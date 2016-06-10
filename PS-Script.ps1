@@ -19,6 +19,6 @@ Remove-Item C:\tomcat_work
 
 New-Item C:\WEB_MAIN -type directory
 
-Extract-Zip C:\WEB_MAIN.zip C:\WEB_MAIN
+Extract-Zip C:\git\WEB_MAIN.zip C:\WEB_MAIN
 
 Start-Service tomcat8
