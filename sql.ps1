@@ -4,7 +4,7 @@ $pwd = "qwer123$"
 $database = "test"
 $connectionString = "Server=$dataSource;uid=$user; pwd=$pwd;Database=$database;Integrated Security=False;"
 
-$query = "create table customer(name nvarchar(10), age nvarchar(10) )"
+$query = get-content "c:\git\sample.sql"
 
 $connection = New-Object System.Data.SqlClient.SqlConnection
 $connection.ConnectionString = $connectionString
