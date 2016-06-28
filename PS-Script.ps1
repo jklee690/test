@@ -7,7 +7,7 @@ function Extract-Zip
     $shellApplication = new-object -com shell.application
     $zipPackage = $shellApplication.NameSpace($zipfilename)
     $destinationFolder = $shellApplication.NameSpace($destination)
-    $destinationFolder.CopyHere($zipPackage.Items())
+    $destinationFolder.CopyHere($zipPackage.Items(), 0x14)
   }
 }
 
@@ -77,10 +77,30 @@ else
     Write-Output "not create web_main directory"
 }
 
+Extract-Zip C:\git\WEB_MAIN_Patch.zip "C:\git"
+
+
+$paths = get-childitem -path "c:\git" -recurse | select FullName
+
+foreach($item in $paths)
+{
+   	$filename = $item.FullName
+   	if( $filename -match "(w+)*.js" )
+	{
+		$destname = $filename.Replace("C:\git", "C:\clt\OPUS_FWD_2014\WEB_MAIN")
+        $destname = $destname.Replace("c:\git", "c:\clt\OPUS_FWD_2014\WEB_MAIN")
+        
+		Copy-Item $filename $destname -force 	
+	}
+}
+
+
 Start-Service $tomcatname
 $tomcatStatus = Get-Service -name $tomcatname | Where-Object {$_.Status -eq "Active"} | select object-name -ExpandProperty Status
 if($tomcatStatus -eq "Stopped")
 {
 	write-output "not enable Active tomcat7 and tomcat 8 service"
-	exit 0
+	
 }
+
+Remove-Item "git" -Recurse

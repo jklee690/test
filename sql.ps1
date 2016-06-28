@@ -1,10 +1,10 @@
-$dataSource = ".\SQLEXPRESS"
-$user = "sa"
-$pwd = "qwer123$"
-$database = "test"
+$dataSource = "(local)"
+$user = "opus_fms"
+$pwd = "fms"
+$database = "demofwdv401_test"
 $connectionString = "Server=$dataSource;uid=$user; pwd=$pwd;Database=$database;Integrated Security=False;"
 
-$query = get-content "c:\git\sample.sql"
+$query = get-content "c:\git\Patch.sql"
 
 $connection = New-Object System.Data.SqlClient.SqlConnection
 $connection.ConnectionString = $connectionString
