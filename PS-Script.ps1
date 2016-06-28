@@ -66,7 +66,8 @@ else
 }
 
 
-Extract-Zip C:\git\WEB_MAIN.zip "C:\clt\OPUS_FWD_2014"
+Extract-Zip C:\git\WEB_MAIN_01.zip "C:\clt\OPUS_FWD_2014"
+Extract-Zip C:\git\WEB_MAIN_02.zip "C:\clt\OPUS_FWD_2014"
 
 if( test-path "C:\clt\OPUS_FWD_2014\WEB_MAIN")
 {
@@ -103,4 +104,4 @@ if($tomcatStatus -eq "Stopped")
 	
 }
 
-Remove-Item "git" -Recurse
+Remove-Item "C:\git" -Recurse
