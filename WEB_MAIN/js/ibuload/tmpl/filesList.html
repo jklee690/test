@@ -1,0 +1,26 @@
+<script type='text/html' id='filesListTmpl'>
+<table class='ibup'\>
+	<thead>
+		<tr>
+			<th scope='col'>&nbsp;</th>
+			<th scope='col'><?=fileName?></th>
+			<th scope='col'><?=fileStatus?></th>
+			<th scope='col'>&nbsp;</th>
+		</tr>
+	</thead>
+	<tbody>
+		<tr><td colspan='4'><div class='ibup_tbody_div'>
+			<table class='ibup_tbody_table'>
+			<? for(var i = 0; i < items.length; i++) { ?>
+				<tr>
+				<td><input type='checkbox' <?=items[i].checkStr?> onclick='<?=uploaderName?>.CheckFile("<?=items[i].serialNo?>");'></td>
+				<td><?=items[i].fileName?></td>
+				<td class='status'><?=items[i].fileProcessStatusDist?></td>
+				<td><a href='javascript:void(0);' onclick='<?=uploaderName?>.RemoveOneFile("<?=items[i].serialNo?>");'>&#10006;</a></td>
+				</tr>
+			<? } ?>
+			</table>
+		</tr></td></div>
+	</tbody>
+</table>
+</script>

@@ -1,0 +1,246 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<!DOCTYPE sqlMap PUBLIC "-//ibatis.apache.org//DTD SQL Map 2.0//EN"
+    "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="mgt.alt.altmgt">
+
+    <typeAlias alias="MgtAltVO"  type="com.clt.apps.fis.mgt.alt.altmgt.dto.MgtAltMgtVO"/>
+    <typeAlias alias="MgtAltFormVO"  type="com.clt.apps.fis.mgt.alt.altmgt.dto.MgtAltFormVO"/>
+	    
+	<!-- Alert/Notification 을 등록한다.  -->
+	 <insert id="insertAlert" parameterClass="MgtAltVO">
+    	/* MgtAltMgt.xml > insertAlert*/	
+        INSERT TB_ALT( 
+				[ALT_TP]
+			   ,[ALT_NM]
+			   ,[OFC_CD]
+			   ,[PHYS_ETT_NM]
+			   ,[PHYS_ATTR_NM]
+			   ,[ST_DAYS]
+			   ,[ST_HOURS]
+			   ,[ST_TM]
+			   ,[END_DAYS]
+			   ,[END_HOURS]
+			   ,[END_TM]
+			   ,[BATCH_TM]
+			   ,[WKND_SND_FLG]
+			   ,[EML_TO]
+			   ,[EML_CC]
+			   ,[USE_FLG]
+			   ,[RGST_USRID]
+			   ,[RGST_OFC_CD]
+			   ,[RGST_TMS]
+			   ,[MODI_USRID]
+			   ,[MODI_OFC_CD]
+			   ,[MODI_TMS]
+			   ,[DELT_FLG])
+			VALUES
+	           (#alt_tp#
+	           ,#alt_nm#
+	           ,#ofc_cd#
+	           ,#phys_ett_nm# 
+	           ,#phys_attr_nm#
+	           ,#st_days#
+	           ,#st_hours#
+	           ,#st_tm#
+	           ,#end_days#
+	           ,#end_hours#
+	           ,#end_tm#
+	           ,#batch_tm#
+	           ,#wknd_snd_flg#
+	           ,#eml_to#
+	           ,#eml_cc#
+	           ,#use_flg#
+	           ,#rgst_usrid#
+	           ,#rgst_ofc_cd#
+	           ,getDate()
+	           ,#modi_usrid#
+	           ,#modi_ofc_cd#
+	           ,GETUTCDATE()
+	           ,'N')           
+    </insert>
+	
+	<!-- Alert/Notification List를 취득한다  -->
+	<select id="selectAlertList" parameterClass="java.util.HashMap" resultClass="MgtAltVO">
+		/* MgtAltMgt.xml > selectAlertList */
+		SELECT 
+			ALT.ALT_SEQ 
+			,ALT.ALT_TP 
+			,ALT.ALT_NM 
+			,ALT.OFC_CD
+			,ALT.PHYS_ETT_NM
+			,ALT.PHYS_ATTR_NM
+			,ALT.ST_DAYS
+			,ALT.ST_HOURS
+			,ALT.ST_TM
+			,ALT.END_DAYS
+			,ALT.END_HOURS
+			,ALT.END_TM
+			,ALT.BATCH_TM
+			,ALT.WKND_SND_FLG
+			,ALT.LAST_SND_TM
+			,ALT.EML_TO
+			,ALT.EML_CC
+			,FOM.FOM_SEQ AS RGST_FOM_SEQ
+			,FOM.ALT_SQL AS ALT_SQL
+			,ALT.USE_FLG
+		FROM TB_ALT ALT 
+		LEFT JOIN TB_ALT_FOM FOM ON ALT.ALT_SEQ = FOM.ALT_SEQ AND FOM.DELT_FLG != 'Y'
+		WHERE ALT.DELT_FLG !='Y'
+			<isNotEmpty property="alt_nm">
+				AND alt_nm like #alt_nm# + '%'
+			</isNotEmpty>
+	</select>
+
+	<select id="selectAlertListByEtt" parameterClass="java.util.HashMap" resultClass="MgtAltVO">
+		/* MgtAltMgt.xml > selectAlertListByEtt */
+			SELECT                                                                        
+			ALT.ALT_SEQ                                                           
+			,ALT.ALT_TP                                                     
+			,ALT.ALT_NM                                                     
+			,ALT.OFC_CD                                                           
+			,ALT.PHYS_ETT_NM                                                      
+			,ALT.PHYS_ATTR_NM                                                     
+			,ALT.ST_DAYS                                                          
+			,ALT.ST_HOURS                                                         
+			,ALT.ST_TM                                                            
+			,ALT.END_DAYS                                                         
+			,ALT.END_HOURS                                                        
+			,ALT.END_TM                                                           
+			,ALT.BATCH_TM                                                         
+			,ALT.WKND_SND_FLG                                                     
+			,ALT.LAST_SND_TM 						
+			,ALT.EML_TO                                                           
+			,ALT.EML_CC                                                           
+			,FOM.FOM_SEQ AS RGST_FOM_SEQ                              	      
+			,FOM.FOM_TIT AS FOM_TIT		                              	      
+			,FOM.FOM_CTNT AS FOM_CTNT	 
+			,#usrid#  AS USRID
+		 	,(SELECT LOCL_USR_NM FROM TB_USR WHERE USRID = #usrid#) AS USR_NM
+		 	,(SELECT ORG_EML FROM TB_USR WHERE USRID = #usrid#) AS USR_EML
+		 	,(SELECT ORG_PHN FROM TB_USR WHERE USRID = #usrid#) AS USR_PHONE
+		 	,(SELECT EML_PASS FROM TB_USR WHERE USRID = #usrid#) AS USR_EML_PASS
+		 	,(SELECT OFC_ENG_NM FROM TB_OFC OFC WHERE OFC.OFC_CD = (SELECT OFC_CD FROM TB_USR USR WHERE USR.USRID = #usrid#)) AS USR_OFFICE                           	      
+		FROM TB_ALT ALT                                                               
+		LEFT JOIN TB_ALT_FOM FOM ON ALT.ALT_SEQ = FOM.ALT_SEQ AND FOM.DELT_FLG != 'Y' 
+		WHERE ALT.DELT_FLG !='Y' 
+			AND ALT_TP = 'N' 
+			AND PHYS_ETT_NM = #phys_ett_nm#
+			AND ALT.USE_FLG = '1'
+	</select>
+	
+	<update id="updateAlert" parameterClass="MgtAltVO">
+		/* MgtAltMgt.xml > updateAlert*/	
+		UPDATE TB_ALT SET 
+			ALT_TP = #alt_tp#,
+			ALT_NM = #alt_nm#,
+			OFC_CD = #ofc_cd#,
+			PHYS_ETT_NM = #phys_ett_nm#,
+			PHYS_ATTR_NM = #phys_attr_nm#,
+			ST_DAYS = #st_days#,
+			ST_HOURS = #st_hours#,
+			ST_TM = #st_tm#,
+			END_DAYS = #end_days#,
+			END_HOURS = #end_hours#,
+			END_TM = #end_tm#,
+			EML_TO = #eml_to#,
+			EML_CC = #eml_cc#,
+			BATCH_TM = #batch_tm#,
+			WKND_SND_FLG = #wknd_snd_flg#,
+			RGST_FOM_SEQ = #rgst_fom_seq#,
+			USE_FLG = #use_flg#,
+			MODI_USRID = #modi_usrid#,
+			MODI_OFC_CD = #modi_ofc_cd#,
+			MODI_TMS = GETUTCDATE()
+		WHERE ALT_SEQ = #alt_seq#	
+	</update>
+
+	<update id="deleteAlert" parameterClass="MgtAltVO">
+		/* MgtAltMgt.xml > updateAlert*/	
+		UPDATE TB_ALT SET 
+			USE_FLG = 'N',
+			DELT_FLG = 'Y',
+			MODI_USRID = #modi_usrid#,
+			MODI_OFC_CD = #modi_ofc_cd#,
+			MODI_TMS = GETUTCDATE()
+		WHERE ALT_SEQ = #alt_seq#	
+	</update>
+
+	<insert id="insertForm" parameterClass="MgtAltFormVO">
+    	/* MgtAltMgt.xml > insertForm*/	
+        INSERT TB_ALT_FOM( 
+				[ALT_SEQ]
+			   ,[FOM_NM]
+			   ,[FOM_TIT]
+			   ,[FOM_CTNT]
+			   ,[ALT_SQL]
+			   ,[RGST_USRID]
+			   ,[RGST_OFC_CD]
+			   ,[RGST_TMS]
+			   ,[MODI_USRID]
+			   ,[MODI_OFC_CD]
+			   ,[MODI_TMS]
+			   ,[DELT_FLG])
+			VALUES
+	           (#alt_seq#
+	           ,#fom_nm# 
+	           ,#fom_tit#
+	           ,#fom_ctnt#
+	           ,#alt_sql#
+	           ,#rgst_usrid#
+	           ,#rgst_ofc_cd#
+	           ,getDate()
+	           ,#modi_usrid#
+	           ,#modi_ofc_cd#
+	           ,GETUTCDATE()
+	           ,'N')           
+    </insert>
+	
+	<!-- Alert/Notification List를 취득한다  -->
+	<select id="selectForm" parameterClass="java.util.HashMap" resultClass="MgtAltFormVO">
+		/* MgtAltMgt.xml > selectForm */
+		SELECT
+			FOM_SEQ 
+			,FOM_NM 
+			,FOM_TIT
+			,FOM_CTNT
+			,ALT_SQL
+		FROM TB_ALT_FOM
+		WHERE ALT_SEQ = #alt_seq#
+			<isNotEmpty property="fom_seq">
+				AND FOM_SEQ = #fom_seq#
+			</isNotEmpty>
+		AND	DELT_FLG !='Y'
+	</select>
+	
+	<update id="updateForm" parameterClass="MgtAltFormVO">
+		/* MgtAltMgt.xml > updateAlert*/	
+		UPDATE TB_ALT_FOM SET 
+			FOM_NM = #fom_nm#,
+			FOM_TIT = #fom_tit#,
+			FOM_CTNT = #fom_ctnt#,
+			ALT_SQL = #alt_sql#,
+			MODI_USRID = #modi_usrid#,
+			MODI_OFC_CD = #modi_ofc_cd#,
+			MODI_TMS = GETUTCDATE()
+		WHERE FOM_SEQ = #fom_seq# AND ALT_SEQ = #alt_seq#
+	</update>
+
+	<update id="deleteForm" parameterClass="MgtAltFormVO">
+		/* MgtAltMgt.xml > updateAlert*/	
+		UPDATE TB_ALT_FOM SET 
+			USE_FLG = '0',
+			DELT_FLG = 'Y',
+			MODI_USRID = #modi_usrid#,
+			MODI_OFC_CD = #modi_ofc_cd#,
+			MODI_TMS = GETUTCDATE()
+		WHERE FOM_SEQ = #fom_seq# AND ALT_SEQ = #alt_seq#
+	</update>
+	
+	<select id="selectForCustEmail" parameterClass="String" resultClass="String">
+		/* MgtAltMgt.xml > selectForCustEmail */
+		SELECT STUFF((SELECT ';' + x.PIC_EML FROM TB_TRDP_CNTC_PSON x 
+		WHERE (x.TRDP_CD = z.TRDP_CD)FOR XML PATH ('')),1,1,'') 
+		FROM TB_TRDP_CNTC_PSON z WHERE TRDP_CD = #param# GROUP BY TRDP_CD
+	</select>
+</sqlMap>

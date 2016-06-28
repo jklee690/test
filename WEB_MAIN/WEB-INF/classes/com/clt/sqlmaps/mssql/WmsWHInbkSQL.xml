@@ -1,0 +1,142 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<!DOCTYPE sqlMap PUBLIC "-//ibatis.apache.org//DTD SQL Map 2.0//EN"
+    "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+
+<sqlMap namespace="wms.WHInbk">
+	<!-- Inbound Booking Search 조회 -->
+	<typeAlias alias="WHInbkListOutDto" 	type="com.clt.apps.fis.wms.whinbooking.dto.WHInbkVO"/>
+	<select id="searchWHInBkList" parameterClass="java.util.HashMap" resultClass="WHInbkListOutDto">
+		/*WHInbk.searchWHInBkList*/
+		SELECT T.*
+		     , CASE WHEN T.BK_STS_CD IN ('N', 'C', 'I') THEN dbo.TL_GET_COMM_NM('WBS',T.BK_STS_CD)
+		            ELSE                                     dbo.TL_GET_COMM_NM('WI1',T.BK_STS_CD)
+		       END AS BK_STS_NM
+		  FROM (
+		SELECT TT.*
+		     , Isnull(TT.ITEM_NM_ORG,CI.ITEM_NM) AS ITEM_NM
+		  FROM (
+		SELECT DENSE_RANK() OVER( ORDER BY A.WIB_BK_NO ASC) AS SEQ
+		     , A.WIB_BK_NO
+		     , Isnull(A.CUST_ORD_NO ,' ') AS CUST_ORD_NO
+		     , A.ORD_TP_CD
+		     , dbo.TL_GET_COMM_NM('WB3',A.ORD_TP_CD) AS ORD_TP_NM
+		     , A.BK_DATE
+		     , CASE WHEN A.BK_STS_CD IN ('N', 'C') THEN A.BK_STS_CD
+		            WHEN A.BK_STS_CD = 'I' THEN (CASE WHEN A.IN_STS_CD IN ('P','X') THEN A.IN_STS_CD ELSE 'I' END )
+		            END AS BK_STS_CD
+		     
+		     , A.CTRT_NO
+		     , dbo.TL_GET_CTRT_NM(A.CTRT_NO) AS CTRT_NM	 
+		     , A.IN_STS_CD           
+		     , dbo.TL_GET_COMM_NM('WI1',A.IN_STS_CD) AS IN_STS_NM
+		     , B.ITEM_SYS_NO
+		     , B.ITEM_CD
+		     , B.ITEM_SEQ
+		     , B.ITEM_NM AS ITEM_NM_ORG
+		     , B.LOT_NO
+			 , B.ITEM_PKGQTY
+	         , B.ITEM_PKGUNIT
+	     	 , B.ITEM_CBM
+	     	 , B.ITEM_CBF
+	     	 , B.ITEM_GRS_KGS
+	     	 , B.ITEM_GRS_LBS
+	     	 , B.ITEM_NET_KGS
+	     	 , B.ITEM_NET_LBS
+		     , B.INBOUND_DT
+		     , B.EXP_DT
+		     , B.LOT_04
+		     , B.LOT_05
+		     , B.PO_NO
+		     , A.WH_CD
+		     , dbo.TL_GET_LOC_NM(A.WH_CD) AS WH_NM
+		     , C.WIB_IN_NO
+		     , B.RGST_TIMESTAMP
+	         , A.REF_NO
+	         , B.EQ_NO
+		  FROM TL_WH_IB  A LEFT JOIN TL_WH_IB_ITEM B ON A.WIB_BK_NO = B.WIB_BK_NO
+				LEFT JOIN TL_WH_RCV_ITEM C ON B.WIB_BK_NO = C.WIB_BK_NO AND B.PO_SYS_NO = C.PO_SYS_NO AND B.ITEM_SYS_NO = C.ITEM_SYS_NO AND B.ITEM_SEQ = C.ITEM_SEQ
+		 WHERE 1 = 1
+		   <isNotEqual property="wh_cd" compareValue="ALL">
+		   		AND A.WH_CD = #wh_cd# /*조건-Warehouse*/
+		   </isNotEqual>
+		    <isNotEmpty property="ctrt_no">
+		    	AND A.CTRT_NO = #ctrt_no# /*조건-Contract No*/
+		    </isNotEmpty>
+		   <isNotEqual property="ord_tp_cd" compareValue="ALL">
+		   		AND A.ORD_TP_CD = #ord_tp_cd# /*조건-Order Type*/
+		   </isNotEqual>
+		   <isNotEmpty property="wib_bk_no">
+		   		AND A.WIB_BK_NO = #wib_bk_no# /*조건-Booking no*/
+		   </isNotEmpty>
+		   <isNotEmpty property="fm_bk_date">
+		   		AND A.BK_DATE BETWEEN REPLACE(#fm_bk_date#, '-', '')  AND REPLACE(#to_bk_date#, '-','') /*Booking date between*/
+		   </isNotEmpty>
+		   <isNotEmpty property="item_cd">
+		   		AND B.ITEM_CD = #item_cd# /*조건-item_cd*/
+		   </isNotEmpty>
+		   <isNotEmpty property="lot_no">
+		   		AND B.LOT_NO = #lot_no# /*조건-lot_no*/
+		   </isNotEmpty>
+		   <isNotEmpty property="cust_ord_no">
+		   		AND A.CUST_ORD_NO = #cust_ord_no# /*조건-custom ref*/
+		   </isNotEmpty>
+		   <isNotEmpty property="po_no">
+		   		AND B.PO_NO = #po_no# /*조건-po_no*/
+		   </isNotEmpty>
+		   <isNotEmpty property="ref_no">
+		   		AND A.REF_NO = #ref_no# /*조건-reference no*/
+		   </isNotEmpty>
+		   <!-- Tin.Luong Modify add 'CNTR/TR No 20160227' -->
+		   <isNotEmpty property="eq_no">
+		   		AND B.EQ_NO = #eq_no# /*CNTR/TR No*/
+		   </isNotEmpty>
+	      ) TT LEFT JOIN TL_CTRT_CUST_ITEM CI ON TT.CTRT_NO = CI.CTRT_NO AND TT.ITEM_SYS_NO = CI.ITEM_SYS_NO
+	      ) T
+	  WHERE 1=1
+	  		<isNotEqual property="bk_sts_cd" compareValue="ALL">
+		   		AND T.BK_STS_CD = #bk_sts_cd# /*조건-Booked status + Incomplete status*/
+		   </isNotEqual>
+	  ORDER BY T.WIB_BK_NO ASC, T.RGST_TIMESTAMP ASC, T.ITEM_CD ASC, T.ITEM_SEQ ASC
+	</select>
+	
+	 <select id="searchFileNo" resultClass="java.lang.String">      
+	/* WHInbk.searchFileNo */     
+		SELECT 'HJD' + CONVERT(VARCHAR(6), GETDATE(), 12) + dbo.LPAD (CONVERT(NUMERIC, ISNULL(MAX (SUBSTRING(doc_no, 10, 6)), 0) + 1), 6, 0)  AS DOC_NO
+			FROM TL_FILE_REP
+		 WHERE DOC_NO LIKE 'HJD' + CONVERT(VARCHAR(6), GETDATE(), 12) + '%'
+    </select>	
+	
+	<!-- 파일 업로드 -->	
+    <insert id="addFile">
+	/* WHInbk.addFile */    
+      INSERT INTO TL_FILE_REP 
+      (
+        DOC_NO, 
+        SVC_TP_CD, 
+        DOC_REF_TP_CD, 
+        DOC_REF_NO, 
+        DOC_REF_NO2, 
+        DOC_TP_CD, 
+        FILE_PATH, 
+        FILE_SYS_NM, 
+        FILE_ORG_NM, 
+        FILE_SIZE,
+        RGST_ID, 
+        RGST_SYS_DT
+      )
+      VALUES( #doc_no#,
+             #svc_tp_cd#, 
+             #doc_ref_tp_cd#, 
+             #doc_ref_no#, 
+             #doc_ref_no2#, 
+             #doc_tp_cd#, 
+             #file_url#,
+             #file_sys_nm#,
+             #file_nm#,
+             #file_capa#,
+             #user_id#,
+             GETDATE()
+      )
+    </insert>
+</sqlMap>

@@ -1,0 +1,542 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<!DOCTYPE sqlMap PUBLIC "-//ibatis.apache.org//DTD SQL Map 2.0//EN"
+    "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="mdm.code.freight">
+	
+	<!-- Trade freight List pop select    -->
+    <select id="selectCMM_POP_0070_LIST" parameterClass="java.util.HashMap" resultClass="com.clt.apps.fis.mdm.code.freight.dto.FrtCdVO">
+        SELECT 	frt_cd,		frt_cd_nm, isnull(tax_rate,0) AS tax_rate
+		  FROM  tb_frt_cd
+		 WHERE  delt_flg = 'N'
+		<isEqual property="air_sea_clss_cd" compareValue="S">
+			<isEqual property="bnd_clss_cd" compareValue="O">
+				<isEqual property="biz_clss_cd" compareValue="H">
+						AND  OEH_FLG = 'Y'
+					<isEqual property="tabStr" compareValue="">
+						AND  AR_FLG = 'Y'
+					</isEqual>
+					<isEqual property="tabStr" compareValue="b_">
+						AND  AP_FLG = 'Y'
+					</isEqual>
+					<isEqual property="tabStr" compareValue="dc_">
+						AND  DC_FLG = 'Y'
+					</isEqual>
+				</isEqual>
+				<isEqual property="biz_clss_cd" compareValue="M">
+						AND  OEM_FLG = 'Y'
+					<isEqual property="tabStr" compareValue="">
+						AND  AR_FLG = 'Y'
+					</isEqual>
+					<isEqual property="tabStr" compareValue="b_">
+						AND  AP_FLG = 'Y'
+					</isEqual>
+					<isEqual property="tabStr" compareValue="dc_">
+						AND  DC_FLG = 'Y'
+					</isEqual>
+				</isEqual>
+			</isEqual>
+			<isEqual property="bnd_clss_cd" compareValue="I">
+				<isEqual property="biz_clss_cd" compareValue="H">
+						AND  OIH_FLG = 'Y'
+					<isEqual property="tabStr" compareValue="">
+						AND  AR_FLG = 'Y'
+					</isEqual>
+					<isEqual property="tabStr" compareValue="b_">
+						AND  AP_FLG = 'Y'
+					</isEqual>
+					<isEqual property="tabStr" compareValue="dc_">
+						AND  DC_FLG = 'Y'
+					</isEqual>
+				</isEqual>
+				<isEqual property="biz_clss_cd" compareValue="M">
+						AND  OIM_FLG = 'Y'
+					<isEqual property="tabStr" compareValue="">
+						AND  AR_FLG = 'Y'
+					</isEqual>
+					<isEqual property="tabStr" compareValue="b_">
+						AND  AP_FLG = 'Y'
+					</isEqual>
+					<isEqual property="tabStr" compareValue="dc_">
+						AND  DC_FLG = 'Y'
+					</isEqual>
+				</isEqual>
+			</isEqual>
+	    </isEqual>
+	    <isEqual property="air_sea_clss_cd" compareValue="A">
+			<isEqual property="bnd_clss_cd" compareValue="O">
+				<isEqual property="biz_clss_cd" compareValue="H">
+						AND  AEH_FLG = 'Y'
+					<isEqual property="tabStr" compareValue="">
+						AND  AR_FLG = 'Y'
+					</isEqual>
+					<isEqual property="tabStr" compareValue="b_">
+						AND  AP_FLG = 'Y'
+					</isEqual>
+					<isEqual property="tabStr" compareValue="dc_">
+						AND  DC_FLG = 'Y'
+					</isEqual>
+				</isEqual>
+				<isEqual property="biz_clss_cd" compareValue="M">
+						AND  AEM_FLG = 'Y'
+					<isEqual property="tabStr" compareValue="">
+						AND  AR_FLG = 'Y'
+					</isEqual>
+					<isEqual property="tabStr" compareValue="b_">
+						AND  AP_FLG = 'Y'
+					</isEqual>
+					<isEqual property="tabStr" compareValue="dc_">
+						AND  DC_FLG = 'Y'
+					</isEqual>
+				</isEqual>
+			</isEqual>
+			<isEqual property="bnd_clss_cd" compareValue="I">
+				<isEqual property="biz_clss_cd" compareValue="H">
+						AND  AIH_FLG = 'Y'
+					<isEqual property="tabStr" compareValue="">
+						AND  AR_FLG = 'Y'
+					</isEqual>
+					<isEqual property="tabStr" compareValue="b_">
+						AND  AP_FLG = 'Y'
+					</isEqual>
+					<isEqual property="tabStr" compareValue="dc_">
+						AND  DC_FLG = 'Y'
+					</isEqual>
+				</isEqual>
+				<isEqual property="biz_clss_cd" compareValue="M">
+						AND  AIM_FLG = 'Y'
+					<isEqual property="tabStr" compareValue="">
+						AND  AR_FLG = 'Y'
+					</isEqual>
+					<isEqual property="tabStr" compareValue="b_">
+						AND  AP_FLG = 'Y'
+					</isEqual>
+					<isEqual property="tabStr" compareValue="dc_">
+						AND  DC_FLG = 'Y'
+					</isEqual>
+				</isEqual>
+			</isEqual>
+	    </isEqual>
+	    
+	    <!-- 2011/12/29 Chungrue GNR 추가   -->
+	    <isEqual property="gnr_flg" compareValue="Y">
+	    	AND GNR_FLG = 'Y'
+	    </isEqual>
+	    <isEqual property="gnr_flg" compareValue="N">
+	    	AND GNR_FLG != 'Y'
+	    </isEqual>
+	    <!-- 2011/12/29 Chungrue GNR 종료   -->
+	    
+	    <isNotEmpty property="frt_cd">
+			AND FRT_CD = #frt_cd#
+	    </isNotEmpty>
+	    <isNotEmpty property="frt_cd_nm">
+			AND FRT_CD_NM LIKE '%' + #frt_cd_nm# + '%'
+	    </isNotEmpty>
+		<isNotEmpty property="use_flg">
+			AND USE_FLG = #use_flg#
+	    </isNotEmpty>
+	    
+	    <!-- WMS module tu.nguyen -->
+	    <isEqual property="wms_flg" compareValue="Y">
+	    	AND WMS_FLG = 'Y'
+	    </isEqual>
+	</select>
+	
+	<!-- Trade freight List pop select count    -->
+    <select id="selectCMM_POP_0070_CNT" parameterClass="java.util.HashMap" resultClass="Integer">
+        SELECT  count(*)
+		  FROM  tb_frt_cd
+		 WHERE  delt_flg = 'N'
+		<isEqual property="air_sea_clss_cd" compareValue="S">
+			<isEqual property="bnd_clss_cd" compareValue="O">
+				<isEqual property="biz_clss_cd" compareValue="H">
+						AND  OEH_FLG = 'Y'
+					<isEqual property="tabStr" compareValue="">
+						AND  AR_FLG = 'Y'
+					</isEqual>
+					<isEqual property="tabStr" compareValue="b_">
+						AND  AP_FLG = 'Y'
+					</isEqual>
+					<isEqual property="tabStr" compareValue="dc_">
+						AND  DC_FLG = 'Y'
+					</isEqual>
+				</isEqual>
+				<isEqual property="biz_clss_cd" compareValue="M">
+						AND  OEM_FLG = 'Y'
+					<isEqual property="tabStr" compareValue="">
+						AND  AR_FLG = 'Y'
+					</isEqual>
+					<isEqual property="tabStr" compareValue="b_">
+						AND  AP_FLG = 'Y'
+					</isEqual>
+					<isEqual property="tabStr" compareValue="dc_">
+						AND  DC_FLG = 'Y'
+					</isEqual>
+				</isEqual>
+			</isEqual>
+			<isEqual property="bnd_clss_cd" compareValue="I">
+				<isEqual property="biz_clss_cd" compareValue="H">
+						AND  OIH_FLG = 'Y'
+					<isEqual property="tabStr" compareValue="">
+						AND  AR_FLG = 'Y'
+					</isEqual>
+					<isEqual property="tabStr" compareValue="b_">
+						AND  AP_FLG = 'Y'
+					</isEqual>
+					<isEqual property="tabStr" compareValue="dc_">
+						AND  DC_FLG = 'Y'
+					</isEqual>
+				</isEqual>
+				<isEqual property="biz_clss_cd" compareValue="M">
+						AND  OIM_FLG = 'Y'
+					<isEqual property="tabStr" compareValue="">
+						AND  AR_FLG = 'Y'
+					</isEqual>
+					<isEqual property="tabStr" compareValue="b_">
+						AND  AP_FLG = 'Y'
+					</isEqual>
+					<isEqual property="tabStr" compareValue="dc_">
+						AND  DC_FLG = 'Y'
+					</isEqual>
+				</isEqual>
+			</isEqual>
+	    </isEqual>
+	    <isEqual property="air_sea_clss_cd" compareValue="A">
+			<isEqual property="bnd_clss_cd" compareValue="O">
+				<isEqual property="biz_clss_cd" compareValue="H">
+						AND  AEH_FLG = 'Y'
+					<isEqual property="tabStr" compareValue="">
+						AND  AR_FLG = 'Y'
+					</isEqual>
+					<isEqual property="tabStr" compareValue="b_">
+						AND  AP_FLG = 'Y'
+					</isEqual>
+					<isEqual property="tabStr" compareValue="dc_">
+						AND  DC_FLG = 'Y'
+					</isEqual>
+				</isEqual>
+				<isEqual property="biz_clss_cd" compareValue="M">
+						AND  OEM_FLG = 'Y'
+					<isEqual property="tabStr" compareValue="">
+						AND  AR_FLG = 'Y'
+					</isEqual>
+					<isEqual property="tabStr" compareValue="b_">
+						AND  AP_FLG = 'Y'
+					</isEqual>
+					<isEqual property="tabStr" compareValue="dc_">
+						AND  DC_FLG = 'Y'
+					</isEqual>
+				</isEqual>
+			</isEqual>
+			<isEqual property="bnd_clss_cd" compareValue="I">
+				<isEqual property="biz_clss_cd" compareValue="H">
+						AND  AIH_FLG = 'Y'
+					<isEqual property="tabStr" compareValue="">
+						AND  AR_FLG = 'Y'
+					</isEqual>
+					<isEqual property="tabStr" compareValue="b_">
+						AND  AP_FLG = 'Y'
+					</isEqual>
+					<isEqual property="tabStr" compareValue="dc_">
+						AND  DC_FLG = 'Y'
+					</isEqual>
+				</isEqual>
+				<isEqual property="biz_clss_cd" compareValue="M">
+						AND  OIM_FLG = 'Y'
+					<isEqual property="tabStr" compareValue="">
+						AND  AR_FLG = 'Y'
+					</isEqual>
+					<isEqual property="tabStr" compareValue="b_">
+						AND  AP_FLG = 'Y'
+					</isEqual>
+					<isEqual property="tabStr" compareValue="dc_">
+						AND  DC_FLG = 'Y'
+					</isEqual>
+				</isEqual>
+			</isEqual>
+	    </isEqual>
+	    
+	    <!-- 2011/12/29 Chungrue GNR 추가   -->
+	    <isEqual property="gnr_flg" compareValue="Y">
+	    	AND GNR_FLG = 'Y'
+	    </isEqual>
+	    <isEqual property="gnr_flg" compareValue="N">
+	    	AND GNR_FLG != 'Y'
+	    </isEqual>
+	    <!-- 2011/12/29 Chungrue GNR 종료   -->
+	    	
+	    <isNotEmpty property="frt_cd">
+			AND FRT_CD = #frt_cd#
+	    </isNotEmpty>
+	    <isNotEmpty property="frt_cd_nm">
+			AND FRT_CD_NM LIKE '%' + #frt_cd_nm# + '%'
+	    </isNotEmpty>
+	</select>
+	
+	<!-- Freight Code List    -->
+    <select id="selectFRT_CD_LIST" resultClass="com.clt.apps.fis.mdm.code.freight.dto.FrtCdVO">
+     /* MdmCodeFreightSQL.xml => selectFRT_CD_LIST */
+       SELECT  TOP $topCnt$
+			   frt_cd		,frt_cd_nm		,frt_cd_locl_nm
+			  ,frt_curr		
+			  ,CASE pfmc_flg WHEN 'Y' THEN 1 ELSE 0 END AS pfmc_flg
+			  ,tax_flg		,tax_rate		,whld_tax_rate
+			  ,gl_cd_rev
+			  ,(SELECT TOP 1 RMK FROM TB_GL_CD WHERE GL_CD = GL_CD_REV) AS gl_rmk_rev	
+			  ,gl_cd_cost		
+			  ,(SELECT TOP 1 RMK FROM TB_GL_CD WHERE GL_CD = GL_CD_COST) AS gl_rmk_cost	
+			  ,gl_cd_prnr
+			  ,(SELECT TOP 1 RMK FROM TB_GL_CD WHERE GL_CD = GL_CD_PRNR) AS gl_rmk_prnr
+			  ,gl_cd_prnr2
+			  ,(SELECT TOP 1 RMK FROM TB_GL_CD WHERE GL_CD = GL_CD_PRNR2) AS gl_rmk_prnr2
+			  ,CASE ar_flg WHEN 'Y' THEN 1 ELSE 0 END AS ar_flg
+			  ,CASE ap_flg WHEN 'Y' THEN 1 ELSE 0 END AS ap_flg
+			  ,CASE dc_flg WHEN 'Y' THEN 1 ELSE 0 END AS dc_flg
+			  ,CASE gnr_flg WHEN 'Y' THEN 1 ELSE 0 END AS gnr_flg
+			  ,CASE oim_flg WHEN 'Y' THEN 1 ELSE 0 END AS oim_flg
+			  ,CASE oih_flg WHEN 'Y' THEN 1 ELSE 0 END AS oih_flg
+			  ,CASE aim_flg WHEN 'Y' THEN 1 ELSE 0 END AS aim_flg
+			  ,CASE aih_flg WHEN 'Y' THEN 1 ELSE 0 END AS aih_flg
+			  ,CASE oem_flg WHEN 'Y' THEN 1 ELSE 0 END AS oem_flg
+			  ,CASE oeh_flg WHEN 'Y' THEN 1 ELSE 0 END AS oeh_flg
+			  ,CASE aem_flg WHEN 'Y' THEN 1 ELSE 0 END AS aem_flg
+			  ,CASE aeh_flg WHEN 'Y' THEN 1 ELSE 0 END AS aeh_flg
+			  ,CASE wms_flg WHEN 'Y' THEN 1 ELSE 0 END AS wms_flg			  
+			  ,frt_clss_cd	,srt_seq
+			  
+			  ,CASE use_flg WHEN 'Y' THEN 1 ELSE 0 END AS use_flg
+			  ,CASE dflt_flg WHEN 'Y' THEN 1 ELSE 0 END AS dflt_flg
+			  ,frt_grp_cd
+		 
+		 FROM  tb_frt_cd
+		WHERE  1=1
+		<isNotEmpty property="s_bill_cd">
+			AND frt_cd LIKE #s_bill_cd# + '%'
+		</isNotEmpty>
+		<isNotEmpty property="s_bill_nm">
+			AND (frt_cd_nm LIKE '%' + #s_bill_nm# + '%' OR frt_cd_locl_nm LIKE '%' + #s_bill_nm# + '%')
+		</isNotEmpty>
+		<isNotEmpty property="s_gl_cd">
+			AND (
+				gl_cd_rev = #s_gl_cd# 
+			  OR 
+			  	gl_cd_cost = #s_gl_cd# 	
+			  OR
+			  	gl_cd_prnr = #s_gl_cd# 
+			  OR
+			  	gl_cd_prnr2 = #s_gl_cd# 
+			)
+		</isNotEmpty>
+		<isNotEmpty property="s_gl_nm">
+			AND exists (SELECT 'X' FROM TB_GL_CD x WHERE x.RMK like '%'+#s_gl_nm#+'%' and x.GL_CD in(GL_CD_REV, GL_CD_REV, GL_CD_REV) )
+		</isNotEmpty>
+		ORDER  BY  frt_cd ASC
+	</select>
+	
+	<!-- Freight Code Count    -->
+    <select id="selectFRT_CD_CNT" resultClass="Integer">
+     /* MdmCodeFreightSQL.xml => selectFRT_CD_CNT */
+        SELECT  count(*)
+		  FROM  tb_frt_cd
+		 WHERE  delt_flg = 'N'
+		<isNotEmpty property="s_bill_cd">
+			AND frt_cd = #s_bill_cd#
+		</isNotEmpty>
+		<isNotEmpty property="s_bill_nm">
+			AND (frt_cd_nm LIKE '%' + #s_bill_nm# + '%' OR frt_cd_locl_nm LIKE '%' + #s_bill_nm# + '%')
+		</isNotEmpty>
+		<isNotEmpty property="s_gl_cd">
+			AND (
+				gl_cd_rev = #s_gl_cd# 
+			  OR 
+			  	gl_cd_cost = #s_gl_cd# 	
+			  OR
+			  	gl_cd_prnr = #s_gl_cd# 
+			  OR
+			  	gl_cd_prnr2 = #s_gl_cd# 
+			)
+		</isNotEmpty>
+		<isNotEmpty property="s_gl_nm">
+			AND exists (SELECT 'X' FROM TB_GL_CD x WHERE x.RMK like '%'+#s_gl_nm#+'%' and x.GL_CD in(GL_CD_REV, GL_CD_REV, GL_CD_REV) )
+		</isNotEmpty>
+	</select>
+	
+	<!-- Package Code Update    -->
+	<update id="updateMDM_MCM_0160" parameterClass="com.clt.apps.fis.mdm.code.freight.dto.FrtCdVO">
+		UPDATE  tb_frt_cd
+		   SET	modi_usrid = #modi_usrid#
+		   	  , modi_ofc_cd = #modi_ofc_cd#
+		      , modi_tms = GETUTCDATE()  
+			<isNotNull property="frt_cd_nm">
+				,frt_cd_nm = #frt_cd_nm#
+			</isNotNull>
+			<isNotNull property="frt_clss_cd">
+				,frt_clss_cd = #frt_clss_cd#
+			</isNotNull>
+			<isNotNull property="air_use_flg">
+				,air_use_flg = #air_use_flg#
+			</isNotNull>
+			<isNotNull property="sea_use_flg">
+				,sea_use_flg = #sea_use_flg#
+			</isNotNull>
+			<isNotNull property="descr">
+				,descr = #descr#
+			</isNotNull>
+			<isNotNull property="delt_flg">
+				,delt_flg = #delt_flg#
+			</isNotNull>
+			<isNotNull property="sea_dflt_flg">
+				,sea_dflt_flg = #sea_dflt_flg#
+			</isNotNull>
+			<isNotNull property="air_dflt_flg">
+				,air_dflt_flg = #air_dflt_flg#
+			</isNotNull>
+			<isNotNull property="frt_curr">
+				,frt_curr = #frt_curr#
+			</isNotNull>
+			<isNotNull property="sea_dflt_srt_seq">
+				,sea_dflt_srt_seq = #sea_dflt_srt_seq#
+			</isNotNull>
+			<isNotNull property="air_dflt_srt_seq">
+				,air_dflt_srt_seq = #air_dflt_srt_seq#
+			</isNotNull>
+			<isNotNull property="frt_cd_locl_nm">
+				,frt_cd_locl_nm = #frt_cd_locl_nm#
+			</isNotNull>
+			<isNotNull property="pfmc_flg">
+				,pfmc_flg = #pfmc_flg#
+			</isNotNull>
+			<isNotNull property="tax_flg">
+				,tax_flg = #tax_flg#
+			</isNotNull>
+			<isNotNull property="tax_rate">
+				,tax_rate = #tax_rate#
+			</isNotNull>
+			<isNotNull property="whld_tax_rate">
+				,whld_tax_rate = #whld_tax_rate#
+			</isNotNull>
+			<isNotNull property="gl_cd_rev">
+				,gl_cd_rev = #gl_cd_rev#
+			</isNotNull>
+			<isNotNull property="gl_cd_cost">
+				,gl_cd_cost = #gl_cd_cost#
+			</isNotNull>
+			<isNotNull property="gl_cd_prnr">
+				,gl_cd_prnr = #gl_cd_prnr#
+			</isNotNull>
+			<isNotNull property="gl_cd_prnr2">
+				,gl_cd_prnr2 = #gl_cd_prnr2#
+			</isNotNull>
+			<isNotNull property="ar_flg">
+				,ar_flg = #ar_flg#
+			</isNotNull>
+			<isNotNull property="ap_flg">
+				,ap_flg = #ap_flg#
+			</isNotNull>
+			<isNotNull property="dc_flg">
+				,dc_flg = #dc_flg#
+			</isNotNull>
+			<isNotNull property="gnr_flg">
+				,gnr_flg = #gnr_flg#
+			</isNotNull>
+			<isNotNull property="oim_flg">
+				,oim_flg = #oim_flg#
+			</isNotNull>
+			<isNotNull property="oih_flg">
+				,oih_flg = #oih_flg#
+			</isNotNull>
+			<isNotNull property="aim_flg">
+				,aim_flg = #aim_flg#
+			</isNotNull>
+			<isNotNull property="aih_flg">
+				,aih_flg = #aih_flg#
+			</isNotNull>
+			<isNotNull property="oem_flg">
+				,oem_flg = #oem_flg#
+			</isNotNull>
+			<isNotNull property="oeh_flg">
+				,oeh_flg = #oeh_flg#
+			</isNotNull>
+			<isNotNull property="aem_flg">
+				,aem_flg = #aem_flg#
+			</isNotNull>
+			<isNotNull property="aeh_flg">
+				,aeh_flg = #aeh_flg#
+			</isNotNull>
+			<isNotNull property="wms_flg">
+				,wms_flg = #wms_flg#
+			</isNotNull>
+			<isNotNull property="srt_seq">
+				,srt_seq = #srt_seq#
+			</isNotNull>
+			<isNotNull property="use_flg">
+				,use_flg = #use_flg#
+			</isNotNull>
+			<isNotNull property="dflt_flg">
+				,dflt_flg = #dflt_flg#
+			</isNotNull>
+			<isNotNull property="frt_grp_cd">
+				,frt_grp_cd = #frt_grp_cd#
+			</isNotNull>
+		 WHERE  frt_cd = #frt_cd#
+	</update>
+	
+	<delete id="deleteMDM_MCM_0160" parameterClass="com.clt.apps.fis.mdm.code.freight.dto.FrtCdVO">
+		DELETE TB_FRT_CD
+		 WHERE frt_cd = #frt_cd#
+	</delete>
+	
+	<!-- Package Code Insert    -->
+	<insert id="insertMDM_MCM_0160" parameterClass="com.clt.apps.fis.mdm.code.freight.dto.FrtCdVO">
+		INSERT INTO tb_frt_cd (
+			frt_cd,        frt_cd_nm,       frt_clss_cd, 
+			air_use_flg,   air_dflt_flg,    air_dflt_srt_seq,
+			sea_use_flg,   sea_dflt_flg,    sea_dflt_srt_seq,
+		
+			frt_curr,      descr,
+		
+			rgst_usrid,    rgst_ofc_cd,     rgst_tms, 
+			modi_usrid,    modi_ofc_cd,     modi_tms,       delt_flg,
+		       
+			frt_cd_locl_nm,	pfmc_flg,	tax_flg,	tax_rate,	whld_tax_rate,
+			gl_cd_rev,		gl_cd_cost,		gl_cd_prnr,		gl_cd_prnr2,
+
+			ar_flg,			ap_flg,			gnr_flg,		oim_flg,
+			oih_flg,		aim_flg,		aih_flg,		oem_flg,
+			oeh_flg,		aem_flg,		aeh_flg,		wms_flg,
+			dc_flg,			srt_seq,		use_flg,		dflt_flg,		frt_grp_cd
+		) VALUES (
+			#frt_cd#,      #frt_cd_nm#,     #frt_clss_cd#, 
+			#air_use_flg#, #air_dflt_flg#,  #air_dflt_srt_seq#,
+			#sea_use_flg#, #sea_dflt_flg#,  #sea_dflt_srt_seq#,
+			
+			#frt_curr#,    #descr#, 
+			#rgst_usrid#,  #rgst_ofc_cd#,   getdate(), 
+			#modi_usrid#,  #modi_ofc_cd#,   GETUTCDATE(),      'N',
+			
+			#frt_cd_locl_nm#,	#pfmc_flg#,		#tax_flg#,		#tax_rate#,		#whld_tax_rate#,
+			#gl_cd_rev#,		#gl_cd_cost#,	#gl_cd_prnr#,	#gl_cd_prnr2#,
+			
+			#ar_flg#,			#ap_flg#,		#gnr_flg#,		#oim_flg#,
+			#oih_flg#,			#aim_flg#,		#aih_flg#,		#oem_flg#,
+			#oeh_flg#,			#aem_flg#,		#aeh_flg#,		#wms_flg#,
+			#dc_flg#,			#srt_seq#,			#use_flg#,		#dflt_flg#,		#frt_grp_cd#
+		)
+	</insert>
+	
+	<select id="selectMDM_MCM_0160_CODE" parameterClass="java.util.HashMap" resultClass="String">
+        SELECT frt_cd
+		FROM tb_frt_cd
+		WHERE frt_cd = #s_frt_cd#
+	</select>
+	
+	<select id="selectFreightCodeList_COMMON" resultClass="com.clt.apps.fis.mdm.code.freight.dto.FrtCdVO" parameterClass="java.util.HashMap">
+		SELECT  frt_cd, frt_cd_nm, frt_clss_cd, 
+		        CASE WHEN use_flg = 'N' THEN 0 ELSE 1 END AS use_flg
+		  FROM  tb_frt_cd
+		 WHERE  1=1
+		   AND  DELT_FLG = 'N'
+	  ORDER BY  frt_cd
+	</select>
+</sqlMap>

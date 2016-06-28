@@ -1,0 +1,319 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<!DOCTYPE sqlMap PUBLIC "-//ibatis.apache.org//DTD SQL Map 2.0//EN"
+    "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="mgt.cur.exchangemgt">
+
+    <!-- 일환률을 조회   -->    
+    <select id="selectINV_XCRT_LIST" parameterClass="java.util.HashMap" resultClass="com.clt.apps.fis.mgt.cur.exchangemgt.dto.InvXcrtVO">
+        SELECT  TOP $topCnt$      
+		        ixc.inv_xcrt_seq,     ixc.dt_clss_cd,         ixc.curr_tp_cd,
+		        ixc.trdp_cd,          trd.eng_nm AS trdp_nm,
+                ixc.fm_curr_cd,       ixc.fm_rt_ut,
+                ixc.to_curr_cd,       ixc.to_rt_ut,
+                ixc.xch_rt_ut,        ixc.aply_fm_dt,         ixc.aply_to_dt,
+                ixc.modi_usrid AS proc_usrid
+          FROM  tb_inv_xcrt ixc LEFT OUTER JOIN tb_trdp trd  
+		    ON  ixc.trdp_cd = trd.trdp_cd
+         WHERE  ixc.delt_flg = 'N'
+        <dynamic>
+        	<isNotNull property="f_curr_tp_cd">
+                AND ixc.curr_tp_cd = #f_curr_tp_cd#
+            </isNotNull>
+            <isNotNull property="f_fm_curr_cd">
+                AND ixc.fm_curr_cd = #f_fm_curr_cd#
+            </isNotNull>
+            <isNotNull property="f_inv_curr_cd">
+                AND ixc.to_curr_cd = #f_inv_curr_cd#
+            </isNotNull>
+            <isNotNull property="f_trdp_cd">
+                AND ixc.trdp_cd = #f_trdp_cd#
+            </isNotNull>
+            <isEqual property="f_dt_clss_cd" compareValue="D">
+                AND ixc.dt_clss_cd = 'D' 
+				AND (ixc.aply_fm_dt BETWEEN #f_aply_fm_dt# AND #f_aply_to_dt#) AND (ixc.aply_to_dt BETWEEN #f_aply_fm_dt# AND #f_aply_to_dt#)
+            </isEqual>  
+            <isEqual property="f_dt_clss_cd" compareValue="M">
+				AND ixc.dt_clss_cd = 'M' 
+                AND ( (ixc.aply_fm_dt BETWEEN #f_aply_fm_dt# AND #f_aply_to_dt#) OR  (ixc.aply_to_dt BETWEEN #f_aply_fm_dt# AND #f_aply_to_dt#))
+            </isEqual>
+			<isNull property="f_dt_clss_cd">
+				AND (       
+						( ixc.dt_clss_cd = 'D' AND (ixc.aply_fm_dt BETWEEN #f_aply_fm_dt# AND #f_aply_to_dt#) AND (ixc.aply_to_dt BETWEEN #f_aply_fm_dt# AND #f_aply_to_dt#))
+					   OR
+						( ixc.dt_clss_cd = 'M' AND  ( (ixc.aply_fm_dt BETWEEN #f_aply_fm_dt# AND #f_aply_to_dt#) OR  (ixc.aply_to_dt BETWEEN #f_aply_fm_dt# AND #f_aply_to_dt#)) )
+					)
+			</isNull>
+        </dynamic>
+        ORDER BY ixc.aply_fm_dt DESC 
+    </select>
+	
+    
+    <!-- 일환률을 조회 Counting   -->
+    <select id="selectINV_XCRT_CNT" parameterClass="java.util.HashMap" resultClass="Integer">
+		SELECT  count(ixc.inv_xcrt_seq)
+          FROM  tb_inv_xcrt ixc LEFT OUTER JOIN tb_trdp trd  
+            ON  ixc.trdp_cd = trd.trdp_cd
+         WHERE  ixc.delt_flg = 'N'
+		<isNotNull property="f_curr_tp_cd">
+			AND ixc.curr_tp_cd = #f_curr_tp_cd#
+		</isNotNull>
+		<isNotNull property="f_fm_curr_cd">
+			AND ixc.fm_curr_cd = #f_fm_curr_cd#
+		</isNotNull>
+		<isNotNull property="f_inv_curr_cd">
+			AND ixc.to_curr_cd = #f_inv_curr_cd#
+		</isNotNull>
+		<isNotNull property="f_trdp_cd">
+			AND ixc.trdp_cd = #f_trdp_cd#
+		</isNotNull>
+		<isEqual property="f_dt_clss_cd" compareValue="D">
+			AND ixc.dt_clss_cd = 'D' 
+			AND (ixc.aply_fm_dt BETWEEN #f_aply_fm_dt# AND #f_aply_to_dt#) AND (ixc.aply_to_dt BETWEEN #f_aply_fm_dt# AND #f_aply_to_dt#)
+		</isEqual>  
+		<isEqual property="f_dt_clss_cd" compareValue="M">
+			AND ixc.dt_clss_cd = 'M' 
+			AND ( (ixc.aply_fm_dt BETWEEN #f_aply_fm_dt# AND #f_aply_to_dt#) OR  (ixc.aply_to_dt BETWEEN #f_aply_fm_dt# AND #f_aply_to_dt#))
+		</isEqual>
+		<isNull property="f_dt_clss_cd">
+			AND (       
+					( ixc.dt_clss_cd = 'D' AND (ixc.aply_fm_dt BETWEEN #f_aply_fm_dt# AND #f_aply_to_dt#) AND (ixc.aply_to_dt BETWEEN #f_aply_fm_dt# AND #f_aply_to_dt#))
+				   OR
+					( ixc.dt_clss_cd = 'M' AND  ( (ixc.aply_fm_dt BETWEEN #f_aply_fm_dt# AND #f_aply_to_dt#) OR  (ixc.aply_to_dt BETWEEN #f_aply_fm_dt# AND #f_aply_to_dt#)) )
+				)
+		</isNull>
+    </select>   
+    
+    <!-- 일환률을 추가(최초 insert시 수정자 정보는 생성자 정보와 같다)   -->
+    <insert id="insertINV_XCRT" parameterClass="com.clt.apps.fis.mgt.cur.exchangemgt.dto.InvXcrtVO">
+        INSERT INTO tb_inv_xcrt 
+        (
+            inv_xcrt_seq,   dt_clss_cd,    curr_tp_cd,   trdp_cd,
+            fm_curr_cd,     fm_rt_ut,
+            to_curr_cd,     to_rt_ut,
+            xch_rt_ut,      aply_fm_dt,    aply_to_dt,
+            rgst_usrid,     rgst_ofc_cd,   rgst_tms,
+            modi_usrid,     modi_ofc_cd,   modi_tms , delt_flg   
+        )VALUES(
+            #inv_xcrt_seq#,   #dt_clss_cd#,   #curr_tp_cd#,    #trdp_cd#,
+            #fm_curr_cd#,     #fm_rt_ut#,
+            #to_curr_cd#,     #to_rt_ut#,
+            #xch_rt_ut#,      #aply_fm_dt#,   #aply_to_dt#,
+            #proc_usrid#,     #proc_ofccd#,   getdate(),
+            #proc_usrid#,     #proc_ofccd#,   GETUTCDATE(), 'N'
+        )
+    </insert>
+    
+    <!-- 일환률을 수정  -->
+    <update id="updateINV_XCRT" parameterClass="com.clt.apps.fis.mgt.cur.exchangemgt.dto.InvXcrtVO">
+        UPDATE  tb_inv_xcrt
+           SET  curr_tp_cd = #curr_tp_cd#,
+		        fm_curr_cd = #fm_curr_cd#,   fm_rt_ut = #fm_rt_ut#,
+                to_curr_cd = #to_curr_cd#,   to_rt_ut = #to_rt_ut#,
+                xch_rt_ut  = #xch_rt_ut#,
+                trdp_cd = #trdp_cd#,
+                dt_clss_cd = #dt_clss_cd#,   aply_fm_dt = #aply_fm_dt#,    aply_to_dt = #aply_to_dt#,
+                modi_usrid = #proc_usrid#,   modi_ofc_cd = #proc_ofccd#,   modi_tms = GETUTCDATE()
+         WHERE  inv_xcrt_seq = #inv_xcrt_seq#
+    </update>
+    
+    <!-- 일환률을 삭제    -->
+    <update id="deleteINV_XCRT" parameterClass="com.clt.apps.fis.mgt.cur.exchangemgt.dto.InvXcrtVO">
+        UPDATE  tb_inv_xcrt
+           SET  delt_flg = 'Y', 
+                modi_usrid = #proc_usrid#,   modi_ofc_cd = #proc_ofccd#, modi_tms = GETUTCDATE()
+         WHERE  inv_xcrt_seq = #inv_xcrt_seq#
+    </update>
+    
+    <!-- 일환률을 PK    -->
+    <select id="selectINV_XCRT_PK" parameterClass="java.util.HashMap" resultClass="String">
+        SELECT  max(inv_xcrt_seq)
+          FROM  tb_inv_xcrt                       
+    </select>
+    
+    <!--일환률을 중복 체크  -->
+    <select id="selectINV_XCRT_CHECK" parameterClass="java.util.HashMap" resultClass="Integer">
+        SELECT count(inv_xcrt_seq) 
+          FROM tb_inv_xcrt
+         WHERE trdp_cd    = #ck_trdp_cd#
+		   AND dt_clss_cd = #ck_dt_clss_cd#  AND  aply_fm_dt = #ck_aply_fm_dt#
+           AND fm_curr_cd = #ck_fm_curr_cd#  AND  to_curr_cd = #ck_to_curr_cd#
+           AND curr_tp_cd = #curr_tp_cd#     AND  delt_flg = 'N'
+    </select>
+	
+	<!-- 재무환율 조회   -->
+    <select id="selectFINC_PERF_XCRT_LIST" parameterClass="java.util.HashMap" resultClass="com.clt.apps.fis.mgt.cur.exchangemgt.dto.FincPerfXcrtVO">
+		SELECT  TOP $topCnt$
+		        finc_xcrt_seq,    dt_clss_cd,
+                fm_curr_cd,       fm_rt_ut,
+                to_curr_cd,       to_rt_ut,
+                xch_rt_ut,        aply_fm_dt,       aply_to_dt,
+		        modi_usrid AS proc_usrid
+		  FROM  tb_finc_perf_xcrt
+		 WHERE  delt_flg = 'N'
+		<dynamic>		
+			<isNotNull property="f_fm_curr_cd">
+				AND fm_curr_cd = #f_fm_curr_cd#
+			</isNotNull>
+			<isNotNull property="f_perf_curr_cd">
+				AND to_curr_cd = #f_perf_curr_cd#
+			</isNotNull>
+			<isEqual property="f_dt_clss_cd" compareValue="A">
+				<![CDATA[AND (     ( dt_clss_cd = 'M' 
+				                     AND  (
+						                    (
+						                        aply_fm_dt BETWEEN  #f_aply_fm_dt# AND  #f_aply_to_dt# 
+						                    ) 
+						                    OR (
+						                        aply_to_dt BETWEEN  #f_aply_fm_dt# AND  #f_aply_to_dt# 
+						                    )
+						                )
+				                     ) 
+				                OR 
+				                     ( dt_clss_cd = 'D' AND (aply_fm_dt BETWEEN #f_aply_fm_dt# AND #f_aply_to_dt#) AND (aply_to_dt BETWEEN #f_aply_fm_dt# AND #f_aply_to_dt#))          
+				              )]]>
+			</isEqual>
+			<isEqual property="f_dt_clss_cd" compareValue="D">
+				AND dt_clss_cd = 'D' AND (aply_fm_dt BETWEEN #f_aply_fm_dt# AND #f_aply_to_dt#) AND (aply_to_dt BETWEEN #f_aply_fm_dt# AND #f_aply_to_dt#)
+			</isEqual>	
+			<isEqual property="f_dt_clss_cd" compareValue="M">
+				<![CDATA[AND dt_clss_cd = 'M' 
+				         AND (
+			                    (
+			                        aply_fm_dt BETWEEN  #f_aply_fm_dt# AND  #f_aply_to_dt# 
+			                    ) 
+			                    OR (
+			                        aply_to_dt BETWEEN  #f_aply_fm_dt# AND  #f_aply_to_dt# 
+			                    )
+						      )]]> 
+			</isEqual>
+		</dynamic>
+		ORDER BY aply_fm_dt DESC 
+	</select>
+	
+    <!-- 재무환율 조회 Counting   -->
+	<select id="selectFINC_PERF_XCRT_CNT" parameterClass="java.util.HashMap" resultClass="Integer">
+    	SELECT  count(finc_xcrt_seq)
+		  FROM  tb_finc_perf_xcrt
+		 WHERE  delt_flg = 'N'
+        <dynamic>       
+            <isNotNull property="f_fm_curr_cd">
+                AND fm_curr_cd = #f_fm_curr_cd#
+            </isNotNull>
+            <isNotNull property="f_perf_curr_cd">
+                AND to_curr_cd = #f_perf_curr_cd#
+            </isNotNull>
+            <isEqual property="f_dt_clss_cd" compareValue="A">
+				<![CDATA[AND (     ( dt_clss_cd = 'M' 
+				                     AND  (
+						                    (
+						                        aply_fm_dt BETWEEN  #f_aply_fm_dt# AND  #f_aply_to_dt# 
+						                    ) 
+						                    OR (
+						                        aply_to_dt BETWEEN  #f_aply_fm_dt# AND  #f_aply_to_dt# 
+						                    )
+						                )
+				                     ) 
+				                OR 
+				                     ( dt_clss_cd = 'D' AND (aply_fm_dt BETWEEN #f_aply_fm_dt# AND #f_aply_to_dt#) AND (aply_to_dt BETWEEN #f_aply_fm_dt# AND #f_aply_to_dt#))          
+				              )]]>
+			</isEqual>
+			<isEqual property="f_dt_clss_cd" compareValue="D">
+				AND dt_clss_cd = 'D' AND (aply_fm_dt BETWEEN #f_aply_fm_dt# AND #f_aply_to_dt#) AND (aply_to_dt BETWEEN #f_aply_fm_dt# AND #f_aply_to_dt#)
+			</isEqual>	
+			<isEqual property="f_dt_clss_cd" compareValue="M">
+				<![CDATA[AND dt_clss_cd = 'M' 
+				         AND (
+			                    (
+			                        aply_fm_dt BETWEEN  #f_aply_fm_dt# AND  #f_aply_to_dt# 
+			                    ) 
+			                    OR (
+			                        aply_to_dt BETWEEN  #f_aply_fm_dt# AND  #f_aply_to_dt# 
+			                    )
+						      )]]> 
+			</isEqual>
+        </dynamic>
+	</select>	
+	
+	<!-- 재무환율관리 추가(최초 insert시 수정자 정보는 생성자 정보와 같다)   -->
+	<insert id="insertFINC_PERF_XCRT" parameterClass="com.clt.apps.fis.mgt.cur.exchangemgt.dto.FincPerfXcrtVO">
+		INSERT INTO tb_finc_perf_xcrt 
+		(
+			finc_xcrt_seq,  dt_clss_cd,
+			fm_curr_cd,     fm_rt_ut,
+			to_curr_cd,     to_rt_ut,
+			xch_rt_ut,      aply_fm_dt,    aply_to_dt,
+			rgst_usrid,     rgst_ofc_cd,   rgst_tms,
+			modi_usrid,     modi_ofc_cd,   modi_tms, delt_flg 	   
+		)VALUES(
+            #finc_xcrt_seq#,  #dt_clss_cd#,
+            #fm_curr_cd#,     #fm_rt_ut#,
+            #to_curr_cd#,     #to_rt_ut#,
+            #xch_rt_ut#,      #aply_fm_dt#,   #aply_to_dt#,
+			#proc_usrid#,     #proc_ofccd#,   getdate(),
+            #proc_usrid#,     #proc_ofccd#,   GETUTCDATE(), 'N'
+		)
+	</insert>
+	
+    <!-- 재무환율관리  수정  -->
+    <update id="updateFINC_PERF_XCRT" parameterClass="com.clt.apps.fis.mgt.cur.exchangemgt.dto.FincPerfXcrtVO">
+        UPDATE  tb_finc_perf_xcrt
+		   SET  fm_curr_cd = #fm_curr_cd#,   fm_rt_ut = #fm_rt_ut#,
+                to_curr_cd = #to_curr_cd#,   to_rt_ut = #to_rt_ut#,
+		        xch_rt_ut  = #xch_rt_ut#,
+                dt_clss_cd = #dt_clss_cd#,   aply_fm_dt = #aply_fm_dt#,    aply_to_dt = #aply_to_dt#,
+		        modi_usrid = #proc_usrid#,   modi_ofc_cd = #proc_ofccd#,   modi_tms = GETUTCDATE()
+         WHERE  finc_xcrt_seq = #finc_xcrt_seq#
+    </update>
+	
+	<!-- 재무환율관리 삭제    -->
+    <update id="deleteFINC_PERF_XCRT" parameterClass="com.clt.apps.fis.mgt.cur.exchangemgt.dto.FincPerfXcrtVO">
+        UPDATE  tb_finc_perf_xcrt
+           SET  delt_flg = 'Y', 
+		        modi_usrid = #proc_usrid#,   modi_ofc_cd = #proc_ofccd#, modi_tms = GETUTCDATE()
+         WHERE  finc_xcrt_seq = #finc_xcrt_seq#
+    </update>
+	
+	<!-- 재무환율관리 PK    -->
+    <select id="selectFINC_PERF_XCRT_PK" parameterClass="java.util.HashMap" resultClass="String">
+        SELECT  max(finc_xcrt_seq)
+		  FROM  tb_finc_perf_xcrt						
+	</select>
+	
+	<!--재무환률 중복 체크  -->
+    <select id="selectFINC_PERF_XCRT_CHECK" parameterClass="java.util.HashMap" resultClass="Integer">
+		SELECT count(finc_xcrt_seq) 
+		  FROM tb_finc_perf_xcrt
+		 WHERE dt_clss_cd = #ck_dt_clss_cd#  AND  aply_fm_dt = #ck_aply_fm_dt#
+		   AND fm_curr_cd = #ck_fm_curr_cd#  AND  to_curr_cd = #ck_to_curr_cd#
+    </select>
+	
+    <!-- 일환률을 조회   -->    
+    <select id="selectINV_XCRT_INFO"       parameterClass="java.util.HashMap" resultClass="String">
+        SELECT  TOP 1 ixc.xch_rt_ut
+          FROM  tb_inv_xcrt ixc LEFT OUTER JOIN tb_trdp trd
+		    ON  ixc.trdp_cd = trd.trdp_cd
+         WHERE  ixc.delt_flg = 'N'
+                AND ixc.fm_curr_cd = #f_fm_curr_cd#
+                AND ixc.to_curr_cd = #f_inv_curr_cd#
+			    AND (ixc.curr_tp_cd = 'S' OR ( ixc.curr_tp_cd = 'N' AND ixc.trdp_cd = #f_trdp_cd# ) )
+	<![CDATA[   AND (     ( ixc.dt_clss_cd = 'M' AND ixc.aply_fm_dt >= #f_aply_fm_dt#       AND     ixc.aply_fm_dt <= #f_aply_to_dt#)
+                      OR  ( ixc.dt_clss_cd = 'D' AND ixc.aply_fm_dt  = #f_curr_date#) )             ]]>
+        
+		ORDER BY ixc.curr_tp_cd ASC, ixc.dt_clss_cd ASC, ixc.aply_fm_dt DESC
+    </select>
+	
+    <!-- 재무환율 조회   -->
+    <select id="selectFINC_PERF_XCRT_INFO" parameterClass="java.util.HashMap" resultClass="String">
+        SELECT  TOP 1 xch_rt_ut
+          FROM  tb_finc_perf_xcrt
+         WHERE  delt_flg = 'N'
+                AND fm_curr_cd = #f_fm_curr_cd#
+                AND to_curr_cd = #f_perf_curr_cd#
+
+    <![CDATA[   AND (     ( dt_clss_cd = 'M' AND aply_fm_dt >= #f_aply_fm_dt#       AND     aply_fm_dt <= #f_aply_to_dt#)
+                      OR  ( dt_clss_cd = 'D' AND aply_fm_dt  = #f_curr_date#) )             ]]>
+        
+        ORDER BY dt_clss_cd ASC, aply_fm_dt DESC
+    </select>
+</sqlMap>

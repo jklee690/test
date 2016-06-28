@@ -1,0 +1,1476 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<!DOCTYPE sqlMap PUBLIC "-//ibatis.apache.org//DTD SQL Map 2.0//EN"
+    "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="mdm.mcm.office">
+
+	<typeAlias alias="OfcVO" 	type="com.clt.apps.fis.mdm.mcm.office.dto.OfcVO"/>
+
+	<select id="getOfcList" resultClass="OfcVO" parameterClass="java.util.HashMap">
+	/* MdmMcmOfficeSQL.xml -- getOfcList */
+    SELECT  a.ofc_eng_nm, a.ofc_cd, a.prnt_ofc_cd, a.ofc_level
+	FROM  
+		(SELECT  ofc_eng_nm,   	ofc_cd, prnt_ofc_cd, 
+				dbo.fc_ofc_compare(ofc_cd,#ofc_cd#) ofc_level
+		FROM  tb_ofc
+		WHERE  delt_flg = 'N'
+		) a
+	WHERE  a.ofc_level in('D','U','E')
+	
+	    <isNotNull property="usrid">
+        AND OFC_CD LIKE ISNULL((SELECT CASE ISNULL(MAX(A.USE_FLG), 'N') WHEN 'Y' THEN '' ELSE MAX(B.OFC_CD) END  
+							  FROM TB_ROLE_FNC A, TB_USR B
+							 WHERE A.ROLE_CD = B.ROLE_CD
+							     AND ROLE_FNC_CD = 'O01' 
+							     AND B.USRID  = #usrid#
+							   ), '') +  '%'
+        </isNotNull>
+          
+	ORDER BY dbo.fc_ofc_rank(ofc_cd)
+	</select>
+	
+	<select id="getOfcInfo" resultClass="OfcVO" parameterClass="java.util.HashMap">
+	    SELECT   ofc_eng_nm
+	    		,ofc_cd
+	    		,trf_cur_cd
+		  FROM  tb_ofc
+	     WHERE  delt_flg = 'N'
+           AND  ofc_cd = #ofc_cd#
+
+	</select>
+
+	<!-- Trade office List pop select    -->
+    <select id="selectCMM_POP_0050_LIST"  parameterClass="java.util.HashMap"  resultClass="OfcVO">
+    	/* selectCMM_POP_0050_LIST */
+		SELECT	ofc_eng_nm,			ofc_cd,			prnt_ofc_cd,
+				UPPER(cnt_cd) AS cnt_cd,			dbo.fc_ofc_depth(ofc_cd) AS ofc_depth
+		 FROM tb_ofc
+		WHERE delt_flg = 'N'
+		  AND use_flg = 'Y'
+		  <isNotNull property="usrid">
+          AND OFC_CD LIKE ISNULL((SELECT CASE ISNULL(MAX(A.USE_FLG), 'N') WHEN 'Y' THEN '' ELSE MAX(B.OFC_CD) END  
+									  FROM TB_ROLE_FNC A, TB_USR B
+									 WHERE A.ROLE_CD = B.ROLE_CD
+									 	 /* OTHER OFFICE ACCESS (B/L) 권한 조회 */
+									 	 <isNull property="acct">
+									     AND ROLE_FNC_CD = 'O01' 
+									     </isNull>
+									     /* OTHER OFFICE ACCESS (ACCT) 권한 조회 */
+									     <isNotNull property="acct">
+									     AND ROLE_FNC_CD = 'O03' 
+									     </isNotNull>
+									     AND B.USRID  = #usrid#
+									   ), '') +  '%'
+          </isNotNull>
+		ORDER BY dbo.fc_ofc_rank(ofc_cd)
+	</select>
+	
+	<!-- Trade office List pop select COUNT    -->
+    <select id="selectCMM_POP_0050_CNT" resultClass="Integer">
+        SELECT COUNT(ofc_cd) 
+		  FROM tb_ofc
+		 WHERE delt_flg = 'N'
+		    AND use_flg = 'Y'
+		  <isNotNull property="usrid">
+            AND OFC_CD LIKE (SELECT CASE ISNULL(MAX(A.USE_FLG), 'N') WHEN 'Y' THEN '' ELSE MAX(B.OFC_CD) END  
+									  FROM TB_ROLE_FNC A, TB_USR B
+									 WHERE A.ROLE_CD = B.ROLE_CD
+									     AND ROLE_FNC_CD = 'O01' 
+									     AND B.USRID  = #usrid#
+									   ) +  '%'
+          </isNotNull>
+	</select>	
+	
+	<!-- Trade office List pop select    -->
+    <select id="selectCMM_POP_0150_LIST" resultClass="OfcVO">
+       SELECT a.ofc_cd,  a.ofc_eng_nm,	a.ofc_addr,	 b.cnt_eng_nm
+		 FROM tb_ofc a,
+			  tb_cnt b
+		WHERE a.cnt_cd  = b.cnt_cd 
+		  AND a.delt_flg = 'N'
+		  AND b.delt_flg = 'N' 		
+    <dynamic>
+        <isNotNull property="s_prnt_ofc_cd">
+            <isNotEqual property="s_prnt_ofc_cd" compareValue="MST">
+                AND a.prnt_ofc_cd IS NOT NULL
+            </isNotEqual>
+        </isNotNull>
+    </dynamic>   
+					
+	</select>
+	
+	<!-- Trade office List pop select COUNT    -->
+    <select id="selectCMM_POP_0150_CNT" resultClass="Integer">
+       SELECT COUNT(a.prnt_ofc_cd) 
+		 FROM tb_ofc a,  tb_cnt b
+		WHERE a.cnt_cd  = b.cnt_cd 
+		  AND a.delt_flg = 'N'
+		  AND b.delt_flg = 'N' 
+	<dynamic>
+		<isNotNull property="s_prnt_ofc_cd">
+            <isNotEqual property="s_prnt_ofc_cd" compareValue="MST">
+				AND a.prnt_ofc_cd IS NOT NULL
+            </isNotEqual>
+		</isNotNull>
+	</dynamic>	
+		
+	</select>	
+	
+	<!--Office Code 조회  -->
+	<select id="selectOFFICECODE_LIST" parameterClass="java.util.HashMap" resultClass="OfcVO">
+         SELECT  TOP $topCnt$   
+		         a.ofc_cd,      a.cnt_cd,    b.cnt_locl_nm AS cnt_nm,
+		 	     a.ofc_eng_nm,  a.ofc_zip,   a.ofc_addr,
+			     a.ofc_phn,     a.ofc_fax,   a.use_flg, 
+		         a.trdp_cd,     g.locl_nm    AS trdp_nm, 
+		         a.prnt_ofc_cd, c.ofc_eng_nm AS prnt_ofc_nm, 
+		         a.loc_cd,      d.loc_nm     AS loc_nm, 
+                 a.descr,       a.sls_ofc_cd, e.ofc_eng_nm AS sls_ofc_nm, 
+                 a.finc_ofc_cd, f.ofc_eng_nm AS finc_ofc_nm,
+		         a.trf_cur_cd,
+		         a.rgst_usrid,  a.rgst_ofc_cd, a.rgst_tms, 
+		         a.modi_usrid,  a.modi_ofc_cd, a.modi_tms, a.delt_flg
+		   FROM  tb_ofc a
+LEFT OUTER JOIN  tb_cnt b
+			 ON  a.cnt_cd = b.cnt_cd
+LEFT OUTER JOIN  tb_ofc c
+			 ON  a.prnt_ofc_cd = c.ofc_cd
+LEFT OUTER JOIN  tb_loc d
+			 ON  a.loc_cd = d.loc_cd
+LEFT OUTER JOIN  tb_ofc e
+			 ON  a.sls_ofc_cd = e.ofc_cd
+LEFT OUTER JOIN  tb_ofc f
+			 ON  a.finc_ofc_cd = f.ofc_cd
+LEFT OUTER JOIN  tb_trdp g
+			 ON  a.trdp_cd = g.trdp_cd
+	      WHERE  a.delt_flg = 'N'
+		<isNotNull property="s_ofc_eng_nm">
+			AND  a.ofc_eng_nm LIKE '%'+#s_ofc_eng_nm#+'%'
+		</isNotNull>
+		<isNotNull property="s_use_flg">
+			AND  a.use_flg = #s_use_flg#
+		</isNotNull>
+		<isNotNull property="s_cnt_cd">
+			AND  a.cnt_cd = #s_cnt_cd#
+		</isNotNull>
+		<isNotNull property="s_loc_cd">
+			AND  a.loc_cd = #s_loc_cd#
+		</isNotNull>
+		ORDER BY  a.ofc_cd ASC
+	</select>
+	
+	<!--Office Code 건수 조회  -->
+	<select id="selectOFFICECODE_CNT" parameterClass="java.util.HashMap" resultClass="Integer">
+		SELECT COUNT(loc_cd)
+		  FROM tb_ofc a
+		 WHERE a.delt_flg = 'N'
+        <isNotNull property="s_ofc_eng_nm">
+            AND  a.ofc_eng_nm LIKE '%'+#s_ofc_eng_nm#+'%'
+        </isNotNull>
+        <isNotNull property="s_use_flg">
+            AND  a.use_flg = #s_use_flg#
+        </isNotNull>
+        <isNotNull property="s_cnt_cd">
+            AND  a.cnt_cd = #s_cnt_cd#
+        </isNotNull>
+        <isNotNull property="s_loc_cd">
+            AND  a.loc_cd = #s_loc_cd#
+        </isNotNull>
+	</select>
+	
+    <!-- Ocean H B/L Remark List 조회, jsjang 2013.7.24 (16904)   -->
+    <select id="selectBLREMARK_LIST" resultClass="com.clt.apps.fis.mdm.mcm.office.dto.BlRmkVO" parameterClass="HashMap">
+    <!--MdmMcmOfficeSQL> selectBLREMARK_LIST   -->
+        SELECT rmk.rmk_cd,
+               rmk.rmk_title,
+               rmk.rmk_detail,
+               rmk.dft_flg
+         FROM  tb_bl_rmk rmk
+        WHERE  rmk.ofc_cd = #s_ofc_cd#
+          AND rmk.use_flg = 'Y'
+          order by dft_flg desc, rmk_cd asc
+    </select>	
+    
+    <!-- Ocean H B/L Remark 삭제, jsjang 2013.7.24 (16904)   -->
+    <delete id="removeRmk" parameterClass="com.clt.apps.fis.mdm.mcm.office.dto.BlRmkVO">
+        DELETE  tb_bl_rmk
+         WHERE  RMK_CD  = #rmk_cd#
+    </delete>  
+    
+    <!-- Ocean H B/L Remark 팝업 상세 조회, jsjang 2013.7.24 (16904)   -->
+    <select id="searchBLRemark" parameterClass="java.util.HashMap" resultClass="com.clt.apps.fis.mdm.mcm.office.dto.BlRmkVO">
+		SELECT   a.rmk_cd,
+				 a.rmk_title,
+				 a.rmk_detail,
+				 a.dft_flg,
+				 a.ofc_cd as s_ofc_cd
+		   FROM  tb_bl_rmk a
+	      WHERE  a.use_flg = 'Y'
+		<isNotNull property="s_ofc_cd">
+			AND  a.ofc_cd = #s_ofc_cd#
+		</isNotNull>
+
+			AND  a.rmk_cd = #rmk_cd#
+
+	</select>
+	
+	<!-- Ocean H B/L Remark PK생성 (16904)  -->
+    <select id="selectBLRemarkPK" resultClass="String" parameterClass="java.util.HashMap">
+        SELECT ISNULL(MAX(rmk_cd),0)+1 pk
+  		FROM tb_bl_rmk
+  		WHERE OFC_CD 	= #s_ofc_cd#
+    </select>	
+    
+	<!-- Ocean H B/L Remark 등록 (16904)  -->
+    <insert id="insertBL_Remark_0150" parameterClass="java.util.HashMap">    
+        INSERT INTO tb_bl_rmk
+			(
+			RMK_CD,       	OFC_CD,          RMK_TITLE,
+			RMK_DETAIL,   	DFT_FLG,    USE_FLG,
+			RGST_USRID,     	MODI_USRID
+			)
+		VALUES 
+		(
+			#rmk_cd#,         #ofc_cd#,			#rmk_title#,
+			#rmk_detail#,   	#dft_flg#,    'Y',
+			#rmk_usr_id#,     	#rmk_usr_id#
+		)
+    </insert>  
+    
+    <!-- Ocean H B/L Remark (16904) 수정   -->
+    <update id="updateBL_Remark_0150" parameterClass="java.util.HashMap">
+      UPDATE tb_bl_rmk
+		SET RMK_TITLE 	 = #rmk_title#,
+			RMK_DETAIL = #rmk_detail#,
+			DFT_FLG = #dft_flg#,
+			MODI_USRID 	 = #rmk_usr_id#,
+			MODI_TMS 	 = GETUTCDATE()
+		WHERE OFC_CD 	= #ofc_cd# and rmk_cd 	= #rmk_cd#
+    </update>
+    
+    <!-- Ocean H B/L Remark (16904) 추가   -->
+    <update id="updateBL_Remark_Default_0150" parameterClass="java.util.HashMap">
+      UPDATE tb_bl_rmk
+		SET DFT_FLG = 'N',
+			MODI_USRID 	 = #rmk_usr_id#,
+			MODI_TMS 	 = GETUTCDATE()
+		WHERE OFC_CD 	= #ofc_cd# and rmk_cd 	!= #rmk_cd#
+    </update>  
+    
+    <!-- Office Logo  파일 등록 (16393) 추가  -->
+    <insert id="insertOFC_Settings" parameterClass="java.util.HashMap">    
+        INSERT INTO TB_OFC_SETTINGS
+			(
+			OFC_CD,       	SET_TYPE,          VALUE_1,	VALUE_2,
+			RGST_USRID,     	MODI_USRID
+			)
+		VALUES 
+		(
+			#i_ofc_cd#,         #set_type#,			#value1#,	#value2#,
+			#rgst_usrid#,     #modi_usrid#
+		)
+    </insert> 
+    
+    <!-- Office Logo  파일 수정 (16393) 추가  -->
+    <update id="updateOFC_Settings" parameterClass="java.util.HashMap">   
+        UPDATE TB_OFC_SETTINGS
+		SET VALUE_1 = #value1#, VALUE_2 = #value2#,
+			MODI_USRID 	 = #modi_usrid#,
+			MODI_TMS 	 = GETUTCDATE()
+		WHERE OFC_CD 	= #i_ofc_cd# and SET_TYPE = #set_type#
+    </update>
+    
+    <!-- Office Logo  파일 삭제 (16393) 추가  -->
+	<delete id="deleteOFC_Settings" parameterClass="java.util.HashMap">
+        DELETE FROM TB_OFC_SETTINGS
+		WHERE OFC_CD 	= #i_ofc_cd# and SET_TYPE = #set_type#
+	</delete>         
+	
+	<!-- Office Code 등록  -->
+	<insert id="insertOFC_CD" parameterClass="java.util.HashMap">
+		INSERT INTO TB_OFC (
+			OFC_CD,			CNT_CD,			OFC_ENG_NM,			OFC_ZIP,
+			OFC_ADDR,		OFC_PHN,		OFC_FAX,			TRDP_CD,
+			PRNT_OFC_CD,	LOC_CD,			DESCR,				USE_FLG,
+			FINC_OFC_CD,	SLS_OFC_CD,
+			RGST_USRID,		RGST_OFC_CD,	RGST_TMS,
+			MODI_USRID,		MODI_OFC_CD,	MODI_TMS,
+			DELT_FLG,		TRF_CUR_CD,		STATE_CD,
+			OFC_LOCL_NM,	OFC_EMAIL,		OFC_URL,
+			IATA_CD,		FMC_NO,			TAX_TYPE,
+			TAX_NO,
+			
+			INV_PRFX,		INV_SEQ_NO,		CRDR_PRFX,			CRDR_SEQ_NO,
+			OI_REF_PRFX,	OI_REF_SEQ_NO,	OE_REF_PRFX,		OE_REF_SEQ_NO,
+			AI_REF_PRFX,	AI_REF_SEQ_NO,	AE_REF_PRFX,		AE_REF_SEQ_NO,
+			AE_AWB_PRFX,	AE_AWB_SEQ_NO,	OE_HBL_PRFX,		OE_HBL_SEQ_NO,
+			OE_BKG_PRFX,	OE_BKG_SEQ_NO,	AE_BKG_PRFX,		AE_BKG_SEQ_NO,
+			SEA_QUO_PRFX,	SEA_QUO_SEQ_NO, AIR_QUO_PRFX,		AIR_QUO_SEQ_NO,	
+			WH_RCPT_PRFX,	WH_RCPT_SEQ_NO,
+			<!-- Vinh.Vo 2015-1-5 (S) -->
+			WH_RCV_PRFX,	WH_RCV_SEQ_NO,	WH_SHP_PRFX,		WH_SHP_SEQ_NO,
+			<!-- Vinh.Vo 2015-1-5 (E) -->
+			TRK_PRFX,		TRK_SEQ_NO,		
+			
+			AES_CNTC_NM,	AES_CITY,		AES_STATE_CD,		AES_ZIP,
+			AES_CNT_CD,		AES_RSPN_EMAIL,	AES_PRT_TYPE,		IT_NEXT_NO,
+			IT_END,			OTH_WGT_UT_CD,	OTH_MEAS_UT_CD,		OTH_SIZE_UT_CD,
+
+			GL_AR,			GL_AP,			GL_AGENT_AR,		GL_AGENT_AP,		GL_AGENT_OTH,
+			GL_AGENT_OI,	GL_AGENT_OE,	GL_AGENT_AI,		GL_AGENT_AE,
+			GL_RE_EARN,		GL_EX_PROFIT,	GL_EX_LOSS,			GL_MISC_PROFIT,
+			GL_MISC_LOSS,	GL_AGENT_PS_OI,	GL_AGENT_PS_OE,		GL_AGENT_PS_AI,
+			GL_AGENT_PS_AE,	GL_AGENT_PS_OTH,
+			GL_VAT_REV,		GL_VAT_COST,	GL_VAT_EXP,
+
+			INV_RMK,		INV_FONT_SIZE,	INV_CARR_RMK,		INV_CARR_FONT_SIZE,
+			CRDR_RMK,		CRDR_FONT_SIZE,	LOCL_STMT_RMK,		LOCL_STMT_FONT_SIZE,
+			AGENT_STMT_RMK,	AGENT_STMT_FONT_SIZE,
+			DO_RMK,			DO_FONT_SIZE,	OOH_BKG_RMK,		OOH_BKG_FONT_SIZE,
+			AWB_RMK,		AWB_FONT_SIZE,	PKUP_RMK,			PKUP_FONT_SIZE,
+			QUO_RMK,		QUO_FONT_SIZE,	
+			OI_QUO_RMK,		OI_QUO_FONT_SIZE,	OE_QUO_RMK,		OE_QUO_FONT_SIZE,	
+			AI_QUO_RMK,		AI_QUO_FONT_SIZE,	AE_QUO_RMK,		AE_QUO_FONT_SIZE,	
+			WH_RCT_RMK,		WH_RCT_FONT_SIZE,	OI_AN_RMK,		OI_AN_FONT_SIZE,	OI_AN_LCL_DESC,		OI_AN_FCL_DESC,
+			SEA_BODY,		SEA_LCL_DESC,	SEA_FCL_DESC,		SEA_COB,
+			SEA_MEI,		SEA_MSCO,		VSL_SHOW_FLG,		LOAD_PORT_SHOW_FLG,
+			CNTR_40HQ_DESC,	CNTR_45_DESC,	AI_AN_RMK,			AI_AN_FONT_SIZE,
+			AIR_BODY,		AEM_HAND_INFO,	AEH_HAND_INFO,
+			
+			DFLT_AN_MEMO,	DOCK_RCPT_RMK,	EMAIL_SIGN,		
+			
+			OPER1_FLG,		OPER2_FLG,		OPER3_FLG,			OPER4_FLG,
+			OPER5_FLG,		OPER6_FLG,		OPER7_FLG,			OPER8_FLG,
+			OPER9_FLG,
+			ACC1_FLG,		ACC2_FLG,		ACC3_FLG,			ACC4_FLG,
+			ACC5_FLG,		ACC6_FLG,		ACC7_FLG,			ACC8_FLG,
+			ACC9_FLG,
+			POST_DT_EXP,	POST_DT_IMP,	POST_DT_INV,		POST_DT_CRDR,
+			PPS_USE_FLG, PPS_PAYTO_TRDP_CD, PPS_CNTR20_RT, PPS_CNTR40_RT, PPS_CBM_RT,
+			OFC_REP_NM,		CCN_PRFX,		OI_CCN_SEQNO,		AI_CCN_SEQNO,	TSA_SEC_NO,
+			RVN_BANK_SEQ,	COST_BANK_SEQ,	USE_HBL_SER,		OI_CGOR_PIC_INFO, 	AI_CGOR_PIC_INFO,
+			WM_DOC_PRFX, WM_DOC_SEQ_NO,
+			CTF_USE_FLG, CTF_PAYTO_TRDP_CD, CTF_CNTR20_RT, CTF_CNTR40_RT, CTF_CBM_RT,
+			CF_USE_FLG, CF_PAYTO_TRDP_CD, CF_CNTR20_RT, CF_CNTR40_RT, CF_CBM_RT
+			
+		)
+		VALUES(
+#i_ofc_cd#,			#i_cnt_cd#,			#i_ofc_eng_nm#,		#i_ofc_zip#,
+#i_ofc_addr#,		#i_ofc_phn#,		#i_ofc_fax#,		#i_trdp_cd#,
+#i_prnt_ofc_cd#,	#i_loc_cd#,			#i_descr#,			#i_use_flg#,
+#i_finc_ofc_cd#,	#i_sls_ofc_cd#,
+#i_rgst_usrid#,		#i_rgst_ofc_cd#,	GETDATE(),
+#i_modi_usrid#,		#i_modi_ofc_cd#,	GETUTCDATE(),
+#i_delt_flg#,		#i_trf_cur_cd#,		#i_state_cd#,
+#i_ofc_locl_nm#,	#i_ofc_email#,		#i_ofc_url#,
+#i_iata_cd#,		#i_fmc_no#,			#i_tax_type#,
+#i_tax_no#,
+#i_inv_prfx#,		#i_inv_seq_no#,		#i_crdr_prfx#,		#i_crdr_seq_no#,
+#i_oi_ref_prfx#,	#i_oi_ref_seq_no#,	#i_oe_ref_prfx#,	#i_oe_ref_seq_no#,
+#i_ai_ref_prfx#,	#i_ai_ref_seq_no#,	#i_ae_ref_prfx#,	#i_ae_ref_seq_no#,
+#i_ae_awb_prfx#,	#i_ae_awb_seq_no#,	#i_oe_hbl_prfx#,	#i_oe_hbl_seq_no#,
+#i_oe_bkg_prfx#,	#i_oe_bkg_seq_no#,	#i_ae_bkg_prfx#,	#i_ae_bkg_seq_no#,
+#i_sea_quo_prfx#,	#i_sea_quo_seq_no#,	#i_air_quo_prfx#,	#i_air_quo_seq_no#,
+#i_wh_rcpt_prfx#,	#i_wh_rcpt_seq_no#,
+<!-- Vinh.Vo 2015-1-5 (S)  -->
+#i_wh_rcv_prfx#,
+#i_wh_rcv_seq_no#,
+#i_wh_shp_prfx#,
+#i_wh_shp_seq_no#,
+<!-- Vinh.Vo 2015-1-5 (S)  -->
+#i_trk_prfx#,
+#i_trk_seq_no#,
+#i_aes_cntc_nm#,
+#i_aes_city#,
+#i_aes_state_cd#,
+#i_aes_zip#,
+#i_aes_cnt_cd#,
+#i_aes_rspn_email#,
+#i_aes_prt_type#,
+#i_it_next_no#,
+#i_it_end#,
+#i_oth_wgt_ut_cd#,
+#i_oth_meas_ut_cd#,
+#i_oth_size_ut_cd#,
+#i_gl_ar#,
+#i_gl_ap#,
+#i_gl_agent_ar#,
+#i_gl_agent_ap#,
+#i_gl_agent_oth#,
+#i_gl_agent_oi#,
+#i_gl_agent_oe#,
+#i_gl_agent_ai#,
+#i_gl_agent_ae#,
+#i_gl_re_earn#,
+#i_gl_ex_profit#,
+#i_gl_ex_loss#,
+#i_gl_misc_profit#,
+#i_gl_misc_loss#,
+#i_gl_agent_ps_oi#,
+#i_gl_agent_ps_oe#,
+#i_gl_agent_ps_ai#,
+#i_gl_agent_ps_ae#,
+#i_gl_agent_ps_oth#,
+#i_gl_vat_rev#,
+#i_gl_vat_cost#,
+#i_gl_vat_exp#,
+#i_inv_rmk#,
+#i_inv_font_size#,
+#i_inv_carr_rmk#,
+#i_inv_carr_font_size#,
+#i_crdr_rmk#,
+#i_crdr_font_size#,
+#i_locl_stmt_rmk#,
+#i_locl_stmt_font_size#,
+#i_agent_stmt_rmk#,
+#i_agent_stmt_font_size#,
+#i_do_rmk#,
+#i_do_font_size#,
+#i_ooh_bkg_rmk#,
+#i_ooh_bkg_font_size#,
+#i_awb_rmk#,
+#i_awb_font_size#,
+#i_pkup_rmk#,
+#i_pkup_font_size#,
+#i_quo_rmk#,
+#i_quo_font_size#,
+#i_oi_quo_rmk#,
+#i_oi_quo_font_size#,
+#i_oe_quo_rmk#,
+#i_oe_quo_font_size#,
+#i_ai_quo_rmk#,
+#i_ai_quo_font_size#,
+#i_ae_quo_rmk#,
+#i_ae_quo_font_size#,
+#i_wh_rct_rmk#,
+#i_wh_rct_font_size#,
+#i_oi_an_rmk#,
+#i_oi_an_font_size#,
+#i_oi_an_lcl_desc#,
+#i_oi_an_fcl_desc#,
+#i_sea_body#,
+#i_sea_lcl_desc#,
+#i_sea_fcl_desc#,
+#i_sea_cob#,
+#i_sea_mei#,
+#i_sea_msco#,
+#i_vsl_show_flg#,
+#i_load_port_show_flg#,
+#i_cntr_40hq_desc#,
+#i_cntr_45_desc#,
+#i_ai_an_rmk#,
+#i_ai_an_font_size#,
+#i_air_body#,
+#i_aem_hand_info#,
+#i_aeh_hand_info#,
+#i_dflt_an_memo#,
+#i_dock_rcpt_rmk#,
+#i_email_sign#,
+#i_oper1_flg#,
+#i_oper2_flg#,
+#i_oper3_flg#,
+#i_oper4_flg#,
+#i_oper5_flg#,
+#i_oper6_flg#,
+#i_oper7_flg#,
+#i_oper8_flg#,
+#i_oper9_flg#,
+#i_acc1_flg#,
+#i_acc2_flg#,
+#i_acc3_flg#,
+#i_acc4_flg#,
+#i_acc5_flg#,
+#i_acc6_flg#,
+#i_acc7_flg#,
+#i_acc8_flg#,
+#i_acc9_flg#,
+#i_post_dt_exp#,
+#i_post_dt_imp#,
+#i_post_dt_inv#,
+#i_post_dt_crdr#,
+#i_pps_use_flg#,
+#i_pps_payto_trdp_cd#, 
+#i_pps_cntr20_rt#,
+#i_pps_cntr40_rt#,
+#i_pps_cbm_rt#,
+#i_ofc_rep_nm#,
+#i_ccn_prfx#,
+#i_oi_ccn_seqno#,
+#i_ai_ccn_seqno#,
+#i_tsa_sec_no#,
+#i_rvn_bank_seq#,
+#i_cost_bank_seq#,
+#i_use_hbl_ser#,
+#i_oi_cgor_pic_info#,
+#i_ai_cgor_pic_info#,
+#i_wm_doc_prfx#,
+#i_wm_doc_seq_no#,
+#i_ctf_use_flg#,
+#i_ctf_payto_trdp_cd#, 
+#i_ctf_cntr20_rt#,
+#i_ctf_cntr40_rt#,
+#i_ctf_cbm_rt#,
+#i_cf_use_flg#,
+#i_cf_payto_trdp_cd#, 
+#i_cf_cntr20_rt#,
+#i_cf_cntr40_rt#,
+#i_cf_cbm_rt#
+)<isNotNull property=""></isNotNull>
+	</insert>
+	
+	<!-- Office Code 수정  -->
+	<update id="updateOFC_CD" parameterClass="java.util.HashMap">
+		UPDATE tb_ofc
+		   SET 
+<isNotNull property="i_cnt_cd">CNT_CD = #i_cnt_cd#,</isNotNull>
+<isNotNull property="i_ofc_eng_nm">OFC_ENG_NM = #i_ofc_eng_nm#,</isNotNull>
+<isNotNull property="i_ofc_zip">OFC_ZIP = #i_ofc_zip#,</isNotNull>
+<isNotNull property="i_ofc_addr">OFC_ADDR = #i_ofc_addr#,</isNotNull>
+<isNotNull property="i_ofc_phn">OFC_PHN = #i_ofc_phn#,</isNotNull>
+<isNotNull property="i_ofc_fax">OFC_FAX = #i_ofc_fax#,</isNotNull>
+<isNotNull property="i_trdp_cd">TRDP_CD = #i_trdp_cd#,</isNotNull>
+<isNotNull property="i_prnt_ofc_cd">PRNT_OFC_CD = #i_prnt_ofc_cd#,</isNotNull>
+<isNotNull property="i_loc_cd">LOC_CD = #i_loc_cd#,</isNotNull>
+<isNotNull property="i_descr">DESCR = #i_descr#,</isNotNull>
+<isNotNull property="i_use_flg">USE_FLG = #i_use_flg#,</isNotNull>
+<isNotNull property="i_finc_ofc_cd">FINC_OFC_CD = #i_finc_ofc_cd#,</isNotNull>
+<isNotNull property="i_sls_ofc_cd">SLS_OFC_CD = #i_sls_ofc_cd#,</isNotNull>
+<isNotNull property="i_modi_usrid">MODI_USRID = #i_modi_usrid#,</isNotNull>
+<isNotNull property="i_modi_ofc_cd">MODI_OFC_CD = #i_modi_ofc_cd#,</isNotNull>
+<isNotNull property="i_delt_flg">DELT_FLG = #i_delt_flg#,</isNotNull>
+<isNotNull property="i_trf_cur_cd">TRF_CUR_CD = #i_trf_cur_cd#,</isNotNull>
+<isNotNull property="i_state_cd">STATE_CD = #i_state_cd#,</isNotNull>
+<isNotNull property="i_ofc_locl_nm">OFC_LOCL_NM = #i_ofc_locl_nm#,</isNotNull>
+<isNotNull property="i_ofc_email">OFC_EMAIL = #i_ofc_email#,</isNotNull>
+<isNotNull property="i_ofc_url">OFC_URL = #i_ofc_url#,</isNotNull>
+<isNotNull property="i_iata_cd">IATA_CD = #i_iata_cd#,</isNotNull>
+<isNotNull property="i_fmc_no">FMC_NO = #i_fmc_no#,</isNotNull>
+<isNotNull property="i_tax_type">TAX_TYPE = #i_tax_type#,</isNotNull>
+<isNotNull property="i_tax_no">TAX_NO = #i_tax_no#,</isNotNull>
+<!-- <isNotNull property="i_inv_prfx">INV_PRFX = #i_inv_prfx#,</isNotNull>
+<isNotNull property="i_inv_seq_no">INV_SEQ_NO = #i_inv_seq_no#,</isNotNull>
+<isNotNull property="i_crdr_prfx">CRDR_PRFX = #i_crdr_prfx#,</isNotNull>
+<isNotNull property="i_crdr_seq_no">CRDR_SEQ_NO = #i_crdr_seq_no#,</isNotNull>
+<isNotNull property="i_oi_ref_prfx">OI_REF_PRFX = #i_oi_ref_prfx#,</isNotNull>
+<isNotNull property="i_oi_ref_seq_no">OI_REF_SEQ_NO = #i_oi_ref_seq_no#,</isNotNull>
+<isNotNull property="i_oe_ref_prfx">OE_REF_PRFX = #i_oe_ref_prfx#,</isNotNull>
+<isNotNull property="i_oe_ref_seq_no">OE_REF_SEQ_NO = #i_oe_ref_seq_no#,</isNotNull>
+<isNotNull property="i_ai_ref_prfx">AI_REF_PRFX = #i_ai_ref_prfx#,</isNotNull>
+<isNotNull property="i_ai_ref_seq_no">AI_REF_SEQ_NO = #i_ai_ref_seq_no#,</isNotNull>
+<isNotNull property="i_ae_ref_prfx">AE_REF_PRFX = #i_ae_ref_prfx#,</isNotNull>
+<isNotNull property="i_ae_ref_seq_no">AE_REF_SEQ_NO = #i_ae_ref_seq_no#,</isNotNull>
+<isNotNull property="i_ae_awb_prfx">AE_AWB_PRFX = #i_ae_awb_prfx#,</isNotNull>
+<isNotNull property="i_ae_awb_seq_no">AE_AWB_SEQ_NO = #i_ae_awb_seq_no#,</isNotNull>
+<isNotNull property="i_oe_hbl_prfx">OE_HBL_PRFX = #i_oe_hbl_prfx#,</isNotNull>
+<isNotNull property="i_oe_hbl_seq_no">OE_HBL_SEQ_NO = #i_oe_hbl_seq_no#,</isNotNull>
+<isNotNull property="i_oe_bkg_prfx">OE_BKG_PRFX = #i_oe_bkg_prfx#,</isNotNull>
+<isNotNull property="i_oe_bkg_seq_no">OE_BKG_SEQ_NO = #i_oe_bkg_seq_no#,</isNotNull>
+<isNotNull property="i_ae_bkg_prfx">AE_BKG_PRFX = #i_ae_bkg_prfx#,</isNotNull>
+<isNotNull property="i_ae_bkg_seq_no">AE_BKG_SEQ_NO = #i_ae_bkg_seq_no#,</isNotNull>
+<isNotNull property="i_sea_quo_prfx">SEA_QUO_PRFX = #i_sea_quo_prfx#,</isNotNull>
+<isNotNull property="i_sea_quo_seq_no">SEA_QUO_SEQ_NO = #i_sea_quo_seq_no#,</isNotNull>
+<isNotNull property="i_air_quo_prfx">AIR_QUO_PRFX = #i_air_quo_prfx#,</isNotNull>
+<isNotNull property="i_air_quo_seq_no">AIR_QUO_SEQ_NO = #i_air_quo_seq_no#,</isNotNull>
+<isNotNull property="i_wh_rcpt_prfx">WH_RCPT_PRFX = #i_wh_rcpt_prfx#,</isNotNull>
+<isNotNull property="i_wh_rcpt_seq_no">WH_RCPT_SEQ_NO = #i_wh_rcpt_seq_no#,</isNotNull> -->
+<!-- Vinh.Vo 2015-1-5 (S)  -->
+<!-- <isNotNull property="i_wh_rcv_prfx">WH_RCV_PRFX = #i_wh_rcv_prfx#,</isNotNull>
+<isNotNull property="i_wh_rcv_seq_no">WH_RCV_SEQ_NO = #i_wh_rcv_seq_no#,</isNotNull>
+<isNotNull property="i_wh_shp_prfx">WH_SHP_PRFX = #i_wh_shp_prfx#,</isNotNull>
+<isNotNull property="i_wh_shp_seq_no">WH_SHP_SEQ_NO = #i_wh_shp_seq_no#,</isNotNull> -->
+<!-- Vinh.Vo 2015-1-5 (E)  -->
+<!-- <isNotNull property="i_trk_prfx">TRK_PRFX = #i_trk_prfx#,</isNotNull>
+<isNotNull property="i_trk_seq_no">TRK_SEQ_NO = #i_trk_seq_no#,</isNotNull>
+<isNotNull property="i_wm_doc_prfx">WM_DOC_PRFX = #i_wm_doc_prfx#,</isNotNull>
+<isNotNull property="i_wm_doc_seq_no">WM_DOC_SEQ_NO = #i_wm_doc_seq_no#,</isNotNull> -->
+<isNotNull property="i_aes_cntc_nm">AES_CNTC_NM = #i_aes_cntc_nm#,</isNotNull>
+<isNotNull property="i_aes_city">AES_CITY = #i_aes_city#,</isNotNull>
+<isNotNull property="i_aes_state_cd">AES_STATE_CD = #i_aes_state_cd#,</isNotNull>
+<isNotNull property="i_aes_zip">AES_ZIP = #i_aes_zip#,</isNotNull>
+<isNotNull property="i_aes_cnt_cd">AES_CNT_CD = #i_aes_cnt_cd#,</isNotNull>
+<isNotNull property="i_aes_rspn_email">AES_RSPN_EMAIL = #i_aes_rspn_email#,</isNotNull>
+<isNotNull property="i_aes_prt_type">AES_PRT_TYPE = #i_aes_prt_type#,</isNotNull>
+<isNotNull property="i_it_next_no">IT_NEXT_NO = #i_it_next_no#,</isNotNull>
+<isNotNull property="i_it_end">IT_END = #i_it_end#,</isNotNull>
+<isNotNull property="i_oth_wgt_ut_cd">OTH_WGT_UT_CD = #i_oth_wgt_ut_cd#,</isNotNull>
+<isNotNull property="i_oth_meas_ut_cd">OTH_MEAS_UT_CD = #i_oth_meas_ut_cd#,</isNotNull>
+<isNotNull property="i_oth_size_ut_cd">OTH_SIZE_UT_CD = #i_oth_size_ut_cd#,</isNotNull>
+<isNotNull property="i_gl_ar">GL_AR = #i_gl_ar#,</isNotNull>
+<isNotNull property="i_gl_ap">GL_AP = #i_gl_ap#,</isNotNull>
+<isNotNull property="i_gl_agent_ar">GL_AGENT_AR = #i_gl_agent_ar#,</isNotNull>
+<isNotNull property="i_gl_agent_ap">GL_AGENT_AP = #i_gl_agent_ap#,</isNotNull>
+<isNotNull property="i_gl_agent_oth">GL_AGENT_OTH = #i_gl_agent_oth#,</isNotNull>
+<isNotNull property="i_gl_agent_oi">GL_AGENT_OI = #i_gl_agent_oi#,</isNotNull>
+<isNotNull property="i_gl_agent_oe">GL_AGENT_OE = #i_gl_agent_oe#,</isNotNull>
+<isNotNull property="i_gl_agent_ai">GL_AGENT_AI = #i_gl_agent_ai#,</isNotNull>
+<isNotNull property="i_gl_agent_ae">GL_AGENT_AE = #i_gl_agent_ae#,</isNotNull>
+<isNotNull property="i_gl_re_earn">GL_RE_EARN = #i_gl_re_earn#,</isNotNull>
+<isNotNull property="i_gl_ex_profit">GL_EX_PROFIT = #i_gl_ex_profit#,</isNotNull>
+<isNotNull property="i_gl_ex_loss">GL_EX_LOSS = #i_gl_ex_loss#,</isNotNull>
+<isNotNull property="i_gl_misc_profit">GL_MISC_PROFIT = #i_gl_misc_profit#,</isNotNull>
+<isNotNull property="i_gl_misc_loss">GL_MISC_LOSS = #i_gl_misc_loss#,</isNotNull>
+<isNotNull property="i_gl_agent_ps_oi">GL_AGENT_PS_OI = #i_gl_agent_ps_oi#,</isNotNull>
+<isNotNull property="i_gl_agent_ps_oe">GL_AGENT_PS_OE = #i_gl_agent_ps_oe#,</isNotNull>
+<isNotNull property="i_gl_agent_ps_ai">GL_AGENT_PS_AI = #i_gl_agent_ps_ai#,</isNotNull>
+<isNotNull property="i_gl_agent_ps_ae">GL_AGENT_PS_AE = #i_gl_agent_ps_ae#,</isNotNull>
+<isNotNull property="i_gl_agent_ps_oth">GL_AGENT_PS_OTH = #i_gl_agent_ps_oth#,</isNotNull>
+<isNotNull property="i_gl_vat_rev">GL_VAT_REV = #i_gl_vat_rev#,</isNotNull>
+<isNotNull property="i_gl_vat_cost">GL_VAT_COST = #i_gl_vat_cost#,</isNotNull>
+<isNotNull property="i_gl_vat_exp">GL_VAT_EXP = #i_gl_vat_exp#,</isNotNull>
+<isNotNull property="i_inv_rmk">INV_RMK = #i_inv_rmk#,</isNotNull>
+<isNotNull property="i_inv_font_size">INV_FONT_SIZE = #i_inv_font_size#,</isNotNull>
+<isNotNull property="i_inv_carr_rmk">INV_CARR_RMK = #i_inv_carr_rmk#,</isNotNull>
+<isNotNull property="i_inv_carr_font_size">INV_CARR_FONT_SIZE = #i_inv_carr_font_size#,</isNotNull>
+<isNotNull property="i_crdr_rmk">CRDR_RMK = #i_crdr_rmk#,</isNotNull>
+<isNotNull property="i_crdr_font_size">CRDR_FONT_SIZE = #i_crdr_font_size#,</isNotNull>
+<isNotNull property="i_locl_stmt_rmk">LOCL_STMT_RMK = #i_locl_stmt_rmk#,</isNotNull>
+<isNotNull property="i_locl_stmt_font_size">LOCL_STMT_FONT_SIZE = #i_locl_stmt_font_size#,</isNotNull>
+<isNotNull property="i_agent_stmt_rmk">AGENT_STMT_RMK = #i_agent_stmt_rmk#,</isNotNull>
+<isNotNull property="i_agent_stmt_font_size">AGENT_STMT_FONT_SIZE = #i_agent_stmt_font_size#,</isNotNull>
+<isNotNull property="i_do_rmk">DO_RMK = #i_do_rmk#,</isNotNull>
+<isNotNull property="i_do_font_size">DO_FONT_SIZE = #i_do_font_size#,</isNotNull>
+<isNotNull property="i_ooh_bkg_rmk">OOH_BKG_RMK = #i_ooh_bkg_rmk#,</isNotNull>
+<isNotNull property="i_ooh_bkg_font_size">OOH_BKG_FONT_SIZE = #i_ooh_bkg_font_size#,</isNotNull>
+<isNotNull property="i_awb_rmk">AWB_RMK = #i_awb_rmk#,</isNotNull>
+<isNotNull property="i_awb_font_size">AWB_FONT_SIZE = #i_awb_font_size#,</isNotNull>
+<isNotNull property="i_pkup_rmk">PKUP_RMK = #i_pkup_rmk#,</isNotNull>
+<isNotNull property="i_pkup_font_size">PKUP_FONT_SIZE = #i_pkup_font_size#,</isNotNull>
+<isNotNull property="i_quo_rmk">QUO_RMK = #i_quo_rmk#,</isNotNull>
+<isNotNull property="i_quo_font_size">QUO_FONT_SIZE = #i_quo_font_size#,</isNotNull>
+<isNotNull property="i_oi_quo_rmk">OI_QUO_RMK = #i_oi_quo_rmk#,</isNotNull>
+<isNotNull property="i_oi_quo_font_size">OI_QUO_FONT_SIZE = #i_oi_quo_font_size#,</isNotNull>
+<isNotNull property="i_oe_quo_rmk">OE_QUO_RMK = #i_oe_quo_rmk#,</isNotNull>
+<isNotNull property="i_oe_quo_font_size">OE_QUO_FONT_SIZE = #i_oe_quo_font_size#,</isNotNull>
+<isNotNull property="i_ai_quo_rmk">AI_QUO_RMK = #i_ai_quo_rmk#,</isNotNull>
+<isNotNull property="i_ai_quo_font_size">AI_QUO_FONT_SIZE = #i_ai_quo_font_size#,</isNotNull>
+<isNotNull property="i_ae_quo_rmk">AE_QUO_RMK = #i_ae_quo_rmk#,</isNotNull>
+<isNotNull property="i_ae_quo_font_size">AE_QUO_FONT_SIZE = #i_ae_quo_font_size#,</isNotNull>
+<isNotNull property="i_wh_rct_rmk">WH_RCT_RMK = #i_wh_rct_rmk#,</isNotNull>
+<isNotNull property="i_wh_rct_font_size">WH_RCT_FONT_SIZE = #i_wh_rct_font_size#,</isNotNull>
+<isNotNull property="i_oi_an_rmk">OI_AN_RMK = #i_oi_an_rmk#,</isNotNull>
+<isNotNull property="i_oi_an_font_size">OI_AN_FONT_SIZE = #i_oi_an_font_size#,</isNotNull>
+<isNotNull property="i_oi_an_lcl_desc">OI_AN_LCL_DESC = #i_oi_an_lcl_desc#,</isNotNull>
+<isNotNull property="i_oi_an_fcl_desc">OI_AN_FCL_DESC = #i_oi_an_fcl_desc#,</isNotNull>
+<isNotNull property="i_sea_body">SEA_BODY = #i_sea_body#,</isNotNull>
+<isNotNull property="i_sea_lcl_desc">SEA_LCL_DESC = #i_sea_lcl_desc#,</isNotNull>
+<isNotNull property="i_sea_fcl_desc">SEA_FCL_DESC = #i_sea_fcl_desc#,</isNotNull>
+<isNotNull property="i_sea_cob">SEA_COB = #i_sea_cob#,</isNotNull>
+<isNotNull property="i_sea_mei">SEA_MEI = #i_sea_mei#,</isNotNull>
+<isNotNull property="i_sea_msco">SEA_MSCO = #i_sea_msco#,</isNotNull>
+<isNotNull property="i_vsl_show_flg">VSL_SHOW_FLG = #i_vsl_show_flg#,</isNotNull>
+<isNotNull property="i_load_port_show_flg">LOAD_PORT_SHOW_FLG = #i_load_port_show_flg#,</isNotNull>
+<isNotNull property="i_cntr_40hq_desc">CNTR_40HQ_DESC = #i_cntr_40hq_desc#,</isNotNull>
+<isNotNull property="i_cntr_45_desc">CNTR_45_DESC = #i_cntr_45_desc#,</isNotNull>
+<isNotNull property="i_ai_an_rmk">AI_AN_RMK = #i_ai_an_rmk#,</isNotNull>
+<isNotNull property="i_ai_an_font_size">AI_AN_FONT_SIZE = #i_ai_an_font_size#,</isNotNull>
+<isNotNull property="i_air_body">AIR_BODY = #i_air_body#,</isNotNull>
+<isNotNull property="i_aem_hand_info">AEM_HAND_INFO = #i_aem_hand_info#,</isNotNull>
+<isNotNull property="i_aeh_hand_info">AEH_HAND_INFO = #i_aeh_hand_info#,</isNotNull>
+<isNotNull property="i_dflt_an_memo">DFLT_AN_MEMO = #i_dflt_an_memo#,</isNotNull>
+<isNotNull property="i_dock_rcpt_rmk">DOCK_RCPT_RMK = #i_dock_rcpt_rmk#,</isNotNull>
+<isNotNull property="i_email_sign">EMAIL_SIGN = #i_email_sign#,</isNotNull>
+<isNotNull property="i_oper1_flg">OPER1_FLG = #i_oper1_flg#,</isNotNull>
+<isNotNull property="i_oper2_flg">OPER2_FLG = #i_oper2_flg#,</isNotNull>
+<isNotNull property="i_oper3_flg">OPER3_FLG = #i_oper3_flg#,</isNotNull>
+<isNotNull property="i_oper4_flg">OPER4_FLG = #i_oper4_flg#,</isNotNull>
+<isNotNull property="i_oper5_flg">OPER5_FLG = #i_oper5_flg#,</isNotNull>
+<isNotNull property="i_oper6_flg">OPER6_FLG = #i_oper6_flg#,</isNotNull>
+<isNotNull property="i_oper7_flg">OPER7_FLG = #i_oper7_flg#,</isNotNull>
+<isNotNull property="i_oper8_flg">OPER8_FLG = #i_oper8_flg#,</isNotNull>
+<isNotNull property="i_oper9_flg">OPER9_FLG = #i_oper9_flg#,</isNotNull>
+<isNotNull property="i_acc1_flg">ACC1_FLG = #i_acc1_flg#,</isNotNull>
+<isNotNull property="i_acc2_flg">ACC2_FLG = #i_acc2_flg#,</isNotNull>
+<isNotNull property="i_acc3_flg">ACC3_FLG = #i_acc3_flg#,</isNotNull>
+<isNotNull property="i_acc4_flg">ACC4_FLG = #i_acc4_flg#,</isNotNull>
+<isNotNull property="i_acc5_flg">ACC5_FLG = #i_acc5_flg#,</isNotNull>
+<isNotNull property="i_acc6_flg">ACC6_FLG = #i_acc6_flg#,</isNotNull>
+<isNotNull property="i_acc7_flg">ACC7_FLG = #i_acc7_flg#,</isNotNull>
+<isNotNull property="i_acc8_flg">ACC8_FLG = #i_acc8_flg#,</isNotNull>
+<isNotNull property="i_acc9_flg">ACC9_FLG = #i_acc9_flg#,</isNotNull>
+<isNotNull property="i_post_dt_exp">POST_DT_EXP = #i_post_dt_exp#,</isNotNull>
+<isNotNull property="i_post_dt_imp">POST_DT_IMP = #i_post_dt_imp#,</isNotNull>
+<isNotNull property="i_post_dt_inv">POST_DT_INV = #i_post_dt_inv#,</isNotNull>
+<isNotNull property="i_post_dt_crdr">POST_DT_CRDR = #i_post_dt_crdr#,</isNotNull>
+<isNotNull property="i_pps_use_flg">PPS_USE_FLG = #i_pps_use_flg#,</isNotNull>
+<isNotNull property="i_pps_payto_trdp_cd">PPS_PAYTO_TRDP_CD = #i_pps_payto_trdp_cd#,</isNotNull>
+<isNotNull property="i_pps_cntr20_rt">PPS_CNTR20_RT = #i_pps_cntr20_rt#,</isNotNull>
+<isNotNull property="i_pps_cntr40_rt">PPS_CNTR40_RT = #i_pps_cntr40_rt#,</isNotNull>
+<isNotNull property="i_pps_cbm_rt">PPS_CBM_RT = #i_pps_cbm_rt#,</isNotNull>
+<isNotNull property="i_ofc_rep_nm">OFC_REP_NM = #i_ofc_rep_nm#,</isNotNull>
+<isNotNull property="i_ccn_prfx">CCN_PRFX = #i_ccn_prfx#,</isNotNull>
+<isNotNull property="i_oi_ccn_seqno">OI_CCN_SEQNO = #i_oi_ccn_seqno#,</isNotNull>
+<isNotNull property="i_ai_ccn_seqno">AI_CCN_SEQNO = #i_ai_ccn_seqno#,</isNotNull>				
+<isNotNull property="i_tsa_sec_no">TSA_SEC_NO = #i_tsa_sec_no#,</isNotNull>		
+<isNotNull property="i_rvn_bank_seq">RVN_BANK_SEQ = #i_rvn_bank_seq#,</isNotNull>	
+<isNotNull property="i_cost_bank_seq">COST_BANK_SEQ = #i_cost_bank_seq#,</isNotNull>			
+<isNotNull property="i_use_hbl_ser">USE_HBL_SER = #i_use_hbl_ser#,</isNotNull>	
+<isNotNull property="i_oi_cgor_pic_info">OI_CGOR_PIC_INFO = #i_oi_cgor_pic_info#,</isNotNull>
+<isNotNull property="i_ai_cgor_pic_info">AI_CGOR_PIC_INFO = #i_ai_cgor_pic_info#,</isNotNull>	
+<isNotNull property="i_ctf_use_flg">CTF_USE_FLG = #i_ctf_use_flg#,</isNotNull>
+<isNotNull property="i_ctf_payto_trdp_cd">CTF_PAYTO_TRDP_CD = #i_ctf_payto_trdp_cd#,</isNotNull>
+<isNotNull property="i_ctf_cntr20_rt">CTF_CNTR20_RT = #i_ctf_cntr20_rt#,</isNotNull>
+<isNotNull property="i_ctf_cntr40_rt">CTF_CNTR40_RT = #i_ctf_cntr40_rt#,</isNotNull>
+<isNotNull property="i_ctf_cbm_rt">CTF_CBM_RT = #i_ctf_cbm_rt#,</isNotNull>
+<isNotNull property="i_cf_use_flg">CF_USE_FLG = #i_cf_use_flg#,</isNotNull>
+<isNotNull property="i_cf_payto_trdp_cd">CF_PAYTO_TRDP_CD = #i_cf_payto_trdp_cd#,</isNotNull>
+<isNotNull property="i_cf_cntr20_rt">CF_CNTR20_RT = #i_cf_cntr20_rt#,</isNotNull>
+<isNotNull property="i_cf_cntr40_rt">CF_CNTR40_RT = #i_cf_cntr40_rt#,</isNotNull>
+<isNotNull property="i_cf_cbm_rt">CF_CBM_RT = #i_cf_cbm_rt#,</isNotNull>		
+MODI_TMS = GETUTCDATE()
+		WHERE  OFC_CD     = #i_ofc_cd#
+	</update>
+	
+	
+<!-- Office Code 수정  -->
+	<update id="updateOFC_SEQ" parameterClass="java.util.HashMap">
+		UPDATE tb_ofc
+		   SET 
+<isNotNull property="i_modi_usrid">MODI_USRID = #i_modi_usrid#,</isNotNull>
+<isNotNull property="i_modi_ofc_cd">MODI_OFC_CD = #i_modi_ofc_cd#,</isNotNull>
+<isNotNull property="i_delt_flg">DELT_FLG = #i_delt_flg#,</isNotNull>
+<isNotNull property="i_inv_prfx">INV_PRFX = #i_inv_prfx#,</isNotNull>
+<isNotNull property="i_inv_seq_no">INV_SEQ_NO = #i_inv_seq_no#,</isNotNull>
+<isNotNull property="i_crdr_prfx">CRDR_PRFX = #i_crdr_prfx#,</isNotNull>
+<isNotNull property="i_crdr_seq_no">CRDR_SEQ_NO = #i_crdr_seq_no#,</isNotNull>
+<isNotNull property="i_oi_ref_prfx">OI_REF_PRFX = #i_oi_ref_prfx#,</isNotNull>
+<isNotNull property="i_oi_ref_seq_no">OI_REF_SEQ_NO = #i_oi_ref_seq_no#,</isNotNull>
+<isNotNull property="i_oe_ref_prfx">OE_REF_PRFX = #i_oe_ref_prfx#,</isNotNull>
+<isNotNull property="i_oe_ref_seq_no">OE_REF_SEQ_NO = #i_oe_ref_seq_no#,</isNotNull>
+<isNotNull property="i_ai_ref_prfx">AI_REF_PRFX = #i_ai_ref_prfx#,</isNotNull>
+<isNotNull property="i_ai_ref_seq_no">AI_REF_SEQ_NO = #i_ai_ref_seq_no#,</isNotNull>
+<isNotNull property="i_ae_ref_prfx">AE_REF_PRFX = #i_ae_ref_prfx#,</isNotNull>
+<isNotNull property="i_ae_ref_seq_no">AE_REF_SEQ_NO = #i_ae_ref_seq_no#,</isNotNull>
+<isNotNull property="i_ae_awb_prfx">AE_AWB_PRFX = #i_ae_awb_prfx#,</isNotNull>
+<isNotNull property="i_ae_awb_seq_no">AE_AWB_SEQ_NO = #i_ae_awb_seq_no#,</isNotNull>
+<isNotNull property="i_oe_hbl_prfx">OE_HBL_PRFX = #i_oe_hbl_prfx#,</isNotNull>
+<isNotNull property="i_oe_hbl_seq_no">OE_HBL_SEQ_NO = #i_oe_hbl_seq_no#,</isNotNull>
+<isNotNull property="i_oe_bkg_prfx">OE_BKG_PRFX = #i_oe_bkg_prfx#,</isNotNull>
+<isNotNull property="i_oe_bkg_seq_no">OE_BKG_SEQ_NO = #i_oe_bkg_seq_no#,</isNotNull>
+<isNotNull property="i_ae_bkg_prfx">AE_BKG_PRFX = #i_ae_bkg_prfx#,</isNotNull>
+<isNotNull property="i_ae_bkg_seq_no">AE_BKG_SEQ_NO = #i_ae_bkg_seq_no#,</isNotNull>
+<isNotNull property="i_sea_quo_prfx">SEA_QUO_PRFX = #i_sea_quo_prfx#,</isNotNull>
+<isNotNull property="i_sea_quo_seq_no">SEA_QUO_SEQ_NO = #i_sea_quo_seq_no#,</isNotNull>
+<isNotNull property="i_air_quo_prfx">AIR_QUO_PRFX = #i_air_quo_prfx#,</isNotNull>
+<isNotNull property="i_air_quo_seq_no">AIR_QUO_SEQ_NO = #i_air_quo_seq_no#,</isNotNull>
+<isNotNull property="i_wh_rcpt_prfx">WH_RCPT_PRFX = #i_wh_rcpt_prfx#,</isNotNull>
+<isNotNull property="i_wh_rcpt_seq_no">WH_RCPT_SEQ_NO = #i_wh_rcpt_seq_no#,</isNotNull>
+<isNotNull property="i_wh_rcv_prfx">WH_RCV_PRFX = #i_wh_rcv_prfx#,</isNotNull>
+<isNotNull property="i_wh_rcv_seq_no">WH_RCV_SEQ_NO = #i_wh_rcv_seq_no#,</isNotNull>
+<isNotNull property="i_wh_shp_prfx">WH_SHP_PRFX = #i_wh_shp_prfx#,</isNotNull>
+<isNotNull property="i_wh_shp_seq_no">WH_SHP_SEQ_NO = #i_wh_shp_seq_no#,</isNotNull>
+<isNotNull property="i_trk_prfx">TRK_PRFX = #i_trk_prfx#,</isNotNull>
+<isNotNull property="i_trk_seq_no">TRK_SEQ_NO = #i_trk_seq_no#,</isNotNull>
+<isNotNull property="i_wm_doc_prfx">WM_DOC_PRFX = #i_wm_doc_prfx#,</isNotNull>
+<isNotNull property="i_wm_doc_seq_no">WM_DOC_SEQ_NO = #i_wm_doc_seq_no#,</isNotNull>
+		MODI_TMS = GETUTCDATE()
+		WHERE  OFC_CD     = #i_ofc_cd#
+	</update>
+	
+	<select id="selectMDM_MCM_0050_CODE" parameterClass="java.util.HashMap" resultClass="OfcVO">
+        SELECT  ofc_cd
+		  FROM  tb_ofc
+		 WHERE  ofc_cd = #s_ofc_cd#
+	</select>
+	
+	<select id="selectMDM_MCM_0050_PARTNER_CODE" parameterClass="java.util.HashMap" resultClass="String">
+        SELECT  ofc_cd
+		  FROM  tb_ofc
+		 WHERE  trdp_cd = #s_trdp_cd#
+		   AND  ofc_cd NOT IN (#s_ofc_cd#)
+	</select>
+	
+	<!-- Node 코드 목록 조회   -->
+	<select id="selectNODECODE_LIST" parameterClass="java.util.HashMap" resultClass="com.clt.apps.fis.mdm.mcm.office.dto.NodVO">
+        SELECT TOP $topCnt$   
+		       a.nod_cd,       a.nod_eng_nm,  a.nod_addr, a.use_flg, a.loc_cd,
+			   ( SELECT b.loc_nm  FROM tb_loc b  
+		         WHERE b.loc_cd = a.loc_cd  AND b.delt_flg = 'N') AS loc_nm,
+			   a.nod_tp_desc, 
+		       a.pic_nm,      a.pic_phn,      a.pic_fax, 
+		       a.rgst_usrid,  a.rgst_ofc_cd,  a.rgst_tms, 
+		       a.modi_usrid,  a.modi_ofc_cd,  a.modi_tms,   a.delt_flg
+		 FROM  tb_nod a
+		<isNotNull property="s_nod_tp_cd">
+   INNER JOIN ( SELECT nod_cd FROM tb_nod_tp_cd_list  WHERE nod_tp_cd = #s_nod_tp_cd#) c
+		   ON a.nod_cd = c.nod_cd
+		</isNotNull>
+		WHERE a.delt_flg = 'N'
+		<isNotNull property="s_nod_eng_nm">
+			AND  a.nod_eng_nm LIKE '%'+#s_nod_eng_nm#+'%'
+		</isNotNull>
+		<isNotNull property="s_use_flg">
+			AND  a.use_flg = #s_use_flg#
+		</isNotNull>
+		<isNotNull property="s_loc_cd">
+			AND  a.loc_cd = #s_loc_cd#
+		</isNotNull>
+		ORDER BY  a.nod_cd ASC
+	</select>
+	
+    <!-- Node 코드 목록 카운트  -->
+	<select id="selectNODECODE_CNT" parameterClass="java.util.HashMap" resultClass="Integer">
+		SELECT COUNT(a.loc_cd)
+		FROM tb_nod a
+		<isNotNull property="s_nod_tp_cd">
+		INNER JOIN (
+			SELECT nod_cd 
+			FROM tb_nod_tp_cd_list
+			WHERE nod_tp_cd = #s_nod_tp_cd#
+			) c
+		ON a.nod_cd = c.nod_cd
+		</isNotNull>
+		WHERE a.delt_flg = 'N'
+		<isNotNull property="s_nod_eng_nm">
+			AND  a.nod_eng_nm LIKE '%'+#s_nod_eng_nm#+'%'
+		</isNotNull>
+		<isNotNull property="s_use_flg">
+			AND  a.use_flg = #s_use_flg#
+		</isNotNull>
+		<isNotNull property="s_loc_cd">
+			AND  a.loc_cd = #s_loc_cd#
+		</isNotNull>
+	</select>
+	<insert id="insertMDM_MCM_0060" parameterClass="java.util.HashMap">
+		INSERT INTO tb_nod (
+			nod_cd,          nod_eng_nm,        nod_addr, 
+		    use_flg,         loc_cd, 
+		    nod_tp_desc,     pic_nm,            pic_phn,       pic_fax,
+		    rgst_usrid,      rgst_ofc_cd,       rgst_tms,
+            modi_usrid,      modi_ofc_cd,       modi_tms,      delt_flg
+		) VALUES (
+			#i_nod_cd#,      #i_nod_eng_nm#,    #i_nod_addr#, 
+		    #i_use_flg#,     #i_loc_cd#,
+		    #i_nod_tp_desc#, #i_pic_nm#,        #i_pic_phn#,   #i_pic_fax#,
+		    #i_rgst_usrid#,  #i_rgst_ofc_cd#,   getdate(), 
+		    #i_modi_usrid#,  #i_modi_ofc_cd#,   GETUTCDATE(),     'N'
+		)
+	</insert>
+	<update id="updateMDM_MCM_0060" parameterClass="java.util.HashMap">
+		UPDATE  tb_nod
+		   SET  nod_eng_nm = #i_nod_eng_nm#,   loc_cd     = #i_loc_cd#,       nod_addr = #i_nod_addr#, 
+		        pic_nm     = #i_pic_nm#,       pic_phn    = #i_pic_phn#,      pic_fax  = #i_pic_fax#,
+		        use_flg    = #i_use_flg#,      nod_tp_desc= #i_nod_tp_desc#, 
+		        modi_usrid = #i_modi_usrid#,   modi_ofc_cd= #i_modi_ofc_cd#,  modi_tms = GETUTCDATE()
+		 WHERE  nod_cd = #i_nod_cd#
+	</update>
+	<select id="selectMDM_MCM_0060_CODE" parameterClass="java.util.HashMap" resultClass="com.clt.apps.fis.mdm.mcm.office.dto.NodVO">
+        SELECT nod_cd
+		FROM tb_nod
+		WHERE nod_cd = #s_nod_cd#
+	</select>
+	
+	<delete id="removeMDM_MCM_0060_CODE" parameterClass="java.util.HashMap">
+        DELETE FROM tb_nod_tp_cd_list
+		WHERE nod_cd = #i_nod_cd#
+	</delete>
+	
+	<insert id="insertMDM_MCM_0060_CODE" parameterClass="java.util.HashMap">
+		INSERT INTO tb_nod_tp_cd_list (
+			nod_cd, nod_tp_cd
+		) VALUES (
+			#i_nod_cd#, #i_nod_tp_cd#
+		)
+	</insert>
+	
+	<select id="selectMDM_MCM_0061_CODE_LIST" parameterClass="java.util.HashMap" resultClass="com.clt.apps.fis.mdm.mcm.location.dto.LocTpCdVO">
+        SELECT nod_tp_cd AS com_cd
+		FROM tb_nod_tp_cd_list
+		WHERE nod_cd = #i_nod_cd#
+	</select>
+	
+	<select id="selectMDM_MCM_0061_CODE_CNT" parameterClass="java.util.HashMap" resultClass="Integer">
+		SELECT COUNT(nod_tp_cd)
+		FROM tb_nod_tp_cd_list
+		WHERE nod_cd = #i_nod_cd#
+	</select>
+	
+	<select id="selectOFFICECODE" parameterClass="java.util.HashMap" resultClass="OfcVO">
+		SELECT  a.ofc_cd,
+				a.cnt_cd,
+				(SELECT cnt_eng_nm FROM tb_cnt WHERE delt_flg = 'N' AND use_flg ='Y' AND cnt_cd =a.cnt_cd) AS cnt_nm,
+				a.ofc_eng_nm,
+				a.ofc_zip,
+				a.ofc_addr,
+				a.ofc_phn,
+				a.ofc_fax,
+				a.trdp_cd,
+				a.prnt_ofc_cd,
+				(SELECT ofc_eng_nm FROM tb_ofc WHERE delt_flg='N' AND  ofc_cd=a.prnt_ofc_cd) as prnt_ofc_nm,
+				a.loc_cd,
+				a.descr,
+				a.use_flg,
+				a.finc_ofc_cd,
+				(SELECT ofc_eng_nm FROM tb_ofc WHERE delt_flg='N' AND  ofc_cd=a.finc_ofc_cd) as finc_ofc_nm,
+				a.sls_ofc_cd,
+				(SELECT ofc_eng_nm FROM tb_ofc WHERE delt_flg='N' AND  ofc_cd=a.sls_ofc_cd) as sls_ofc_nm,
+				a.rgst_usrid,
+				a.rgst_ofc_cd,
+				a.rgst_tms,
+				a.modi_usrid,
+				a.modi_ofc_cd,
+				a.modi_tms,
+				a.delt_flg,
+				a.trf_cur_cd,
+				a.state_cd,
+				(SELECT state_eng_nm FROM tb_state WHERE use_flg='Y' AND state_cd=a.state_cd AND cnt_cd =a.cnt_cd) as state_nm,
+				a.ofc_locl_nm,
+				a.ofc_email,
+				a.ofc_url,
+				a.iata_cd,
+				a.fmc_no,
+				a.tax_type,
+				a.tax_no,
+				a.inv_prfx,
+				a.inv_seq_no,
+				a.crdr_prfx,
+				a.crdr_seq_no,
+				a.oi_ref_prfx,
+				a.oi_ref_seq_no,
+				a.oe_ref_prfx,
+				a.oe_ref_seq_no,
+				a.ai_ref_prfx,
+				a.ai_ref_seq_no,
+				a.ae_ref_prfx,
+				a.ae_ref_seq_no,
+				a.ae_awb_prfx,
+				a.ae_awb_seq_no,
+				a.oe_hbl_prfx,
+				a.oe_hbl_seq_no,
+				a.oe_bkg_prfx,
+				a.oe_bkg_seq_no,
+				a.ae_bkg_prfx,
+				a.ae_bkg_seq_no,
+				a.ae_bkg_prfx,
+				a.ae_bkg_seq_no,
+				a.sea_quo_prfx,
+				a.sea_quo_seq_no,
+				a.air_quo_prfx,
+				a.air_quo_seq_no,
+				a.wh_rcpt_prfx,
+				a.wh_rcpt_seq_no,
+				a.trk_prfx,
+				a.trk_seq_no,
+				a.wm_doc_prfx,
+				a.wm_doc_seq_no,
+				a.aes_cntc_nm,
+				a.aes_city,
+				a.aes_state_cd,
+				a.aes_zip,
+				a.aes_cnt_cd,
+				a.aes_rspn_email,
+				a.aes_prt_type,
+        		a.it_next_no,
+        		a.it_end,
+				a.oth_wgt_ut_cd,
+				a.oth_meas_ut_cd,
+				a.oth_size_ut_cd,
+				a.gl_ar,
+				a.gl_ap,
+				a.gl_agent_ar,
+				a.gl_agent_ap,
+				a.gl_agent_oth,
+				a.gl_agent_oi,
+				a.gl_agent_oe,
+				a.gl_agent_ai,
+				a.gl_agent_ae,
+				a.gl_re_earn,
+				a.gl_ex_profit,
+				a.gl_ex_loss,
+				a.gl_misc_profit,
+				a.gl_misc_loss,
+				a.gl_agent_ps_oi,
+				a.gl_agent_ps_oe,
+				a.gl_agent_ps_ai,
+				a.gl_agent_ps_ae,
+				a.gl_agent_ps_oth,
+				a.gl_vat_rev,
+				a.gl_vat_cost,
+				a.gl_vat_exp,
+				a.inv_rmk,
+				a.inv_font_size,
+				a.inv_carr_rmk,
+				a.inv_carr_font_size,
+				a.crdr_rmk,
+				a.crdr_font_size,
+				a.locl_stmt_rmk,
+				a.locl_stmt_font_size,
+				a.agent_stmt_rmk,
+				a.agent_stmt_font_size,
+				a.do_rmk,
+				a.do_font_size,
+				a.ooh_bkg_rmk,
+				a.ooh_bkg_font_size,
+				a.awb_rmk,
+				a.awb_font_size,
+				a.pkup_rmk,
+				a.pkup_font_size,
+				a.quo_rmk,
+				a.quo_font_size,
+				a.oi_an_rmk,
+				a.oi_an_font_size,
+				a.oi_cgor_pic_info,
+				a.oi_an_lcl_desc,
+				a.oi_an_fcl_desc,
+				a.sea_body,
+				a.sea_lcl_desc,
+				a.sea_fcl_desc,
+				a.sea_cob,
+				a.sea_mei,
+				a.sea_msco,
+				a.vsl_show_flg,
+				a.load_port_show_flg,
+				a.cntr_40hq_desc,
+				a.cntr_45_desc,
+				a.ai_an_rmk,
+				a.ai_an_font_size,
+				a.ai_cgor_pic_info,
+				a.air_body,
+				a.aem_hand_info,
+				a.aeh_hand_info,
+				a.dflt_an_memo,
+				a.dock_rcpt_rmk,
+				a.email_sign,
+				a.oper1_flg,
+				a.oper2_flg,
+				a.oper3_flg,
+				a.oper4_flg,
+				a.oper5_flg,
+				a.oper6_flg,
+				a.oper7_flg,
+				a.oper8_flg,
+				a.oper9_flg,
+				a.acc1_flg,
+				a.acc2_flg,
+				a.acc3_flg,
+				a.acc4_flg,
+				a.acc5_flg,
+				a.acc6_flg,
+				a.acc7_flg,
+				a.acc8_flg,
+				a.acc9_flg,
+				a.post_dt_exp,
+				a.post_dt_imp,
+				a.post_dt_inv,
+				a.post_dt_crdr,
+				a.use_hbl_ser,
+				a.pps_use_flg,
+				a.ctf_use_flg,
+				a.cf_use_flg
+		   FROM  tb_ofc a
+	      WHERE  a.delt_flg = 'N'
+		<isNotNull property="s_ofc_cd">
+			AND  a.ofc_cd = #s_ofc_cd#
+		</isNotNull>
+		<isNull property="s_use_flg">
+			AND  a.use_flg = 'Y'
+		</isNull>
+		<isNotNull property="s_use_flg">
+			AND  a.use_flg = #s_use_flg#
+		</isNotNull>
+	</select>
+	
+	<!-- jsjang 2013.07.30 #16393 Company, C-TPAT Logo Outgoing report -->
+	<select id="selectOFFICECODE_View" parameterClass="java.util.HashMap" resultClass="OfcVO">
+		/*selectOFFICECODE_View*/
+	    SELECT  a.ofc_cd,
+				a.cnt_cd,
+				(SELECT cnt_eng_nm FROM tb_cnt WHERE delt_flg = 'N' AND use_flg ='Y' AND cnt_cd =a.cnt_cd) AS cnt_nm,
+				a.ofc_eng_nm,
+				a.ofc_zip,
+				a.ofc_addr,
+				a.ofc_phn,
+				a.ofc_fax,
+				a.trdp_cd,
+				a.prnt_ofc_cd,
+				(SELECT ofc_eng_nm FROM tb_ofc WHERE delt_flg='N' AND  ofc_cd=a.prnt_ofc_cd) as prnt_ofc_nm,
+				a.loc_cd,
+				a.descr,
+				a.use_flg,
+				a.finc_ofc_cd,
+				(SELECT ofc_eng_nm FROM tb_ofc WHERE delt_flg='N' AND  ofc_cd=a.finc_ofc_cd) as finc_ofc_nm,
+				a.sls_ofc_cd,
+				(SELECT ofc_eng_nm FROM tb_ofc WHERE delt_flg='N' AND  ofc_cd=a.sls_ofc_cd) as sls_ofc_nm,
+				a.rgst_usrid,
+				a.rgst_ofc_cd,
+				a.rgst_tms,
+				a.modi_usrid,
+				a.modi_ofc_cd,
+				a.modi_tms,
+				a.delt_flg,
+				a.trf_cur_cd,
+				a.state_cd,
+				(SELECT state_eng_nm FROM tb_state WHERE use_flg='Y' AND state_cd=a.state_cd AND cnt_cd =a.cnt_cd) as state_nm,
+				a.ofc_locl_nm,
+				a.ofc_email,
+				a.ofc_url,
+				a.iata_cd,
+				a.fmc_no,
+				a.tax_type,
+				a.tax_no,
+				a.inv_prfx,
+				a.inv_seq_no,
+				a.crdr_prfx,
+				a.crdr_seq_no,
+				a.oi_ref_prfx,
+				a.oi_ref_seq_no,
+				a.oe_ref_prfx,
+				a.oe_ref_seq_no,
+				a.ai_ref_prfx,
+				a.ai_ref_seq_no,
+				a.ae_ref_prfx,
+				a.ae_ref_seq_no,
+				a.ae_awb_prfx,
+				a.ae_awb_seq_no,
+				a.oe_hbl_prfx,
+				a.oe_hbl_seq_no,
+				a.oe_bkg_prfx,
+				a.oe_bkg_seq_no,
+				a.ae_bkg_prfx,
+				a.ae_bkg_seq_no,
+				a.ae_bkg_prfx,
+				a.ae_bkg_seq_no,
+				a.sea_quo_prfx,
+				a.sea_quo_seq_no,
+				a.air_quo_prfx,
+				a.air_quo_seq_no,
+				a.wh_rcpt_prfx,
+				a.wh_rcpt_seq_no,
+				<!--Vinh.Vo 2015-1-5 (S)  -->
+				a.wh_rcv_prfx,
+				a.wh_rcv_seq_no,
+				a.wh_shp_prfx,
+				a.wh_shp_seq_no,
+				<!--Vinh.Vo 2015-1-5 (E)  -->	
+				a.trk_prfx,
+				a.trk_seq_no,
+				a.wm_doc_prfx,
+				a.wm_doc_seq_no,
+				a.aes_cntc_nm,
+				a.aes_city,
+				a.aes_state_cd,
+				a.aes_zip,
+				a.aes_cnt_cd,
+				a.aes_rspn_email,
+				a.aes_prt_type,
+        		a.it_next_no,
+        		a.it_end,
+				a.oth_wgt_ut_cd,
+				a.oth_meas_ut_cd,
+				a.oth_size_ut_cd,
+				a.gl_ar,
+				a.gl_ap,
+				a.gl_agent_ar,
+				a.gl_agent_ap,
+				a.gl_agent_oth,
+				a.gl_agent_oi,
+				a.gl_agent_oe,
+				a.gl_agent_ai,
+				a.gl_agent_ae,
+				a.gl_re_earn,
+				a.gl_ex_profit,
+				a.gl_ex_loss,
+				a.gl_misc_profit,
+				a.gl_misc_loss,
+				a.gl_agent_ps_oi,
+				a.gl_agent_ps_oe,
+				a.gl_agent_ps_ai,
+				a.gl_agent_ps_ae,
+				a.gl_agent_ps_oth,
+				a.gl_vat_rev,
+				a.gl_vat_cost,
+				a.gl_vat_exp,
+				a.inv_rmk,
+				a.inv_font_size,
+				a.inv_carr_rmk,
+				a.inv_carr_font_size,
+				a.crdr_rmk,
+				a.crdr_font_size,
+				a.locl_stmt_rmk,
+				a.locl_stmt_font_size,
+				a.agent_stmt_rmk,
+				a.agent_stmt_font_size,
+				a.do_rmk,
+				a.do_font_size,
+				a.ooh_bkg_rmk,
+				a.ooh_bkg_font_size,
+				a.awb_rmk,
+				a.awb_font_size,
+				a.pkup_rmk,
+				a.pkup_font_size,
+				a.quo_rmk,
+				a.quo_font_size,
+				a.oi_quo_rmk,
+				a.oi_quo_font_size,
+				a.oe_quo_rmk,
+				a.oe_quo_font_size,
+				a.ai_quo_rmk,
+				a.ai_quo_font_size,
+				a.ae_quo_rmk,
+				a.ae_quo_font_size,
+				a.wh_rct_rmk,
+				a.wh_rct_font_size,
+				a.oi_an_rmk,
+				a.oi_an_font_size,
+				a.oi_cgor_pic_info,
+				a.oi_an_lcl_desc,
+				a.oi_an_fcl_desc,
+				a.sea_body,
+				a.sea_lcl_desc,
+				a.sea_fcl_desc,
+				a.sea_cob,
+				a.sea_mei,
+				a.sea_msco,
+				a.vsl_show_flg,
+				a.load_port_show_flg,
+				a.cntr_40hq_desc,
+				a.cntr_45_desc,
+				a.ai_an_rmk,
+				a.ai_an_font_size,
+				a.ai_cgor_pic_info,
+				a.air_body,
+				a.aem_hand_info,
+				a.aeh_hand_info,
+				a.dflt_an_memo,
+				a.dock_rcpt_rmk,
+				a.email_sign,
+				a.oper1_flg,
+				a.oper2_flg,
+				a.oper3_flg,
+				a.oper4_flg,
+				a.oper5_flg,
+				a.oper6_flg,
+				a.oper7_flg,
+				a.oper8_flg,
+				a.oper9_flg,
+				a.acc1_flg,
+				a.acc2_flg,
+				a.acc3_flg,
+				a.acc4_flg,
+				a.acc5_flg,
+				a.acc6_flg,
+				a.acc7_flg,
+				a.acc8_flg,
+				a.acc9_flg,
+				a.post_dt_exp,
+				a.post_dt_imp,
+				a.post_dt_inv,
+				a.pps_use_flg,
+				a.pps_payto_trdp_cd,
+				(SELECT locl_nm FROM tb_trdp WHERE delt_flg='N' AND  trdp_cd= a.pps_payto_trdp_cd) as pps_payto_trdp_nm,
+				CONVERT(FLOAT, a.pps_cntr20_rt) AS pps_cntr20_rt,
+				CONVERT(FLOAT,a.pps_cntr40_rt) AS pps_cntr40_rt,
+				CONVERT(FLOAT,a.pps_cbm_rt) AS pps_cbm_rt,
+				a.post_dt_crdr,
+				(SELECT value_1 FROM TB_OFC_SETTINGS WHERE ofc_cd = a.ofc_cd AND set_type = 'CLOGO_1') AS logo_square,
+				(SELECT value_1 FROM TB_OFC_SETTINGS WHERE ofc_cd = a.ofc_cd AND set_type = 'CLOGO_2') AS logo_rectangle,
+				(SELECT value_1 FROM TB_OFC_SETTINGS WHERE ofc_cd = a.ofc_cd AND set_type = 'CLOGO_3') AS logo_sub,
+				(SELECT value_2 FROM TB_OFC_SETTINGS WHERE ofc_cd = a.ofc_cd AND set_type = 'OEM_PS') AS oem_pro_share,
+				(SELECT value_2 FROM TB_OFC_SETTINGS WHERE ofc_cd = a.ofc_cd AND set_type = 'OEH_PS') AS oeh_pro_share,
+				(SELECT value_2 FROM TB_OFC_SETTINGS WHERE ofc_cd = a.ofc_cd AND set_type = 'OIM_PS') AS oim_pro_share,
+				(SELECT value_2 FROM TB_OFC_SETTINGS WHERE ofc_cd = a.ofc_cd AND set_type = 'OIH_PS') AS oih_pro_share,
+				(SELECT value_2 FROM TB_OFC_SETTINGS WHERE ofc_cd = a.ofc_cd AND set_type = 'AEH_PS') AS aeh_pro_share,
+				a.ofc_rep_nm,
+				a.ccn_prfx,
+				a.oi_ccn_seqno,
+				a.ai_ccn_seqno,
+				a.tsa_sec_no,
+				a.rvn_bank_seq,
+				a.cost_bank_seq,
+				a.use_hbl_ser,
+				
+				a.ctf_use_flg,
+				a.ctf_payto_trdp_cd,
+				(SELECT locl_nm FROM tb_trdp WHERE delt_flg='N' AND  trdp_cd= a.ctf_payto_trdp_cd) as ctf_payto_trdp_nm,
+				CONVERT(FLOAT, a.ctf_cntr20_rt) AS ctf_cntr20_rt,
+				CONVERT(FLOAT,a.ctf_cntr40_rt) AS ctf_cntr40_rt,
+				CONVERT(FLOAT,a.ctf_cbm_rt) AS ctf_cbm_rt,
+				a.cf_use_flg,
+				a.cf_payto_trdp_cd,
+				(SELECT locl_nm FROM tb_trdp WHERE delt_flg='N' AND  trdp_cd= a.cf_payto_trdp_cd) as cf_payto_trdp_nm,
+				CONVERT(FLOAT, a.cf_cntr20_rt) AS cf_cntr20_rt,
+				CONVERT(FLOAT,a.cf_cntr40_rt) AS cf_cntr40_rt,
+				CONVERT(FLOAT,a.cf_cbm_rt) AS cf_cbm_rt
+		  FROM  tb_ofc a
+	     WHERE  a.delt_flg = 'N'
+		<isNotNull property="s_ofc_cd">
+		   AND  a.ofc_cd = #s_ofc_cd#
+		</isNotNull>
+		<isNotNull property="s_use_flg">
+		   AND  a.use_flg = #s_use_flg#
+		</isNotNull>
+	</select>	
+	
+	<!-- jsjang 2013.07.30 #16393 Company, C-TPAT Logo Outgoing report -->
+	<select id="selectOfcDoc" parameterClass="java.util.HashMap" resultClass="OfcVO">
+		SELECT  set_type,
+				value_1 AS logo_square
+		   FROM  TB_OFC_SETTINGS
+	      WHERE 
+	      	ofc_cd = #v_ofc_cd#
+			AND  set_type = #v_set_type#	
+	</select>		
+	
+	<select id="selectOFFICECODE_PK" parameterClass="java.util.HashMap" resultClass="OfcVO">
+	SELECT  a.ofc_cd,
+			
+			a.inv_prfx,
+			a.inv_seq_no + 1 AS inv_seq_no,
+			a.crdr_prfx,
+			a.crdr_seq_no + 1 AS crdr_seq_no,
+			a.oi_ref_prfx,
+			a.oi_ref_seq_no + 1 AS oi_ref_seq_no,
+			a.oe_ref_prfx,
+			a.oe_ref_seq_no + 1 AS oe_ref_seq_no,
+			a.ai_ref_prfx,
+			a.ai_ref_seq_no + 1 AS ai_ref_seq_no,
+			a.ae_ref_prfx,
+			a.ae_ref_seq_no + 1 AS ae_ref_seq_no,
+			a.ae_awb_prfx,
+			a.ae_awb_seq_no + 1 AS ae_awb_seq_no,
+			a.oe_hbl_prfx,
+			a.oe_hbl_seq_no + 1 AS oe_hbl_seq_no,
+			a.oe_bkg_prfx,
+			a.oe_bkg_seq_no + 1 AS oe_bkg_seq_no,
+			a.sea_quo_prfx,
+			a.sea_quo_seq_no + 1 AS sea_quo_seq_no,
+			a.air_quo_prfx,
+			a.air_quo_seq_no + 1 AS air_quo_seq_no,
+			a.wh_rcpt_prfx,
+			a.wh_rcpt_seq_no + 1 AS wh_rcpt_seq_no,
+			a.trk_prfx,
+			a.trk_seq_no + 1 AS trk_seq_no,
+			a.wm_doc_prfx,
+			a.wm_doc_seq_no + 1 AS wm_doc_seq_no,
+			a.ae_bkg_prfx,
+			a.ae_bkg_seq_no + 1 AS ae_bkg_seq_no
+		   FROM  tb_ofc a
+	      WHERE  a.delt_flg = 'N'
+		<isNotNull property="s_ofc_cd">
+			AND  a.ofc_cd = #s_ofc_cd#
+		</isNotNull>
+		<isNotNull property="s_use_flg">
+			AND  a.use_flg = #s_use_flg#
+		</isNotNull>
+	</select>
+	
+	<select id="selectTrdpPrefixCode_PK" parameterClass="java.util.HashMap" resultClass="com.clt.apps.fis.mdm.mcm.partner.dto.TrdpVO">
+	SELECT  a.trdp_cd,
+			a.oi_ref_prfx,
+			a.oi_ref_seq_no + 1 AS oi_ref_seq_no,
+			a.oe_ref_prfx,
+			a.oe_ref_seq_no + 1 AS oe_ref_seq_no,
+			a.ai_ref_prfx,
+			a.ai_ref_seq_no + 1 AS ai_ref_seq_no,
+			a.ae_ref_prfx,
+			a.ae_ref_seq_no + 1 AS ae_ref_seq_no,
+			a.ae_awb_prfx,
+			a.ae_awb_seq_no + 1 AS ae_awb_seq_no,
+			a.oe_hbl_prfx,
+			a.oe_hbl_seq_no + 1 AS oe_hbl_seq_no
+		   FROM  tb_trdp a
+	      WHERE  a.delt_flg = 'N'
+		<isNotNull property="s_trdp_cd">
+			AND  a.trdp_cd = #s_trdp_cd#
+		</isNotNull>
+	</select>
+	
+	<update id="updateOFFICECODE_PK" parameterClass="java.util.HashMap">
+	UPDATE TB_OFC
+	   SET 
+		<isNotNull property="inv_seq_no">
+		   inv_seq_no = #inv_seq_no#,
+		</isNotNull>	 
+		<isNotNull property="crdr_seq_no">
+		   crdr_seq_no = #crdr_seq_no#,
+		</isNotNull>
+		<isNotNull property="oi_ref_seq_no">
+		   oi_ref_seq_no = #oi_ref_seq_no#,
+		</isNotNull>
+		<isNotNull property="oe_ref_seq_no">
+		   oe_ref_seq_no = #oe_ref_seq_no#,
+		</isNotNull>
+		<isNotNull property="ai_ref_seq_no">
+		   ai_ref_seq_no = #ai_ref_seq_no#,
+		</isNotNull>
+		<isNotNull property="ae_ref_seq_no">
+		   ae_ref_seq_no = #ae_ref_seq_no#,
+		</isNotNull>
+		<isNotNull property="ae_awb_seq_no">
+		   ae_awb_seq_no = #ae_awb_seq_no#,
+		</isNotNull>
+		<isNotNull property="oe_hbl_seq_no">
+		   oe_hbl_seq_no = #oe_hbl_seq_no#,
+		</isNotNull>
+		<isNotNull property="oe_bkg_seq_no">
+		   oe_bkg_seq_no = #oe_bkg_seq_no#,
+		</isNotNull>
+		<isNotNull property="sea_quo_seq_no">
+		   sea_quo_seq_no = #sea_quo_seq_no#,
+		</isNotNull>
+		<isNotNull property="air_quo_seq_no">
+		   air_quo_seq_no = #air_quo_seq_no#,
+		</isNotNull>
+		<isNotNull property="wh_rcpt_seq_no">
+		   wh_rcpt_seq_no = #wh_rcpt_seq_no#,
+		</isNotNull>
+		<isNotNull property="trk_seq_no">
+		   trk_seq_no = #trk_seq_no#,
+		</isNotNull>
+		<isNotNull property="ae_bkg_seq_no">
+		   ae_bkg_seq_no = #ae_bkg_seq_no#,
+		</isNotNull>  
+		<isNotNull property="wm_doc_seq_no">
+		   wm_doc_seq_no = #wm_doc_seq_no#,
+		</isNotNull>  
+	 	   ofc_cd = #s_ofc_cd#
+	 WHERE 1=1
+		<isNotNull property="s_ofc_cd">
+	   AND ofc_cd = #s_ofc_cd#
+		</isNotNull>
+		<isNotNull property="s_use_flg">
+	   AND use_flg = #s_use_flg#
+		</isNotNull>
+
+	</update>
+	
+	<update id="updateTrdpPrefixCode_PK" parameterClass="java.util.HashMap">
+	UPDATE TB_TRDP
+	   SET 
+		<isNotNull property="oi_ref_seq_no">
+		   oi_ref_seq_no = #oi_ref_seq_no#
+		</isNotNull>
+		<isNotNull property="oe_ref_seq_no">
+		   oe_ref_seq_no = #oe_ref_seq_no#
+		</isNotNull>
+		<isNotNull property="ai_ref_seq_no">
+		   ai_ref_seq_no = #ai_ref_seq_no#
+		</isNotNull>
+		<isNotNull property="ae_ref_seq_no">
+		   ae_ref_seq_no = #ae_ref_seq_no#
+		</isNotNull>
+		<isNotNull property="ae_awb_seq_no">
+		   ae_awb_seq_no = #ae_awb_seq_no#
+		</isNotNull>
+		<isNotNull property="oe_hbl_seq_no">
+		   oe_hbl_seq_no = #oe_hbl_seq_no#
+		</isNotNull>
+	 WHERE 1=1
+		<isNotNull property="s_trdp_cd">
+	   AND trdp_cd = #s_trdp_cd#
+		</isNotNull>
+	</update>
+	
+	<!-- jsjang 2013.8.14 logo 등록 여부 조회 -->
+	<select id="getLogoInfo" resultClass="String" parameterClass="java.util.HashMap">
+       select 
+       value_2 
+       from TB_OFC_SETTINGS 
+       where ofc_cd =  #s_ofc_cd# 
+       and set_type = 'CLOGO_1'
+	</select>	
+	
+	<select id="selectOfcSetCnt" resultClass="Integer" parameterClass="java.util.HashMap">
+       SELECT COUNT(VALUE_2) FROM TB_OFC_SETTINGS WHERE OFC_CD = #i_ofc_cd# AND SET_TYPE = #set_type#     
+	</select>	
+	
+</sqlMap>

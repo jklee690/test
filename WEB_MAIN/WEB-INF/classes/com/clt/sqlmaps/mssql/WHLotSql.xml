@@ -1,0 +1,1016 @@
+<?xml version="1.0" encoding="UTF-8" ?> 
+<!DOCTYPE sqlMap PUBLIC "-//ibatis.apache.org//DTD SQL Map 2.0//EN"
+    "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+
+<sqlMap namespace="WHLot">
+	<!-- Nam Tran (S) -->
+	<select id="searchWarehouseCdListRSQL" parameterClass="java.util.HashMap" resultClass="com.clt.apps.fis.wms.item.dto.WHLotListVO">
+	/* OpusBaseSQL.xml > searchWarehouseListRSQL */
+		SELECT 
+		   WH_CD,
+		   WH_NM		  
+		FROM TL_WH
+		WHERE USE_FLG = 'Y'
+	</select>
+	
+	<select id="searchWHLotList" parameterClass="java.util.HashMap" resultClass="com.clt.apps.fis.wms.item.dto.WHLotListVO">
+	/* searchWHLotList */
+	SELECT ROW_NUMBER() OVER(ORDER BY LOT_ID) AS SEQ
+	      ,CTRT_NO
+          ,CTRT_NM
+          ,ITEM_CD
+          ,ITEM_NM
+          ,LOT_ID
+          ,LOT_ATTRIB_01
+          ,LOT_ATTRIB_02
+          ,LOT_ATTRIB_03
+          ,LOT_ATTRIB_04
+          ,LOT_ATTRIB_05
+          ,ITEM_SYS_NO
+	      ,COUNT(*) OVER() AS TOTAL
+	FROM (	
+			SELECT B.CTRT_NO
+		          ,dbo.TL_GET_CTRT_NM(B.CTRT_NO) AS CTRT_NM
+		          ,C.ITEM_CD
+		          ,C.ITEM_NM
+		          ,A.LOT_ID
+		          ,A.LOT_ATTRIB_01
+		          ,A.LOT_ATTRIB_02
+		          ,A.LOT_ATTRIB_03
+		          ,A.LOT_ATTRIB_04
+		          ,A.LOT_ATTRIB_05
+		          ,A.ITEM_SYS_NO
+		      FROM TL_CTRT B
+		          ,TL_CTRT_CUST_ITEM_LOT A LEFT JOIN TL_CTRT_CUST_ITEM C ON A.CTRT_NO = C.CTRT_NO
+		     WHERE A.CTRT_NO     = B.CTRT_NO
+		       AND A.ITEM_SYS_NO = C.ITEM_SYS_NO
+		     
+		     <isNotEmpty property="loc_cd">
+		     	AND A.WH_CD = #loc_cd#
+		     </isNotEmpty>  
+		     <isNotEmpty property="ctrt_no">	   
+			   AND B.CTRT_NO = #ctrt_no#
+			 </isNotEmpty>
+			 <isNotEmpty property="ctrt_nm">	   
+			   AND dbo.TL_GET_CTRT_NM(B.CTRT_NO) LIKE '%'+#ctrt_nm#+'%'
+			 </isNotEmpty>  
+		     <isNotEmpty property="item_cd">	   	   
+			   AND C.ITEM_NM = #item_cd#
+			 </isNotEmpty>
+		     <isNotEmpty property="lot_id">	   	   
+			   AND A.LOT_ID = #lot_id#
+			 </isNotEmpty>
+			 
+			 <isNotEmpty property="prop_no">
+			 	 <isEqual property="prop_no_tp" compareValue="LOT_NO">	   	   
+				   AND A.LOT_ATTRIB_02 = #prop_no#
+				 </isEqual> 
+				 <isEqual property="prop_no_tp" compareValue="LOT_04">	   	   
+				   AND A.LOT_ATTRIB_04 = #prop_no#
+				 </isEqual>  
+				 <isEqual property="prop_no_tp" compareValue="LOT_05">	   	   
+				   AND A.LOT_ATTRIB_05 = #prop_no#
+				 </isEqual>
+			 </isNotEmpty>
+			 
+			 <isNotEmpty property="prop_date_fm">
+			 	 <isEqual property="prop_date_tp" compareValue="INBOUND_DT">	   	   
+				   AND A.LOT_ATTRIB_01 BETWEEN replace(#prop_date_fm#,'-','') AND replace(#prop_date_to#,'-','')
+				 </isEqual> 
+				 <isEqual property="prop_date_tp" compareValue="EXP_DT">	   	   
+				   AND A.LOT_ATTRIB_03 BETWEEN replace(#prop_date_fm#,'-','') AND replace(#prop_date_to#,'-','')
+				 </isEqual> 	
+			 </isNotEmpty>
+		   ) AS TEMP
+	</select>		
+		
+	<select id="searchOptFldList" parameterClass="java.util.HashMap" resultClass="com.clt.apps.fis.wms.item.dto.OptValVO">
+		SELECT 	F.OPT_FLD_CLSS_CD, 
+       			F.OPT_FLD_ID, 
+       			F.OPT_FLD_NM,
+       			'' OPT_FLD_VAL
+  		FROM 	TL_CTRT_OPT_FLD F
+ 		WHERE 	F.CTRT_NO 			= #ctrt_no#
+   		AND 	F.OPT_FLD_CLSS_CD 	= #opt_fld_clss_cd#
+ 		ORDER BY F.DISP_SEQ
+	</select>
+	
+	<select id="searchIMInfo" parameterClass="java.util.HashMap" resultClass="com.clt.apps.fis.wms.item.dto.IMInfoVO">
+	/*WHLotSql.xml > searchIMInfo*/
+		SELECT  I.CTRT_NO,
+        dbo.TL_GET_CTRT_NM(I.CTRT_NO) AS CTRT_NM,
+        I.ITEM_SYS_NO,
+        I.ITEM_CD,
+        I.ITEM_NM,
+        I.HTS_NO,
+        dbo.TL_GET_HTS_NM(I.HTS_NO) AS HTS_NM,
+        LTRIM(RTRIM(CONVERT(DECIMAL(15,
+        5),
+        I.LV1_CBM))) AS LV1_CBM,
+        LTRIM(RTRIM(CONVERT(DECIMAL(15,
+        5),
+        I.LV1_CBF))) AS LV1_CBF,
+        LTRIM(RTRIM(CONVERT(DECIMAL(15,
+        5),
+        I.LV1_GRS_KGS))) AS LV1_GRS_KGS,
+        LTRIM(RTRIM(CONVERT(DECIMAL(15,
+        5),
+        I.LV1_GRS_LBS))) AS LV1_GRS_LBS,
+        LTRIM(RTRIM(CONVERT(DECIMAL(15,
+        5),
+        I.LV1_NET_KGS))) AS LV1_NET_KGS,
+        LTRIM(RTRIM(CONVERT(DECIMAL(15,
+        5),
+        I.LV1_NET_LBS))) AS LV1_NET_LBS,
+        LTRIM(RTRIM(CONVERT(DECIMAL(5,
+        2),
+        I.LV1_WIDTH))) AS LV1_WIDTH,
+        LTRIM(RTRIM(CONVERT(DECIMAL(5,
+        2),
+        I.LV1_LENGTH))) AS LV1_LENGTH,
+        LTRIM(RTRIM(CONVERT(DECIMAL(5,
+        2),
+        I.LV1_HEIGHT))) AS LV1_HEIGHT,
+        LTRIM(RTRIM(CONVERT(DECIMAL(15,
+        5),
+        I.ITEM_CBM))) AS ITEM_CBM,
+        LTRIM(RTRIM(CONVERT(DECIMAL(15,
+        5),
+        I.ITEM_CBF))) AS ITEM_CBF,
+        LTRIM(RTRIM(CONVERT(DECIMAL(15,
+        5),
+        I.ITEM_KGS))) AS ITEM_KGS,
+        LTRIM(RTRIM(CONVERT(DECIMAL(15,
+        5),
+        I.item_grs_lbs))) AS item_grs_lbs,
+        LTRIM(RTRIM(CONVERT(DECIMAL(15,
+        5),
+        I.ITEM_NET_WGT))) AS ITEM_NET_WGT,
+        LTRIM(RTRIM(CONVERT(DECIMAL(15,
+        5),
+        I.item_net_lbs))) AS item_net_lbs,
+        LTRIM(RTRIM(CONVERT(DECIMAL(5,
+        2),
+        I.ITEM_WIDTH))) AS ITEM_WIDTH,
+        LTRIM(RTRIM(CONVERT(DECIMAL(5,
+        2),
+        I.ITEM_LENGTH))) AS ITEM_LENGTH,
+        LTRIM(RTRIM(CONVERT(DECIMAL(5,
+        2),
+        I.ITEM_HEIGHT))) AS ITEM_HEIGHT,
+        LTRIM(RTRIM(CONVERT(DECIMAL(15,
+        5),
+        I.LV3_CBM))) AS LV3_CBM,
+        LTRIM(RTRIM(CONVERT(DECIMAL(15,
+        5),
+        I.LV3_CBF))) AS LV3_CBF,
+        LTRIM(RTRIM(CONVERT(DECIMAL(15,
+        5),
+        I.LV3_GRS_KGS))) AS LV3_GRS_KGS,
+        LTRIM(RTRIM(CONVERT(DECIMAL(15,
+        5),
+        I.LV3_GRS_LBS))) AS LV3_GRS_LBS,
+        LTRIM(RTRIM(CONVERT(DECIMAL(15,
+        5),
+        I.LV3_NET_KGS))) AS LV3_NET_KGS,
+        LTRIM(RTRIM(CONVERT(DECIMAL(15,
+        5),
+        I.LV3_NET_LBS))) AS LV3_NET_LBS,
+        LTRIM(RTRIM(CONVERT(DECIMAL(5,
+        2),
+        I.LV3_WIDTH))) AS LV3_WIDTH,
+        LTRIM(RTRIM(CONVERT(DECIMAL(5,
+        2),
+        I.LV3_LENGTH))) AS LV3_LENGTH,
+        LTRIM(RTRIM(CONVERT(DECIMAL(5,
+        2),
+        I.LV3_HEIGHT))) AS LV3_HEIGHT,
+        ISNULL(LTRIM(RTRIM(CONVERT(DECIMAL(15,
+        0),
+        I.PKG_PL_STD_QTY))),
+        LTRIM(RTRIM(CONVERT(DECIMAL(15,
+        0),
+        I.PKG_LV3_QTY)))) AS PKG_PL_STD_QTY,
+        ISNULL(LTRIM(RTRIM(CONVERT(DECIMAL(3,
+        1),
+        I.PKG_PL_OVER_WGT))),
+        '1.0') AS PKG_PL_OVER_WGT,
+        I.ITEM_REMARK,
+        I.ITEM_USE_FLG,
+        I.ITEM_GRP_CD,
+        I.PKG_LV1_UNIT_CD,
+        dbo.TL_GET_PKG_NM(
+        I.PKG_LV1_UNIT_CD)     AS PKG_LV1_UNIT_NM,
+        LTRIM(RTRIM(CONVERT(DECIMAL(15,
+        0),
+        I.PKG_LV1_QTY))) AS PKG_LV1_QTY,
+        ISNULL(I.PKG_LV1_PUT_TP_CD,
+        'N') AS PKG_LV1_PUT_TP_CD,
+        I.ITEM_PKGUNIT,
+        dbo.TL_GET_PKG_NM(
+        I.ITEM_PKGUNIT)     AS ITEM_PKGUNIT_NM,
+        LTRIM(RTRIM(CONVERT(DECIMAL(15,
+        0),
+        I.ITEM_PKGBASEQTY))) AS ITEM_PKGBASEQTY,
+        ISNULL(I.PKG_LV2_PUT_TP_CD,
+        'N') AS PKG_LV2_PUT_TP_CD,
+        I.PKG_LV3_UNIT_CD,
+        dbo.TL_GET_PKG_NM(
+        I.PKG_LV3_UNIT_CD)     AS PKG_LV3_UNIT_NM,
+        LTRIM(RTRIM(CONVERT(DECIMAL(15,
+        0),
+        I.PKG_LV3_QTY))) AS PKG_LV3_QTY,
+        ISNULL(I.PKG_LV3_PUT_TP_CD,
+        'N') AS PKG_LV3_PUT_TP_CD,
+        I.PKG_LV4_UNIT_CD,
+        dbo.TL_GET_PKG_NM(
+        I.PKG_LV4_UNIT_CD)     AS PKG_LV4_UNIT_NM,
+        LTRIM(RTRIM(CONVERT(DECIMAL(15,
+        0),
+        I.PKG_LV4_QTY))) AS PKG_LV4_QTY,
+        ISNULL(I.PKG_LV4_PUT_TP_CD,
+        'N') AS PKG_LV4_PUT_TP_CD,
+        I.ALTER_ITEM_CD,
+        I.BARCODE_NO,
+        LTRIM(RTRIM(CONVERT(DECIMAL(15,
+        0),
+        I.SAFE_STC_QTY))) AS SAFE_STC_QTY,
+        I.ADV_CURR_CD,
+        LTRIM(RTRIM(CONVERT(DECIMAL(15,
+        2),
+        I.ADV_PRICE))) AS ADV_PRICE,
+        I.NEGO_CURR_CD,
+        LTRIM(RTRIM(CONVERT(DECIMAL(15,
+        2),
+        I.NEGO_PRICE))) AS NEGO_PRICE,
+        I.UNIT_CURR_CD,
+        LTRIM(RTRIM(CONVERT(DECIMAL(15,
+        2),
+        I.UNIT_PRICE))) AS UNIT_PRICE,
+        I.ABC_CD,
+        I.REF_CD_01,
+        I.REF_CD_02,
+        I.LEN_UT_CD
+		  		 
+		  FROM TL_CTRT_CUST_ITEM I 
+		 WHERE I.CTRT_NO 		= #in_ctrt_no#
+		 
+		 <isNotNull property="item_sys_no">
+		 	<isNotEmpty property="item_sys_no">
+		 		AND I.ITEM_SYS_NO	= #item_sys_no#
+		 	</isNotEmpty>
+		 </isNotNull>
+	
+		<!-- Thoa.Dien - Search all status, not check use_flg -->
+		<!--  <isNotNull property="item_sys_no">
+		 	<isEmpty property="item_sys_no">
+		 		AND I.ITEM_USE_FLG = 'Y'
+		 	</isEmpty>
+		 </isNotNull> -->
+		 
+		 <isNotNull property="in_item_cd">
+		 	<isNotEmpty property="in_item_cd">
+		 		AND I.ITEM_CD	 	= #in_item_cd#
+		 	</isNotEmpty>
+		 </isNotNull>
+		   
+	</select>
+	
+	<select id="searchIMWarehouseList" parameterClass="java.util.HashMap" resultClass="com.clt.apps.fis.wms.item.dto.IMWhVO">
+	/*searchIMWarehouseList*/
+		SELECT ROW_NUMBER() OVER(ORDER BY I.ITEM_SYS_NO) AS SEQ,
+		       I.CTRT_NO, 
+		       I.ITEM_SYS_NO, 
+		       I.WH_CD, 
+		       dbo.TL_GET_LOC_NM(I.wh_cd) AS WH_NM,
+		       I.FIX_LOC_CD,
+		       (SELECT WH_LOC_NM FROM TL_WH_LOC WHERE LOC_CD = I.WH_CD AND WH_LOC_CD = I.FIX_LOC_CD) AS FIX_LOC_NM,
+		       I.DEF_LOC_CD,
+		       (SELECT WH_LOC_NM FROM TL_WH_LOC WHERE LOC_CD = I.WH_CD AND WH_LOC_CD = I.DEF_LOC_CD) AS DEF_LOC_NM,
+		       COUNT(*) OVER() AS TOTAL
+		  FROM TL_CTRT_CUST_ITEM_WH I 
+		 WHERE I.CTRT_NO 		= #ctrt_no#
+		   AND I.ITEM_SYS_NO	= #item_sys_no#
+	</select>
+
+	<select id="searchAllFieldIMWarehouseList" parameterClass="java.util.HashMap" resultClass="com.clt.apps.fis.wms.item.dto.Grd01IMVO">
+		/*searchAllFieldIMWarehouseList*/
+		SELECT *
+		FROM TL_CTRT_CUST_ITEM_WH I
+		WHERE I.CTRT_NO 		= #ctrt_no#
+		AND I.ITEM_SYS_NO	= #item_sys_no#
+	</select>
+	
+	<select id="searchIMSuppList" parameterClass="java.util.HashMap" resultClass="com.clt.apps.fis.wms.item.dto.IMSuppVO">
+	/*searchIMSuppList*/
+		SELECT ROW_NUMBER() OVER(ORDER BY I.ITEM_SYS_NO) AS SEQ,
+		       I.CTRT_NO, 
+		       I.ITEM_SYS_NO, 
+		       I.SUPP_CD, 
+		       dbo.TL_GET_CUST_NM(I.SUPP_CD) AS SUPP_NM,
+		       I.SUPP_ITEM_CD,
+		       I.CTRT_NO,
+		       I.ITEM_SYS_NO,
+		       COUNT(*) OVER() AS TOTAL
+		  FROM TL_CTRT_CUST_ITEM_SUPP I 
+		 WHERE I.CTRT_NO 		= #ctrt_no#
+		   AND I.ITEM_SYS_NO	= #item_sys_no#
+	</select>
+
+	<select id="searchAllFieldIMSuppList" parameterClass="java.util.HashMap" resultClass="com.clt.apps.fis.wms.item.dto.Grd02IMVO">
+		/*searchIMSuppList*/
+		SELECT *
+		FROM TL_CTRT_CUST_ITEM_SUPP I
+		WHERE I.CTRT_NO 		= #ctrt_no#
+		AND I.ITEM_SYS_NO	= #item_sys_no#
+	</select>
+
+	<select id="searchIMFileList" parameterClass="java.util.HashMap" resultClass="com.clt.apps.fis.wms.item.dto.IMFileVO">
+	/*searchIMFileList*/
+		SELECT ROW_NUMBER() OVER(ORDER BY I.ITEM_SYS_NO) AS SEQ,
+		       I.CTRT_NO, 
+		       I.ITEM_SYS_NO, 
+		       I.file_seq, 
+		       I.file_path,
+		       I.file_sys_nm,
+		       I.file_org_nm,
+		       I.file_size,
+		       COUNT(*) OVER() AS TOTAL
+		  FROM TL_CTRT_CUST_ITEM_FILE_REP I 
+		 WHERE I.CTRT_NO 		= #ctrt_no#
+		   AND I.ITEM_SYS_NO	= #item_sys_no#
+	</select>
+
+	<select id="searchAllFieldIMFileList" parameterClass="java.util.HashMap" resultClass="com.clt.apps.fis.wms.item.dto.Grd03IMVO">
+		/*searchIMFileList*/
+		SELECT *
+		FROM TL_CTRT_CUST_ITEM_FILE_REP I
+		WHERE I.CTRT_NO 		= #ctrt_no#
+		AND I.ITEM_SYS_NO	= #item_sys_no#
+	</select>
+
+	<select id="searchOptValList" parameterClass="java.util.HashMap" resultClass="com.clt.apps.fis.wms.item.dto.OptValVO">
+		SELECT 	F.OPT_FLD_CLSS_CD,
+        		F.OPT_FLD_ID,
+        		F.OPT_FLD_NM,
+        		V.OPT_FLD_VAL
+		FROM    TL_CTRT_OPT_FLD F LEFT JOIN TL_CTRT_OPT_VAL V ON F.CTRT_NO = V.CTRT_NO AND F.OPT_FLD_CLSS_CD = V.OPT_FLD_CLSS_CD AND F.OPT_FLD_ID = V.OPT_FLD_ID
+		WHERE      F.CTRT_NO  			= #ctrt_no#
+		AND     F.OPT_FLD_CLSS_CD 	= #opt_fld_clss_cd#
+		AND     #opt_fld_clss_ref_no#	= V.OPT_FLD_CLSS_REF_NO
+		ORDER BY F.DISP_SEQ, F.OPT_FLD_CLSS_CD, F.OPT_FLD_ID
+	</select>
+
+	<select id="searchCopyOptValList" parameterClass="java.util.HashMap" resultClass="com.clt.apps.fis.wms.item.dto.OptValVO">
+		SELECT 	F.OPT_FLD_CLSS_CD,
+		F.OPT_FLD_ID,
+		F.OPT_FLD_NM,
+		V.OPT_FLD_VAL
+		FROM    TL_CTRT_OPT_FLD F LEFT JOIN TL_CTRT_OPT_VAL V ON F.CTRT_NO = V.CTRT_NO AND F.OPT_FLD_CLSS_CD = V.OPT_FLD_CLSS_CD AND F.OPT_FLD_ID = V.OPT_FLD_ID
+		WHERE      F.CTRT_NO  			= #ctrt_no#
+		AND     #opt_fld_clss_ref_no#	= V.OPT_FLD_CLSS_REF_NO
+		ORDER BY F.DISP_SEQ, F.OPT_FLD_CLSS_CD, F.OPT_FLD_ID
+	</select>
+	
+	<!-- ITEM INFO CANCEL -->
+	<update id="modifyItemFlag" parameterClass="java.util.HashMap">
+	/* WHLotSql.xml - modifyItemFlag*/
+		UPDATE TL_CTRT_CUST_ITEM
+		   SET ITEM_USE_FLG = 'N'
+		 WHERE CTRT_NO 	   = #ctrt_no#
+		   AND ITEM_SYS_NO = #item_sys_no#
+	</update>
+	
+	<insert id="addFileITEM">
+	/* WHLotSql.xml - addFileITEM*/
+      INSERT INTO TL_CTRT_CUST_ITEM_FILE_REP (
+		          CTRT_NO,
+			      ITEM_SYS_NO,
+			      FILE_SEQ,
+			      FILE_PATH,
+			      FILE_SYS_NM,
+			      FILE_ORG_NM,
+			      FILE_SIZE,
+			      RGST_ID,
+			      RGST_SYS_DT,
+			      MODI_ID,
+			      MODI_SYS_DT
+      )
+        VALUES(  #ctrt_no#
+                ,#item_sys_no#
+                ,( SELECT ISNULL(MAX(FILE_SEQ),0)+1 
+                     FROM TL_CTRT_CUST_ITEM_FILE_REP 
+                    WHERE CTRT_NO     = #ctrt_no# 
+                      AND ITEM_SYS_NO = #item_sys_no# 
+                  )
+                ,#file_url#
+                ,#file_sys_nm#
+                ,#file_nm#
+                ,#file_capa#
+                ,#user_id#
+                ,GETDATE()
+                ,#user_id#
+                ,GETDATE()
+                )
+    </insert>
+    
+    <!-- ITEM INFO 수정 -->
+	<update id="modifyItemInfo">
+	/* WHLotSql.xml - modifyItemInfo*/
+		UPDATE TL_CTRT_CUST_ITEM 
+		   SET  ITEM_CD 			= UPPER(#item_cd#), 
+		        ITEM_NM 			= UPPER(#item_nm#),  
+		        HTS_NO 				= #hts_no#, 
+		        
+		        <isNotEmpty property="lv1_cbm">
+		        	LV1_CBM 			= REPLACE(#lv1_cbm#, 	',', ''),
+		        </isNotEmpty>
+		        
+		        <isNotEmpty property="lv1_cbf">
+		        	LV1_CBF 			= REPLACE(#lv1_cbf#, 	',', ''),
+		        </isNotEmpty>
+		        
+		        <isNotEmpty property="lv1_grs_kgs">
+			        LV1_GRS_KGS 		= REPLACE(#lv1_grs_kgs#, 	',', ''), 
+		        </isNotEmpty>
+		        
+		        <isNotEmpty property="lv1_grs_lbs">
+			        LV1_GRS_LBS 		= REPLACE(#lv1_grs_lbs#, 	',', ''), 
+		        </isNotEmpty>
+		        
+		        <isNotEmpty property="lv1_net_kgs">
+			        LV1_NET_KGS 		= REPLACE(#lv1_net_kgs#, 	',', ''),
+		        </isNotEmpty>
+		        
+		        <isNotEmpty property="lv1_net_lbs">
+			        LV1_NET_LBS 		= REPLACE(#lv1_net_lbs#, 	',', ''),
+		        </isNotEmpty>
+		        
+		        <isNotEmpty property="lv1_width">
+			        LV1_WIDTH 			= REPLACE(#lv1_width#, 	',', ''), 
+		        </isNotEmpty>
+		        
+		        <isNotEmpty property="lv1_length">
+			        LV1_LENGTH 			= REPLACE(#lv1_length#, 	',', ''),
+		        </isNotEmpty>
+		        
+		        <isNotEmpty property="lv1_height">
+			        LV1_HEIGHT 			= REPLACE(#lv1_height#, 	',', ''),
+		        </isNotEmpty>
+		        
+		        <isNotEmpty property="item_cbm">
+			        ITEM_CBM 			= REPLACE(#item_cbm#, 	',', ''),
+		        </isNotEmpty>
+		        
+		        <isNotEmpty property="item_cbf">
+			        ITEM_CBF 			= REPLACE(#item_cbf#, 	',', ''),
+		        </isNotEmpty>
+		        
+		        <isNotEmpty property="item_kgs">
+			        ITEM_KGS 			= REPLACE(#item_kgs#, 	',', ''), 
+		        </isNotEmpty>
+		        
+		        <isNotEmpty property="item_grs_lbs">
+			        ITEM_GRS_LBS 		= REPLACE(#item_grs_lbs#, 	',', ''), 
+		        </isNotEmpty>
+		        
+		        <isNotEmpty property="item_net_wgt">
+			        ITEM_NET_WGT 		= REPLACE(#item_net_wgt#, 	',', ''),
+		        </isNotEmpty>
+		        
+		        <isNotEmpty property="item_net_lbs">
+			        ITEM_NET_LBS 		= REPLACE(#item_net_lbs#, 	',', ''),
+		        </isNotEmpty>
+		        
+		        <isNotEmpty property="item_width">
+			        ITEM_WIDTH 			= REPLACE(#item_width#, 	',', ''), 
+		        </isNotEmpty>
+		        
+		        <isNotEmpty property="item_length">
+			        ITEM_LENGTH 		= REPLACE(#item_length#, 	',', ''),
+		        </isNotEmpty>
+		        
+		        <isNotEmpty property="item_height">
+			        ITEM_HEIGHT 		= REPLACE(#item_height#, 	',', ''),
+		        </isNotEmpty>
+		        
+			    ITEM_REMARK 		= #item_remark#, 
+		        
+		        ITEM_USE_FLG 		= #item_use_flg#, 
+		        
+		        MODI_ID 			= #user_id#, 
+		        
+		        MODI_SYS_DT 		= GETDATE(),
+		        
+		        item_grp_cd			= #item_grp_cd#,
+		        
+		        pkg_lv1_unit_cd 	= #pkg_lv1_unit_cd#,
+		        
+		        <isNotEmpty property="pkg_lv1_qty">
+			        pkg_lv1_qty	 		= REPLACE(#pkg_lv1_qty#, 	',', ''),
+		        </isNotEmpty>
+		        
+		        pkg_lv1_put_tp_cd 	= #pkg_lv1_put_tp_cd#,
+		        
+		        ITEM_PKGUNIT 		= #item_pkgunit#, 
+		        
+		        <isNotEmpty property="item_pkgbaseqty">
+			        ITEM_PKGBASEQTY 	= REPLACE(#item_pkgbaseqty#, ',', ''),
+		        </isNotEmpty>
+		        
+		        pkg_lv2_put_tp_cd 	= #pkg_lv2_put_tp_cd#,
+		        
+		        pkg_lv3_unit_cd 	= #pkg_lv3_unit_cd#,
+		        
+		        <isNotEmpty property="pkg_lv3_qty">
+			        pkg_lv3_qty	 		= REPLACE(#pkg_lv3_qty#, 	',', ''),
+		        </isNotEmpty>
+		        
+		        pkg_lv3_put_tp_cd 	= #pkg_lv3_put_tp_cd#,
+		        
+		        pkg_lv4_unit_cd 	= #pkg_lv4_unit_cd#,
+		        
+		        <isNotEmpty property="pkg_lv4_qty">
+			        pkg_lv4_qty 		= REPLACE(#pkg_lv4_qty#, 	',', ''),
+		        </isNotEmpty>
+		        
+		        pkg_lv4_put_tp_cd 	= #pkg_lv4_put_tp_cd#,
+		        
+		        alter_item_cd 		= #alter_item_cd#,
+		        
+		        barcode_no 			= #barcode_no#,
+		        
+		        <isNotEmpty property="safe_stc_qty">
+			        safe_stc_qty 		= REPLACE(#safe_stc_qty#, 	',', ''),
+		        </isNotEmpty>
+		        
+		        adv_curr_cd 		= #adv_curr_cd#,
+		        
+		        <isNotEmpty property="adv_price">
+			        adv_price 			= REPLACE(#adv_price#, 	',', ''),
+		        </isNotEmpty>
+		        
+		        nego_curr_cd 		= #nego_curr_cd#,
+		        
+		        <isNotEmpty property="nego_price">
+			        nego_price 			= REPLACE(#nego_price#, 	',', ''),
+		        </isNotEmpty>
+		        
+		        unit_curr_cd 		= #unit_curr_cd#,
+		        
+		  		<isNotEmpty property="unit_price">
+			        unit_price 			= REPLACE(#unit_price#, 	',', ''),
+		        </isNotEmpty>
+		        
+		        /**/
+		  		
+		  		<isNotEmpty property="lv3_cbm">
+			        LV3_CBM 			= REPLACE(#lv3_cbm#, 	',', ''),
+		        </isNotEmpty>
+		        
+		        <isNotEmpty property="lv3_cbf">
+			        LV3_CBF 			= REPLACE(#lv3_cbf#, 	',', ''),
+		        </isNotEmpty>
+		  		
+		  		<isNotEmpty property="lv3_grs_kgs">
+			        LV3_GRS_KGS 		= REPLACE(#lv3_grs_kgs#, 	',', ''), 
+		        </isNotEmpty>
+		  		
+		  		<isNotEmpty property="lv3_grs_lbs">
+			        LV3_GRS_LBS 		= REPLACE(#lv3_grs_lbs#, 	',', ''), 
+		        </isNotEmpty>
+		        
+		        <isNotEmpty property="lv3_net_kgs">
+			        LV3_NET_KGS 		= REPLACE(#lv3_net_kgs#, 	',', ''),
+		        </isNotEmpty>
+		        
+		        <isNotEmpty property="lv3_net_lbs">
+			        LV3_NET_LBS 		= REPLACE(#lv3_net_lbs#, 	',', ''),
+		        </isNotEmpty>
+		        
+		        <isNotEmpty property="lv3_width">
+			        LV3_WIDTH 			= REPLACE(#lv3_width#, 	',', ''), 
+		        </isNotEmpty>
+		        
+		        <isNotEmpty property="lv3_length">
+			        LV3_LENGTH 			= REPLACE(#lv3_length#, 	',', ''),
+		        </isNotEmpty>
+		        
+		        <isNotEmpty property="lv3_height">
+			        LV3_HEIGHT 			= REPLACE(#lv3_height#, 	',', ''),
+		        </isNotEmpty>
+		  		
+		  		<isNotEmpty property="pkg_pl_std_qty">
+			        PKG_PL_STD_QTY 		= REPLACE(#pkg_pl_std_qty#, 	',', ''),
+		        </isNotEmpty>
+		  		
+		        <isNotEmpty property="pkg_pl_over_wgt">
+			        PKG_PL_OVER_WGT 	= REPLACE(#pkg_pl_over_wgt#, 	',', ''),
+		        </isNotEmpty>
+		        
+		        abc_cd 				= #abc_cd#,
+		  		
+		        ref_cd_01 			= #ref_cd_01#,
+		  		
+		        ref_cd_02 			= #ref_cd_02#,
+		        LEN_UT_CD			= #len_ut_cd#
+		        
+		 WHERE CTRT_NO 		= #ctrt_no#
+		   AND ITEM_SYS_NO 	= #item_sys_no#
+				
+	
+	</update>
+	
+	<!-- ITEM WAREHOUSE 저장 -->
+	<insert id="addItemWarehouse" parameterClass="com.clt.apps.fis.wms.item.dto.Grd01IMVO">
+	/* WHLotSql.xml - addItemWarehouse*/
+		INSERT INTO TL_CTRT_CUST_ITEM_WH(
+				  CTRT_NO,
+			      ITEM_SYS_NO,
+			      WH_CD,
+			      FIX_LOC_CD,
+			      DEF_LOC_CD,
+			      RGST_ID,
+			      RGST_SYS_DT,
+			      MODI_ID,
+			      MODI_SYS_DT
+		)VALUES(
+				  #ctrt_no#,
+		          #item_sys_no#,
+		          #wh_cd#,
+		          #fix_loc_cd#,
+		          #def_loc_cd#,
+		          #user_id#,
+		          GETDATE(),
+		          #user_id#,
+		          GETDATE()
+		)
+	</insert>
+	
+	<!-- ITEM WAREHOUSE 수정 -->
+	<update id="modifyItemWarehouse">
+	/* WHLotSql.xml - modifyItemWarehouse*/
+		UPDATE TL_CTRT_CUST_ITEM_WH
+		   SET  WH_CD 		= #wh_cd#
+			   ,FIX_LOC_CD	= #fix_loc_cd#
+			   ,DEF_LOC_CD	= #def_loc_cd#
+			   ,MODI_ID		= #user_id#
+			   ,MODI_SYS_DT	= GETDATE()
+	     WHERE CTRT_NO 		= #ctrt_no#
+	       AND ITEM_SYS_NO 	= #item_sys_no#
+	       AND WH_CD 		= #wh_cd#
+	</update>
+	
+	<!-- ITEM WAREHOUSE 삭제 -->
+	<delete id="removeItemWarehouse">
+	/* WHLotSql.xml - removeItemWarehouse*/
+		DELETE FROM TL_CTRT_CUST_ITEM_WH
+		 WHERE CTRT_NO 		= #ctrt_no#
+		   AND ITEM_SYS_NO 	= #item_sys_no#
+		   AND WH_CD 		= #wh_cd#
+	</delete>
+	
+	<!-- ITEM SUPP INFO 저장 -->
+	<insert id="addItemSupplier">
+	/* WHLotSql.xml - addItemSupplier*/
+		INSERT INTO TL_CTRT_CUST_ITEM_SUPP(
+				  CTRT_NO,
+			      ITEM_SYS_NO,
+			      SUPP_CD,
+			      SUPP_ITEM_CD,
+			      RGST_ID,
+			      RGST_SYS_DT,
+			      MODI_ID,
+			      MODI_SYS_DT
+		)VALUES(
+				  #ctrt_no#,
+		          #item_sys_no#,
+		          #supp_cd#,
+		          #supp_item_cd#,
+		          #user_id#,
+		          GETDATE(),
+		          #user_id#,
+		          GETDATE()
+		)
+	</insert>
+	
+	<!-- ITEM SUPP INFO 수정 -->
+	<update id="modifyItemSupplier">
+	/* WHLotSql.xml - modifyItemSupplier*/
+		UPDATE TL_CTRT_CUST_ITEM_SUPP
+		   SET  SUPP_CD 		= #supp_cd#
+			   ,SUPP_ITEM_CD	= #supp_item_cd#
+			   ,MODI_ID			= #user_id#
+			   ,MODI_SYS_DT		= GETDATE()
+	     WHERE CTRT_NO 		= #ctrt_no#
+	       AND ITEM_SYS_NO 	= #item_sys_no#
+	       AND SUPP_CD 		= #supp_cd#
+	</update>
+	
+	<!-- ITEM SUPP INFO 삭제 -->
+	<delete id="removeItemSupplier">
+	/* WHLotSql.xml - removeItemSupplier*/
+		DELETE FROM TL_CTRT_CUST_ITEM_SUPP
+		 WHERE CTRT_NO 		= #ctrt_no#
+		   AND ITEM_SYS_NO 	= #item_sys_no#
+		   AND SUPP_CD 		= #supp_cd#
+	</delete>
+	
+	<insert id="mergeOptVal">
+	/* WHLotSql.xml - mergeOptVal*/
+	MERGE 	INTO TL_CTRT_OPT_VAL A
+		USING (	SELECT 
+              			#ctrt_no# AS CTRT_NO,
+              			#opt_fld_clss_cd# AS OPT_FLD_CLSS_CD,
+              			#opt_fld_id# AS OPT_FLD_ID,
+              			#opt_fld_clss_ref_no# AS OPT_FLD_CLSS_REF_NO,
+              			#opt_fld_val# AS OPT_FLD_VAL,
+              			#rgst_id# AS RGST_ID,
+              			#modi_id# AS MODI_ID) B
+		ON (		A.CTRT_NO 				= B.CTRT_NO 
+				AND A.OPT_FLD_CLSS_CD 		= B.OPT_FLD_CLSS_CD 
+				AND A.OPT_FLD_ID 			= B.OPT_FLD_ID 
+				AND A.OPT_FLD_CLSS_REF_NO 	= B.OPT_FLD_CLSS_REF_NO)
+		WHEN MATCHED THEN
+ 		UPDATE
+     	SET 	A.OPT_FLD_VAL = B.OPT_FLD_VAL,
+         		A.MODI_SYS_DT = GETDATE(),
+         		A.MODI_ID = B.MODI_ID
+  		WHEN NOT MATCHED THEN
+  		INSERT
+    	(	CTRT_NO,
+    	 	OPT_FLD_CLSS_CD,
+     		OPT_FLD_ID,
+     		OPT_FLD_CLSS_REF_NO,
+     		OPT_FLD_VAL,
+     		RGST_ID,
+     		RGST_SYS_DT,
+     		MODI_ID,
+     		MODI_SYS_DT)
+  		VALUES
+    	(	B.CTRT_NO,
+     		B.OPT_FLD_CLSS_CD,
+     		B.OPT_FLD_ID,
+     		B.OPT_FLD_CLSS_REF_NO,
+     		B.OPT_FLD_VAL,
+     		B.RGST_ID,
+     		GETDATE(),
+     		B.MODI_ID,
+     		GETDATE()	);
+	</insert>
+	
+	<insert id="insertSeqItemSysNo">
+	/* WHLotSql.xml - insertSeqItemSysNo*/
+		INSERT INTO TB_MJR_NO_SEQ(NO_TP_CD, SEQ, MAX_SEQ, DESCR) values ('ISYSNO', 0, 9999999, 'ITEM SYS NO')
+	</insert>
+	
+	<!-- ITEM SYS NO 채번 -->
+	<select id="searchItemSysNo" parameterClass="java.lang.String" resultClass="java.lang.String">
+	/* WHLotSql.xml - searchItemSysNo*/
+		DECLARE @PRE_FIX VARCHAR (20)
+		SET @PRE_FIX = 'A'
+		SELECT 'IT' 
+		+ dbo.LPAD(SUBSTRING((SELECT CTRT_CUST_CD FROM TL_CTRT WHERE CTRT_NO = #ctrt_no# ), 1, 10), 10, '0') 
+		+ ISNULL(@PRE_FIX, '') 
+		+ dbo.LPAD((SELECT SEQ + 1 from TB_MJR_NO_SEQ Where NO_TP_CD = 'ISYSNO'),7,'0') 
+		  AS ITEM_SYS_NO
+	</select>
+	
+	<update id="updateSeqItemSysNo">
+		UPDATE TB_MJR_NO_SEQ SET SEQ = SEQ + 1 where NO_TP_CD = 'ISYSNO'
+	</update>
+	
+	<!-- ITEM INFO 저장 -->
+	<insert id="addItemInfo">
+	/* WHLotSql.xml - addItemInfo*/
+		INSERT INTO TL_CTRT_CUST_ITEM(
+				CTRT_NO,
+		        ITEM_SYS_NO,
+		        ITEM_CD,
+		        ITEM_NM,
+		        HTS_NO,
+		        
+		        LV1_CBM,
+		        LV1_CBF,
+		        LV1_GRS_KGS,
+		        LV1_GRS_LBS,
+		        LV1_NET_KGS,
+		        LV1_NET_LBS,
+		        LV1_WIDTH,
+		        LV1_LENGTH,
+		        LV1_HEIGHT,
+		        
+		        ITEM_CBM,
+		        ITEM_CBF,
+		        ITEM_KGS,
+		        ITEM_GRS_LBS,
+		        ITEM_NET_WGT,
+		        ITEM_NET_LBS,
+		        ITEM_WIDTH,
+		        ITEM_LENGTH,
+		        ITEM_HEIGHT,
+		        
+		        ITEM_REMARK,
+		        ITEM_USE_FLG,
+		        RGST_ID,
+		        RGST_SYS_DT,
+		  		ITEM_GRP_CD,
+		  		
+		  		PKG_LV1_UNIT_CD,
+		  		PKG_LV1_QTY,
+		  		PKG_LV1_PUT_TP_CD,
+		        ITEM_PKGUNIT,
+		        ITEM_PKGBASEQTY,
+		  		PKG_LV2_PUT_TP_CD,
+		  		PKG_LV3_UNIT_CD,
+		  		PKG_LV3_QTY,
+		  		PKG_LV3_PUT_TP_CD,
+		  		PKG_LV4_UNIT_CD,
+		  		PKG_LV4_QTY,
+		  		PKG_LV4_PUT_TP_CD,
+		  		
+		  		ALTER_ITEM_CD,
+		  		BARCODE_NO,
+		  		SAFE_STC_QTY,
+		  		ADV_CURR_CD,
+		  		ADV_PRICE,
+		  		NEGO_CURR_CD,
+		  		NEGO_PRICE,
+		  		UNIT_CURR_CD,
+		  		UNIT_PRICE,
+		  		ABC_CD,
+		  		REF_CD_01,
+		  		REF_CD_02,
+		  		
+		  		LV3_CBM,
+                LV3_CBF,
+                LV3_GRS_KGS,
+                LV3_GRS_LBS,
+                LV3_NET_KGS,
+                LV3_NET_LBS,
+                LV3_WIDTH,
+                LV3_LENGTH,
+                LV3_HEIGHT,
+                
+                PKG_PL_STD_QTY,
+                PKG_PL_OVER_WGT,
+                LEN_UT_CD
+		  		 
+	    )VALUES (
+		  		#ctrt_no#,
+		        #item_sys_no#,
+		        UPPER(#item_cd#),
+		        UPPER(#item_nm#),
+		        #hts_no#,
+		        
+		        
+		        (SELECT CONVERT(NUMERIC(15,5),REPLACE(#lv1_cbm#, 		',', ''))),
+		        (SELECT CONVERT(NUMERIC(15,5),REPLACE(#lv1_cbf#, 		',', ''))),
+		        (SELECT CONVERT(NUMERIC(15,5),REPLACE(#lv1_grs_kgs#, 	',', ''))),
+		        (SELECT CONVERT(NUMERIC(15,5),REPLACE(#lv1_grs_lbs#, 	',', ''))),
+		        (SELECT CONVERT(NUMERIC(15,5),REPLACE(#lv1_net_kgs#, 	',', ''))),
+		        (SELECT CONVERT(NUMERIC(15,5),REPLACE(#lv1_net_lbs#, 	',', ''))),
+		        (SELECT CONVERT(NUMERIC(5,2),REPLACE(#lv1_width#, 		',', ''))),
+		        (SELECT CONVERT(NUMERIC(5,2),REPLACE(#lv1_length#, 		',', ''))),
+		        (SELECT CONVERT(NUMERIC(5,2),REPLACE(#lv1_height#, 		',', ''))),
+		        
+		        (SELECT CONVERT(NUMERIC(15,5),REPLACE(#item_cbm#, 		',', ''))),
+		        (SELECT CONVERT(NUMERIC(15,5),REPLACE(#item_cbf#, 		',', ''))),
+		        (SELECT CONVERT(NUMERIC(15,5),REPLACE(#item_kgs#, 		',', ''))),
+		        (SELECT CONVERT(NUMERIC(15,5),REPLACE(#item_grs_lbs#, 	',', ''))),
+		        (SELECT CONVERT(NUMERIC(15,5),REPLACE(#item_net_wgt#, 	',', ''))),
+		        (SELECT CONVERT(NUMERIC(15,5),REPLACE(#item_net_lbs#, 	',', ''))),
+		        
+		        (SELECT CONVERT(NUMERIC(5,2),REPLACE(#item_width#, 		',', ''))),
+		        (SELECT CONVERT(NUMERIC(5,2),REPLACE(#item_length#, 	',', ''))),
+		        (SELECT CONVERT(NUMERIC(5,2),REPLACE(#item_height#, 	',', ''))),
+		        
+		        #item_remark#,
+		        #item_use_flg#,
+		        #user_id#,      
+		        GETDATE(),
+		  		#item_grp_cd#,
+		  		
+		  		#pkg_lv1_unit_cd#,
+		  		(SELECT CONVERT(NUMERIC(15),REPLACE(#pkg_lv1_qty#, 	',', ''))),
+		  		#pkg_lv1_put_tp_cd#,
+		  		
+		  		#item_pkgunit#,
+		  		(SELECT CONVERT(NUMERIC(15),REPLACE(#item_pkgbaseqty#, ',', ''))),
+		  		#pkg_lv2_put_tp_cd#,
+		  		
+		  		#pkg_lv3_unit_cd#,
+		  		(SELECT CONVERT(NUMERIC(15),REPLACE(#pkg_lv3_qty#, 	',', ''))),
+		  		#pkg_lv3_put_tp_cd#,
+		  		
+		  		#pkg_lv4_unit_cd#,
+		  		(SELECT CONVERT(NUMERIC(15),REPLACE(#pkg_lv4_qty#, 	',', ''))),
+		  		#pkg_lv4_put_tp_cd#,
+		  		
+		  		#alter_item_cd#,
+		  		#barcode_no#,
+		  		(SELECT CONVERT(NUMERIC(15),REPLACE(#safe_stc_qty#, 	',', ''))),
+		  		#adv_curr_cd#,
+		  		(SELECT CONVERT(NUMERIC(15,2),REPLACE(#adv_price#, 	',', ''))),
+		  		#nego_curr_cd#,
+		  		(SELECT CONVERT(NUMERIC(15,2),REPLACE(#nego_price#, 	',', ''))),
+		  		#unit_curr_cd#,
+		  		(SELECT CONVERT(NUMERIC(15,2),REPLACE(#unit_price#, 	',', ''))),
+		  		#abc_cd#,
+		  		#ref_cd_01#,
+		  		#ref_cd_02#,
+		  		
+		  		(SELECT CONVERT(NUMERIC(15,5),REPLACE(#lv3_cbm#,         ',', ''))),
+                (SELECT CONVERT(NUMERIC(15,5),REPLACE(#lv3_cbf#,         ',', ''))),
+                (SELECT CONVERT(NUMERIC(15,5),REPLACE(#lv3_grs_kgs#,     ',', ''))),
+                (SELECT CONVERT(NUMERIC(15,5),REPLACE(#lv3_grs_lbs#,     ',', ''))),
+                (SELECT CONVERT(NUMERIC(15,5),REPLACE(#lv3_net_kgs#,     ',', ''))),
+                (SELECT CONVERT(NUMERIC(15,5),REPLACE(#lv3_net_lbs#,     ',', ''))),
+                
+                (SELECT CONVERT(NUMERIC(5,2),REPLACE(#lv3_width#,       ',', ''))),
+                (SELECT CONVERT(NUMERIC(5,2),REPLACE(#lv3_length#,      ',', ''))),
+                (SELECT CONVERT(NUMERIC(5,2),REPLACE(#lv3_height#,      ',', ''))),
+                
+                (SELECT CONVERT(NUMERIC(15),REPLACE(#pkg_pl_std_qty#,      ',', ''))),
+                (SELECT CONVERT(NUMERIC(3,1),REPLACE(#pkg_pl_over_wgt#,     ',', ''))),
+                #len_ut_cd#
+		)
+
+	</insert>
+	
+	<!-- ITEM FILE 저장 -->
+	<insert id="addItemFile">
+	/* WHLotSql.xml - addItemFile*/
+		INSERT INTO TL_CTRT_CUST_ITEM_FILE_REP(
+				  CTRT_NO,
+			      ITEM_SYS_NO,
+			      FILE_SEQ,
+			      FILE_PATH,
+			      FILE_SYS_NM,
+			      FILE_ORG_NM,
+			      FILE_SIZE,
+			      RGST_ID,
+			      RGST_SYS_DT,
+			      MODI_ID,
+			      MODI_SYS_DT
+		)VALUES(
+				  #ctrt_no#,
+		          #item_sys_no#,
+		          ( SELECT ISNULL(MAX(FILE_SEQ),0)+1 
+		              FROM TL_CTRT_CUST_ITEM_FILE_REP 
+		             WHERE CTRT_NO = #ctrt_no#
+		               AND ITEM_SYS_NO = #item_sys_no#
+		           ),
+		          #file_path#,
+		          #file_sys_nm#,
+		          #file_org_nm#,
+		          #file_size#,
+		          #user_id#,
+		          GETDATE(),
+		          #user_id#,
+		          GETDATE()
+		)
+	</insert>
+	
+	<!-- ITEM FILE 수정 -->
+	<update id="modifyItemFile">
+	/* WHLotSql.xml - modifyItemFile*/
+		UPDATE TL_CTRT_CUST_ITEM_FILE_REP
+		   SET  FILE_PATH 	= #file_path#
+			   ,FILE_SYS_NM	= #file_sys_nm#
+			   ,FILE_ORG_NM	= #file_org_nm#
+			   ,FILE_SIZE	= #file_size#
+			   ,MODI_ID		= #user_id#
+			   ,MODI_SYS_DT	= GETDATE()
+	     WHERE CTRT_NO 		= #ctrt_no#
+	       AND ITEM_SYS_NO 	= #item_sys_no#
+	       AND FILE_SEQ 	= #file_seq#
+	</update>
+	
+	
+	<delete id="removeItemFile">
+	/* WHLotSql.xml - removeItemFile*/
+		DELETE FROM TL_CTRT_CUST_ITEM_FILE_REP
+		 WHERE CTRT_NO 		= #ctrt_no#
+	       AND ITEM_SYS_NO 	= #item_sys_no#
+	       AND FILE_SEQ 	= #file_seq#
+	</delete>
+	
+	<select id="searchItemExists" resultClass="com.clt.apps.fis.wms.item.dto.IMVO">
+	/*searchItemExists*/
+		SELECT  ISNULL(MAX(CTRT_NO), #ctrt_no# )        AS CTRT_NO
+		       ,ISNULL(MAX(ITEM_CD), #item_cd# )        AS ITEM_CD
+		       ,ISNULL(MAX(ITEM_NM), '')              AS ITEM_NM
+		       ,ISNULL(MAX(ITEM_SYS_NO), '')          AS ITEM_SYS_NO
+		       ,ISNULL(COUNT(ITEM_SYS_NO), '0')       AS ROW_CNT
+		  FROM TL_CTRT_CUST_ITEM
+		 WHERE 1=1
+		   AND ITEM_CD = #item_cd#
+  <!--Thoa.Dien ONLY Check duplicate by Item Code
+  	  Hanh.Le: check duplicate Item Code in contract
+  -->
+ 		   AND CTRT_NO = #ctrt_no#
+<!-- 		   AND ITEM_USE_FLG = 'Y'       -->
+	</select>
+	<!-- Nam Tran (E) -->
+</sqlMap>

@@ -1,0 +1,3427 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<!DOCTYPE sqlMap PUBLIC "-//ibatis.apache.org//DTD SQL Map 2.0//EN"
+    "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+
+<sqlMap namespace="wms.WHClosing">
+	<!-- Inbound Booking Search 조회 -->
+	<typeAlias alias="WHClosingVO" 	type="com.clt.apps.fis.wms.whclosing.dto.WHClosingVO"/>
+	<select id="searchClosingMgmtInfo_CLS" resultClass="java.lang.String">
+		/*WHClosing.searchClosingMgmtInfo_CLS*/
+		SELECT CLS.CLS_NO
+		  FROM TL_WH_CLS CLS
+		 WHERE CLS.CLS_NO = #in_cls_no#
+		 <!-- <isEqual property="auth_lvl" compareValue="AQ">
+		 	AND CLS.OFC_CD IN (SELECT OFC_CD 
+	                            FROM TB_OFC O
+	                           WHERE O.USE_FLG = 'Y'
+	                             AND O.MODI_OFC_CD =  #org_cd#
+	                           UNION
+	                          SELECT OFC_CD
+	                            FROM TB_OFC O
+	                           WHERE O.USE_FLG = 'Y'
+	                             AND O.OFC_CD =  #org_cd#  
+	                         )
+		 </isEqual>
+		<isEqual property="auth_lvl" compareValue="LB">
+			AND CLS.OFC_CD = #org_cd#
+		</isEqual> -->
+	</select>
+	<select id="searchClosingMgmtInfo_SO" resultClass="java.lang.String">
+		/*WHClosing.searchClosingMgmtInfo_SO*/
+		SELECT SO.SO_NO
+		  FROM TL_WH_CLS_SO SO
+		 WHERE SO.SO_NO = #in_so_no#
+		<!-- <isEqual property="auth_lvl" compareValue="AQ">
+	       AND SO.OFC_CD IN (SELECT OFC_CD 
+	                            FROM TB_OFC O
+	                           WHERE O.USE_FLG = 'Y'
+	                             AND O.MODI_OFC_CD =  #org_cd#
+	                           UNION
+	                          SELECT OFC_CD
+	                            FROM TB_OFC O
+	                           WHERE O.USE_FLG = 'Y'
+	                             AND O.OFC_CD =  #org_cd#  
+	                         )
+		</isEqual>
+		<isEqual property="auth_lvl" compareValue="LB">
+	       AND SO.OFC_CD = #org_cd#
+		</isEqual> -->
+	</select>
+	
+	<!-- LKH::2015-11-03 WMS4.O -->
+	<select id="searchClosingMgmtDtlNoData" resultClass="WHClosingVO">
+			/*WHClosing.searchClosingMgmtDtlNoData*/
+		SELECT ROW_NUMBER() OVER (ORDER BY T.CLS_KEY) AS RN /*화면에서 SEQ한값을 넣어 MERGE효과를 중지시킨다*/
+		     , ROW_NUMBER() OVER (ORDER BY T.CLS_KEY) AS MERGE_KEY2
+		     , T.*
+		  FROM (
+			SELECT CLS.CLS_NO + CLS_SO.CTRT_NO AS CLS_KEY
+				 , CLS.CLS_NO 
+				 , CLS.CLS_NO + CLS_SO.CTRT_NO + CONVERT(VARCHAR(1000), CLS_SO.CLS_SEQ) AS MERGE_KEY
+			     , CLS_SO.CLS_SEQ
+			     , CLS_SO.CTRT_NO
+			     , dbo.TL_GET_CTRT_NM(CLS_SO.CTRT_NO) AS CTRT_NM
+			     , CLS_SO.RTP_NO
+			     , ISNULL(CLS_SO.CUST_CD, ' ') AS CUST_CD	     
+			     , ISNULL((SELECT LOCL_NM FROM TB_TRDP CUST WHERE CUST.TRDP_CD = CLS_SO.CUST_CD AND ISNULL(CUST.DELT_FLG,'N') = 'N' ), ' ') AS CUST_NM
+			     , CLS_D.SB_CLS_CD
+			     , '' AS CLS_FRT_SEQ
+			     , 'N' AS STS_CD
+			     , ' ' AS SO_NO
+			     , '' AS RMK	     
+			     , '' AS RMK2
+			     , CLS_D.RATE_TP_CD
+			     , CLS_D.ORDER_REL
+			     , CLS_D.FRT_CD
+			     , CLS_D.FRT_NM
+			     , '' AS DTL_FRT_NM
+			     , CLS_D.CURR_CD
+			     , '' AS DTL_UNIT_CD
+			     , '' AS UNIT_CD
+			     , 0 AS UNIT_QTY
+			     , 0 AS UNIT_PRICE
+			     , 0 AS BASIC_AMT
+			     , 0 AS ADJUST_AMT
+			     , 0 AS TOT_AMT     
+			     , 'M' AS SRC_TP_CD
+			     , CLS.WH_CD
+			     , dbo.TL_GET_LOC_NM(CLS.WH_CD) AS WH_NM
+			     , CLS.OFC_CD
+			     , CLS.CLS_DT
+			     , CLS.SET_FR_DT
+			     , CLS.SET_TO_DT
+			     , 0 AS SUB_TOT
+		         ,(SELECT CD.SRT_SEQ 
+	              FROM tb_com_cd_dtl CD 
+	             WHERE CD.COM_CD = 'WR0'
+	               AND CD.CD_VAL = CLS_D.RATE_TP_CD
+	            ) AS CD_DISP_SEQ
+	            <!--  , CLS_S.FRT_SEQ  -->  
+	            <!-- , '' AS WM_DOC_SEQ -->	
+	            ,(SELECT WM_DOC_SEQ FROM TB_WM_DOC_MST WMDOC WHERE WMDOC.DOC_REF_NO = CLS_SO.SO_NO) AS WM_DOC_SEQ        
+			  FROM TL_WH_CLS CLS 
+			  		JOIN TL_WH_CLS_SO CLS_SO 
+			  			ON CLS.CLS_NO =  CLS_SO.CLS_NO 
+			  		JOIN TL_WH_CLS_SO_DTL CLS_D 
+			  			ON CLS_SO.CLS_NO = CLS_D.CLS_NO 
+			  			AND CLS_SO.CLS_SEQ = CLS_D.CLS_SEQ
+			     
+				
+			 WHERE 1 = 1
+			  	<isEqual property="search_tp" compareValue="IN_CLS_NO">
+			  		AND CLS_D.CLS_NO = #in_cls_no#
+			  	</isEqual>
+			  	<isEqual property="search_tp" compareValue="H_CLS_NO">
+			  		AND CLS_D.CLS_NO IN (
+										<iterate property="in_cls_no_in" conjunction=",">#in_cls_no_in[]#</iterate>
+					                  )
+			  	</isEqual>
+			  	<isNotEqual property="search_tp" compareValue="IN_CLS_NO">
+			  		<isNotEqual property="search_tp" compareValue="H_CLS_NO">
+			  			AND CLS_D.CLS_AGR_NO  = #cls_agr_no#
+			  		</isNotEqual>
+			  	</isNotEqual>
+		     	GROUP BY CLS.CLS_NO, CLS.WH_CD, CLS.OFC_CD, CLS.CLS_DT, CLS.SET_FR_DT, CLS.SET_TO_DT
+			        , CLS_SO.CLS_SEQ, CLS_SO.CTRT_NO, CLS_SO.RTP_NO, CLS_SO.CUST_CD, CLS_SO.SO_NO
+		            , CLS_D.SB_CLS_CD, CLS_D.RATE_TP_CD, CLS_D.ORDER_REL, CLS_D.FRT_CD, CLS_D.FRT_NM, CLS_D.CURR_CD
+		       ) T
+		       ORDER BY T.CLS_NO ASC
+			        , T.CLS_SEQ ASC
+			        , T.SB_CLS_CD DESC /* SELL, BUY */
+		            , T.CD_DISP_SEQ ASC /* TYPE의 코드순서별*/
+		            , T.ORDER_REL ASC
+		            , T.FRT_CD ASC
+		            , T.FRT_NM ASC
+		            , T.CURR_CD ASC
+	</select>
+	
+	<!-- LKH::2015-11-03 WMS4.O -->
+	<select id="searchClosingMgmtDtlNoDataUnion" resultClass="WHClosingVO">
+		/*WHClosing.searchClosingMgmtDtlNoDataUnion*/
+		SELECT * FROM (
+			SELECT CLS.CLS_NO + CLS_SO.CTRT_NO AS CLS_KEY
+				 , CLS.CLS_NO 
+				 , CLS.CLS_NO + CLS_SO.CTRT_NO + CONVERT(VARCHAR(1000), CLS_SO.CLS_SEQ) AS MERGE_KEY
+			     , CLS_SO.CLS_SEQ
+			     , CLS_SO.CTRT_NO
+			     , dbo.TL_GET_CTRT_NM(CLS_SO.CTRT_NO) AS CTRT_NM
+			     , CLS_SO.RTP_NO
+			     , ISNULL(CLS_SO.CUST_CD, ' ') AS CUST_CD	     
+			     , ISNULL((SELECT LOCL_NM FROM TB_TRDP CUST WHERE CUST.TRDP_CD = CLS_SO.CUST_CD AND ISNULL(CUST.DELT_FLG,'N') = 'N'), ' ') AS CUST_NM
+			     , CLS_S.SB_CLS_CD
+			     , CLS_S.CLS_FRT_SEQ                
+		         , CASE WHEN CLS_S.CLS_NO IS NULL THEN 'N'
+			            WHEN CLS_SO.STS_CD = 'C' THEN 
+											       CASE WHEN (SELECT COUNT(*) 
+																FROM tb_wm_doc_mst A JOIN TB_FRT B ON A.WM_DOC_SEQ = B.WMS_SEQ 
+																WHERE B.INV_SEQ IS NOT NULL AND A.DOC_REF_NO = CLS_SO.SO_NO
+															  ) > 0 
+										             	THEN 'I'
+										                ELSE CLS_SO.STS_CD
+										                END
+										                
+		                ELSE CLS_SO.STS_CD  
+		                END AS STS_CD
+		         , ( SELECT TOP 1 C.INV_NO 
+						FROM tb_wm_doc_mst A JOIN TB_FRT B ON A.WM_DOC_SEQ = B.WMS_SEQ
+							JOIN  TB_INV_DTL C ON B.INV_SEQ = C.inv_seq
+						WHERE B.INV_SEQ IS NOT NULL AND A.DOC_REF_NO = CLS_SO.SO_NO
+					) AS INV_NO       
+			     , ISNULL(CLS_SO.SO_NO, ' ') AS SO_NO
+			     , CASE WHEN CLS_S.SB_CLS_CD = 'S' THEN CLS_SO.SELL_RMK
+			            ELSE CLS_SO.BUY_RMK
+			            END AS RMK	     
+			     , CASE WHEN CLS_S.SB_CLS_CD = 'S' THEN CLS_SO.SELL_RMK
+			            ELSE CLS_SO.BUY_RMK
+			            END AS RMK2
+			     , CLS_S.RATE_TP_CD
+			     , CLS_S.ORDER_REL
+			     , CLS_S.FRT_CD
+			     , CLS_S.FRT_NM
+			     , CLS_S.DTL_FRT_NM
+			     , CLS_S.CURR_CD
+			     , CLS_S.DTL_UNIT_CD
+			     , CLS_S.UNIT_CD
+			     , CLS_S.UNIT_QTY
+			     , CLS_S.UNIT_PRICE
+			     , ISNULL(CLS_S.BASIC_AMT, 0) AS BASIC_AMT
+			     , ISNULL(CLS_S.ADJUST_AMT, 0) AS ADJUST_AMT
+			     , ISNULL(CLS_S.BASIC_AMT, 0) + ISNULL(CLS_S.ADJUST_AMT, 0) AS TOT_AMT     
+			     , CASE WHEN CLS_S.CLS_NO IS NULL THEN 'M' ELSE CLS_S.SRC_TP_CD END AS SRC_TP_CD
+			     /*, CLS.CLS_AGR_NO*/
+			     , CLS.WH_CD
+			     , dbo.TL_GET_LOC_NM(CLS.WH_CD) AS WH_NM
+			     , CLS.OFC_CD
+			     , CLS.CLS_DT
+			     , CLS.SET_FR_DT
+			     , CLS.SET_TO_DT
+			     , SUM(ISNULL(CLS_S.BASIC_AMT, 0) + ISNULL(CLS_S.ADJUST_AMT, 0) ) OVER ( PARTITION BY CLS.CLS_NO, CLS_SO.CLS_SEQ, CLS_S.SB_CLS_CD) AS SUB_TOT
+			     ,(SELECT CD.SRT_SEQ 
+	              FROM tb_com_cd_dtl CD 
+	             WHERE CD.COM_CD = 'WR0'
+	               AND CD.CD_VAL = CLS_S.RATE_TP_CD
+	            ) AS CD_DISP_SEQ
+		         , CLS_S.DISP_SEQ 	   
+		         , CLS.CLS_NO + CLS_SO.CTRT_NO + CONVERT(VARCHAR(1000), CLS_SO.CLS_SEQ) AS MERGE_KEY2 
+		         , CLS_S.FRT_SEQ 
+		         ,(SELECT WM_DOC_SEQ FROM TB_WM_DOC_MST WMDOC WHERE WMDOC.DOC_REF_NO = CLS_SO.SO_NO) AS WM_DOC_SEQ    
+			  FROM TL_WH_CLS CLS JOIN TL_WH_CLS_SO CLS_SO ON CLS.CLS_NO =  CLS_SO.CLS_NO JOIN  TL_WH_CLS_SO_FRT CLS_S ON CLS_SO.CLS_NO = CLS_S.CLS_NO AND CLS_SO.CLS_SEQ = CLS_S.CLS_SEQ
+				
+			 WHERE 1 = 1
+			   
+			   <!-- AND ISNULL(CLS_S.BASIC_AMT, 0) + ISNULL(CLS_S.ADJUST_AMT, 0) != 0  TinLuong Modify 20160317-->
+			   <![CDATA[ 
+			   AND ISNULL(CLS_S.UNIT_QTY, 0) + ISNULL(CLS_S.ADJUST_AMT, 0) != 0
+			   ]]>
+			   AND CLS.CLS_NO IN (
+								<iterate property="in_cls_no_in" conjunction=",">#in_cls_no_in[]#</iterate>
+					              )
+		
+		UNION ALL
+		SELECT T.*
+		     , CONVERT(VARCHAR(1000), ROW_NUMBER() OVER (ORDER BY T.CLS_KEY)) AS MERGE_KEY2
+		  FROM (
+		    SELECT CLS.CLS_NO + CLS_SO.CTRT_NO AS CLS_KEY
+				 , CLS.CLS_NO 
+				 , CLS.CLS_NO + CLS_SO.CTRT_NO + CONVERT(VARCHAR(1000), CLS_SO.CLS_SEQ) AS MERGE_KEY
+			     , CLS_SO.CLS_SEQ
+			     , CLS_SO.CTRT_NO
+			     , dbo.TL_GET_CTRT_NM(CLS_SO.CTRT_NO) AS CTRT_NM
+			     , CLS_SO.RTP_NO
+			     , ISNULL(CLS_SO.CUST_CD, ' ') AS CUST_CD	     
+			     , ISNULL((SELECT LOCL_NM FROM TB_TRDP CUST WHERE CUST.TRDP_CD = CLS_SO.CUST_CD AND ISNULL(CUST.DELT_FLG,'N') = 'N' ), ' ') AS CUST_NM
+			     , CLS_D.SB_CLS_CD
+			     , NULL AS CLS_FRT_SEQ
+			     , 'N' AS STS_CD
+			     , ''  AS INV_NO
+			     , ' ' AS SO_NO
+			     , '' AS RMK	     
+			     , '' AS RMK2
+			     , CLS_D.RATE_TP_CD
+			     , CLS_D.ORDER_REL
+			     , CLS_D.FRT_CD
+			     , CLS_D.FRT_NM
+			     , '' AS DTL_FRT_NM
+			     , CLS_D.CURR_CD
+			     , '' AS DTL_UNIT_CD
+			     , '' AS UNIT_CD
+			     , 0 AS UNIT_QTY
+			     , 0 AS UNIT_PRICE
+			     , 0 AS BASIC_AMT
+			     , 0 AS ADJUST_AMT
+			     , 0 AS TOT_AMT     
+			     , 'M' AS SRC_TP_CD
+			     , CLS.WH_CD
+			     , dbo.TL_GET_LOC_NM(CLS.WH_CD) AS WH_NM
+			     , CLS.OFC_CD
+			     , CLS.CLS_DT
+			     , CLS.SET_FR_DT
+			     , CLS.SET_TO_DT
+			     , 0 AS SUB_TOT
+			     ,(SELECT CD.SRT_SEQ 
+	              FROM tb_com_cd_dtl CD 
+	             WHERE CD.COM_CD = 'WR0'
+	               AND CD.CD_VAL = CLS_D.RATE_TP_CD
+	            ) AS CD_DISP_SEQ
+		         , 1 AS DISP_SEQ
+		         , '' AS FRT_SEQ	
+		         , '' AS WM_DOC_SEQ       
+			  FROM TL_WH_CLS CLS JOIN TL_WH_CLS_SO CLS_SO ON CLS.CLS_NO =  CLS_SO.CLS_NO JOIN  TL_WH_CLS_SO_DTL CLS_D ON CLS_SO.CLS_NO = CLS_D.CLS_NO AND CLS_SO.CLS_SEQ = CLS_D.CLS_SEQ
+			 WHERE 1 = 1
+			   AND CLS_D.CLS_NO IN (
+								     <iterate property="in_cls_no_in" conjunction=",">#in_cls_no_in[]#</iterate>
+					               )
+			   AND CLS.CLS_NO NOT IN (
+									    SELECT A.CLS_NO 
+									      FROM TL_WH_CLS A JOIN TL_WH_CLS_SO B ON A.CLS_NO =  B.CLS_NO JOIN TL_WH_CLS_SO_FRT C ON B.CLS_NO = C.CLS_NO AND B.CLS_SEQ = C.CLS_SEQ
+										 WHERE 1 = 1
+										   <![CDATA[ 
+										   AND ISNULL(C.BASIC_AMT, 0) + ISNULL(C.ADJUST_AMT, 0) != 0
+										    ]]>
+										   AND A.CLS_NO IN (
+														     <iterate property="in_cls_no_in" conjunction=",">#in_cls_no_in[]#</iterate>
+											               )
+			                          )
+		     GROUP BY CLS.CLS_NO, CLS.WH_CD, CLS.OFC_CD, CLS.CLS_DT, CLS.SET_FR_DT, CLS.SET_TO_DT
+			        , CLS_SO.CLS_SEQ, CLS_SO.CTRT_NO, CLS_SO.RTP_NO, CLS_SO.CUST_CD, CLS_SO.SO_NO
+		            , CLS_D.SB_CLS_CD, CLS_D.RATE_TP_CD, CLS_D.ORDER_REL, CLS_D.FRT_CD, CLS_D.FRT_NM, CLS_D.CURR_CD
+		        ) T           
+		) TT            
+			 ORDER BY TT.CLS_NO ASC	        
+			        , TT.CLS_SEQ ASC
+			        , TT.SB_CLS_CD DESC /* SELL, BUY */
+		            , CD_DISP_SEQ ASC /* TYPE의 코드순서별*/
+		            , TT.ORDER_REL ASC
+		            , TT.FRT_CD ASC
+		            , TT.FRT_NM ASC
+		            , TT.CURR_CD ASC
+		            , TT.DISP_SEQ ASC /*입력 시 등록된 순서별*/
+	</select>
+	<insert id="createClosingStatus">
+	/*WHClosing.createClosingStatus*/
+	INSERT INTO TL_WH_CLS_AGR_MST
+	  (WH_CD
+	  ,CLS_MTH
+	  ,BGR_SEQ
+	  ,CLS_DT
+	  ,SET_FR_DT
+	  ,SET_TO_DT
+	  ,CTRT_NO
+	  ,SB_CLS_CD
+	  ,RATE_TP_CD
+	  ,STS_CD
+	  ,STS_RSLT
+	  ,FB_CLS_CD
+	  ,CLS_AGR_NO
+	  ,RGST_ID
+	  ,RGST_OFC_CD
+	  ,RGST_LOC_DT
+	  ,RGST_SYS_DT)
+	VALUES
+	  (#wh_cd#
+	  ,SUBSTRING(REPLACE(#cls_dt#, '-', ''), 1,6)
+	  ,(SELECT ISNULL(MAX(T.BGR_SEQ),0)+1
+	      FROM TL_WH_CLS_AGR_MST T
+	     WHERE T.WH_CD = #wh_cd#
+	       AND T.CLS_MTH = SUBSTRING(REPLACE(#cls_dt#, '-', ''), 1,6)
+	   )
+	  ,REPLACE(#cls_dt#, '-', '')
+	  ,REPLACE(#set_fr_dt#, '-', '')
+	  ,REPLACE(#set_to_dt#, '-', '')
+	  ,#ctrt_no#
+	  ,REPLACE(#sb_cls_cd#,'ALL','')
+	  ,REPLACE(#rate_tp_cd#,'ALL','')
+	  ,'O'
+	  ,''
+	  ,#fb_cls_cd#
+	  ,''
+	  ,#user_id#
+	  ,#ofc_cd#
+	  , dbo.TL_GET_TM_ZONE_DATE_DT(#wh_cd#)
+	  ,GETDATE()
+	  )	
+	</insert>
+	
+	<select id="searchClsFrtSeq" resultClass="java.lang.String">
+	/*WHClosing.searchClsFrtSeq*/
+	SELECT ISNULL(MAX(CLS_FRT_SEQ),0) + 1 AS NEXT_SEQ
+      FROM TL_WH_CLS_SO_FRT
+     WHERE CLS_NO = #cls_no#
+       AND CLS_SEQ = #cls_seq#
+       AND SB_CLS_CD = #sb_cls_cd#
+	</select>
+	
+	<insert id="saveWhClsSoFrt">
+	/*WHClosing.saveWhClsSoFrt*/
+	INSERT INTO TL_WH_CLS_SO_FRT
+	     ( CLS_NO
+	     , CLS_SEQ
+	     , SB_CLS_CD
+	     , CLS_FRT_SEQ
+	     , RATE_TP_CD
+	     , ORDER_REL
+	     , SRC_TP_CD
+	     , FRT_CD
+	     , FRT_NM
+	     , DTL_FRT_NM
+	     , CURR_CD
+	     , DTL_UNIT_CD
+	     , UNIT_CD
+	     , UNIT_QTY
+	     , UNIT_PRICE
+	     , BASIC_AMT
+	     , ADJUST_AMT
+	     , DISP_SEQ
+	     , RGST_ID
+	     , RGST_OFC_CD
+	     , RGST_SYS_DT
+	     , RGST_LOC_DT
+	     , MODI_ID
+	     , MODI_OFC_CD
+	     , MODI_SYS_DT
+	     , MODI_LOC_DT
+	     )
+	VALUES
+	     ( #cls_no#
+	     , #cls_seq#
+	     , #sb_cls_cd#
+	     , #cls_frt_seq#
+	     , #rate_tp_cd#
+	     , #order_rel#
+	     , #src_tp_cd#
+	     , #frt_cd#
+	     , #frt_nm#
+	     , #frt_nm#
+	     , #curr_cd#
+	     , #unit_cd#
+	     , #unit_cd#
+	     , #unit_qty#
+	     , #unit_price#
+	     , #basic_amt#
+	     , #adjust_amt#
+	     , (SELECT ISNULL(MAX(DISP_SEQ),0) + 1 
+	          FROM TL_WH_CLS_SO_FRT
+	         WHERE CLS_NO = #cls_no#
+	       )	     
+	     , #rgst_id#
+	     , #rgst_ofc_cd#
+	     , GETDATE()
+	     , dbo.TL_GET_TM_ZONE_DATE_DT(#wh_cd#)
+	     , #rgst_id#
+	     , #rgst_ofc_cd#
+	     , GETDATE()
+	     , dbo.TL_GET_TM_ZONE_DATE_DT(#wh_cd#)
+	     )
+	</insert>
+	
+	<insert id="saveWhClsSo">
+	/*WHClosing.saveWhClsSo*/
+	INSERT INTO TL_WH_CLS_SO
+	     ( CLS_NO
+	     , CLS_SEQ
+	     , WH_CD
+	     , OFC_CD
+	     , CTRT_NO
+	     , RTP_NO
+	     , CUST_CD
+	     , STS_CD
+	     , SELL_RMK
+	     , BUY_RMK
+	     , SO_NO
+	     , RGST_ID
+	     , RGST_OFC_CD
+	     , RGST_SYS_DT
+	     , RGST_LOC_DT
+	     , MODI_ID
+	     , MODI_OFC_CD
+	     , MODI_SYS_DT
+	     , MODI_LOC_DT
+	     )
+	VALUES
+	     ( #cls_no#
+	     , #cls_seq#
+	     , #wh_cd#
+	     , #ofc_cd#
+	     , #ctrt_no#
+	     , #rtp_no#
+	     , #cust_cd#
+	     , #sts_cd#
+	     <isEqual property="sts_cd" compareValue="S">
+	     ,#rmk#
+	     ,NULL
+	     </isEqual>
+	     <isEqual property="sts_cd" compareValue="B">
+	     ,NULL
+	     ,#rmk#
+	     </isEqual>
+	     , #so_no#    
+	     , #rgst_id#
+	     , #rgst_ofc_cd#
+	     , GETDATE()
+	     , dbo.TL_GET_TM_ZONE_DATE_DT(#wh_cd#)
+	     , #rgst_id#
+	     , #rgst_ofc_cd#
+	     , GETDATE()
+	     , dbo.TL_GET_TM_ZONE_DATE_DT(#wh_cd#)
+	     )
+	</insert>
+	
+	<update id="modifyWhClsSo">
+		/*WHClosing.modifyWhClsSo*/
+		UPDATE TL_WH_CLS_SO
+		   SET MODI_ID     = #modi_id#
+		     , MODI_OFC_CD = #modi_ofc_cd#
+		     , MODI_SYS_DT = GETDATE()
+		     , MODI_LOC_DT = dbo.TL_GET_TM_ZONE_DATE_DT(WH_CD)
+		     <isEqual property="sb_cls_cd" compareValue="S">
+		     	, SELL_RMK    = #rmk#
+		     </isEqual>
+		     <isEqual property="sb_cls_cd" compareValue="B">
+		     	, BUY_RMK    = #rmk#
+		     </isEqual>
+			 , SO_NO = #so_no#
+		 WHERE CLS_NO = #cls_no# 
+		   AND CLS_SEQ = #cls_seq#
+	</update>
+	<update id="modifyWhClsSoForStsCd">
+	/*WHClosing.modifyWhClsSoForStsCd*/
+	UPDATE TL_WH_CLS_SO
+	   SET MODI_ID     = #modi_id#
+	     , MODI_OFC_CD = #modi_ofc_cd#
+	     , MODI_SYS_DT = GETDATE()
+	     , MODI_LOC_DT = dbo.TL_GET_TM_ZONE_DATE_DT((SELECT WH_CD FROM TL_WH_CLS WHERE CLS_NO = #cls_no#) )
+		 , STS_CD  = #sts_cd#
+	 WHERE CLS_NO = #cls_no# 
+	   AND CLS_SEQ = #cls_seq#
+	   AND STS_CD = 'A'
+	</update>
+	<update id="modifyWhClsInfoForWhOthCost">
+	/**wms.WHClosing.modifyWhClsInfoForWhOthCost*/
+	MERGE
+		INTO TL_WH_OTH_COST A
+		USING TL_WH_CLS_SO_DTL B
+		ON (    A.OTH_COST_NO  = B.OTH_COST_NO
+			AND B.CLS_NO       = #cls_no#
+	        AND B.CLS_SEQ      = #cls_seq#      
+			AND B.OTH_COST_NO IS NOT NULL
+		   )		
+		WHEN MATCHED THEN
+			UPDATE 
+			   SET CLS_NO      = #cls_no#
+			     , CLS_DT      = (SELECT CLS_DT FROM TL_WH_CLS WHERE CLS_NO = #cls_no#)
+			     , STS_CD      = #sts_cd#
+			     , MODI_ID     = #modi_id#
+			     , MODI_OFC_CD = #modi_ofc_cd#
+			     , MODI_SYS_DT = GETDATE()
+			     , MODI_LOC_DT = dbo.TL_GET_TM_ZONE_DATE_DT(A.WH_CD);
+	</update>
+	<insert id="saveWhCls">
+	/*WHClosing.saveWhCls*/
+	INSERT INTO TL_WH_CLS
+	     ( CLS_NO
+         , CLS_DT
+         , SET_FR_DT
+         , SET_TO_DT
+         , WH_CD
+         , OFC_CD
+	     , RGST_ID
+	     , RGST_OFC_CD
+	     , RGST_SYS_DT
+	     , RGST_LOC_DT
+	     , MODI_ID
+	     , MODI_OFC_CD
+	     , MODI_SYS_DT
+	     , MODI_LOC_DT
+	     )
+	VALUES
+	     ( #cls_no#
+	     , REPLACE(#cls_dt#, '-', '')
+	     , REPLACE(#set_fr_dt#, '-', '')
+	     , REPLACE(#set_to_dt#, '-', '')
+	     , #wh_cd#
+	     , #ofc_cd#
+	     , #rgst_id#
+	     , #rgst_ofc_cd#
+	     , GETDATE()
+	     , dbo.TL_GET_TM_ZONE_DATE_DT(#wh_cd#)
+	     , #rgst_id#
+	     , #rgst_ofc_cd#
+	     , GETDATE()
+	     , dbo.TL_GET_TM_ZONE_DATE_DT(#wh_cd#)
+	     )
+	</insert>
+	<select id="searchClsSeq" resultClass="java.lang.String">
+	/*WHClosing.searchClsSeq*/
+	SELECT ISNULL(MAX(CLS_SEQ),0) + 1 AS NEXT_SEQ
+      FROM TL_WH_CLS_SO
+     WHERE CLS_NO = #cls_no#
+	</select>
+	<delete id="deleteWhClsSoFrt">
+		/*WHClosing.deleteWhClsSoFrt*/
+		DELETE FROM TL_WH_CLS_SO_FRT
+		 WHERE CLS_NO = #cls_no# 
+		   AND CLS_SEQ = #cls_seq#
+		   AND SB_CLS_CD = #sb_cls_cd#
+		   AND CLS_FRT_SEQ = #cls_frt_seq#
+	</delete>
+	<select id="searchWhClsFrtDtlSeqCnt" resultClass="java.lang.String">
+	/*WHClosing.searchWhClsFrtDtlSeqCnt*/
+	SELECT SUM(FRT_CNT) + SUM(DTL_CNT) AS CNT
+	  FROM (
+			SELECT COUNT(1) AS FRT_CNT
+			     , 0 AS DTL_CNT
+			  FROM TL_WH_CLS_SO_FRT
+			 WHERE CLS_NO  = #cls_no#
+			   AND CLS_SEQ = #cls_seq#
+			   AND ISNULL(BASIC_AMT,0) + ISNULL(ADJUST_AMT,0) != 0
+			 UNION ALL
+			SELECT 0 AS FRT_CNT
+			     , COUNT(1) AS DTL_CNT
+			  FROM TL_WH_CLS_SO_DTL
+			 WHERE CLS_NO  = #cls_no#
+			   AND CLS_SEQ = #cls_seq#
+	     ) T
+	</select>	
+	<delete id="deleteWhClsFrt">
+	/*WHClosing.deleteWhClsFrt*/
+	DELETE FROM TL_WH_CLS_SO_FRT
+	 WHERE CLS_NO = #cls_no#
+	</delete>
+	<delete id="deleteWhClsFrtSeq">
+	/*WHClosing.deleteWhClsFrtSeq*/
+	DELETE FROM TL_WH_CLS_SO_FRT
+	 WHERE CLS_NO  = #cls_no#
+	   AND CLS_SEQ = #cls_seq#
+	</delete>
+	<delete id="deleteWhClsSoSeq">
+	/*WHClosing.deleteWhClsSoSeq*/
+	DELETE FROM TL_WH_CLS_SO
+	 WHERE CLS_NO  = #cls_no#
+	   AND CLS_SEQ = #cls_seq#
+	</delete>
+	<select id="searchWhClsSoCnt" resultClass="java.lang.String">
+	/*WHClosing.searchWhClsSoCnt*/
+	SELECT SUM(SO_CNT) AS CNT
+	  FROM (
+			SELECT COUNT(1) AS SO_CNT
+			  FROM TL_WH_CLS_SO
+			 WHERE CLS_NO  = #cls_no#
+			   AND CLS_SEQ = #cls_seq#
+		 	) T
+	</select>
+	<delete id="deleteWhClsSeq">
+	/*WHClosing.deleteWhClsSeq*/
+	DELETE FROM TL_WH_CLS_SO
+	 WHERE CLS_NO  = #cls_no#
+	   AND CLS_SEQ = #cls_seq#
+	</delete>
+	<update id="modifyWhClsSoDtlAmtQtyZero">
+	/*WHClosing.modifyWhClsSoDtlAmtQtyZero*/
+	UPDATE TL_WH_CLS_SO_DTL
+	   SET MODI_ID     = #modi_id#
+	     , MODI_OFC_CD = #modi_ofc_cd#
+	     , MODI_SYS_DT = GETDATE()
+	     , MODI_LOC_DT = dbo.TL_GET_TM_ZONE_DATE_DT((SELECT WH_CD FROM TL_WH_CLS WHERE CLS_NO = #cls_no#))
+	     <isEqual property="dtl_unit_cd" compareValue="PE">, AMT_PL_LVL = 0 </isEqual>
+	     <isEqual property="dtl_unit_cd" compareValue="BX">, AMT_BX_LVL = 0 </isEqual>
+	     <isEqual property="dtl_unit_cd" compareValue="IC">, AMT_IN_LVL = 0 </isEqual>
+	     <isEqual property="dtl_unit_cd" compareValue="EA">, AMT_EA_LVL = 0 </isEqual>
+	     <isEqual property="dtl_unit_cd" compareValue="CBM">, AMT_CBM = 0 </isEqual>
+	     <isEqual property="dtl_unit_cd" compareValue="CBF">, AMT_CBF = 0 </isEqual>
+	     <isEqual property="dtl_unit_cd" compareValue="GWT">, AMT_CBF = 0 </isEqual>
+	     <isEqual property="dtl_unit_cd" compareValue="GLB">, AMT_GRS_LBS = 0 </isEqual>
+	     <isEqual property="dtl_unit_cd" compareValue="NWT">, AMT_NET_KGS = 0 </isEqual>
+	     <isEqual property="dtl_unit_cd" compareValue="NLB">, AMT_NET_LBS = 0 </isEqual>
+	     <isEqual property="dtl_unit_cd" compareValue="ORD">, AMT_ORD = 0 </isEqual>
+	     <isEqual property="dtl_unit_cd" compareValue="OTH">, AMT_OTH = 0 </isEqual>
+	     <isEqual property="dtl_unit_cd" compareValue="FIX">, AMT_FIX = 0 </isEqual>
+	     <isEqual property="dtl_unit_cd" compareValue="LOC">, AMT_LOC = 0 </isEqual>
+	     <isNotEqual property="dtl_unit_cd" compareValue="PE">
+       		<isNotEqual property="dtl_unit_cd" compareValue="BX">
+       			<isNotEqual property="dtl_unit_cd" compareValue="IC">
+       				<isNotEqual property="dtl_unit_cd" compareValue="EA">
+       					<isNotEqual property="dtl_unit_cd" compareValue="CBM">
+       						<isNotEqual property="dtl_unit_cd" compareValue="CBF">
+       							<isNotEqual property="dtl_unit_cd" compareValue="GWT">
+       								<isNotEqual property="dtl_unit_cd" compareValue="GLB">
+       									<isNotEqual property="dtl_unit_cd" compareValue="NWT">
+	       									<isNotEqual property="dtl_unit_cd" compareValue="NLB">
+	       										<isNotEqual property="dtl_unit_cd" compareValue="ORD">
+		       										<isNotEqual property="dtl_unit_cd" compareValue="OTH">
+			       										<isNotEqual property="dtl_unit_cd" compareValue="FIX">
+				       										<isNotEqual property="unit_cd" compareValue="LOC">
+			       												, AMT_EQ = 0
+			       											</isNotEqual>
+			       										</isNotEqual>
+		       										</isNotEqual>
+	       										</isNotEqual>
+	       									</isNotEqual>
+       									</isNotEqual>
+       								</isNotEqual>
+       							</isNotEqual>
+       						</isNotEqual>
+       					</isNotEqual>
+       				</isNotEqual>
+       			</isNotEqual>
+       		</isNotEqual>
+       </isNotEqual>
+     WHERE CLS_NO = #cls_no#
+       AND CLS_SEQ = #cls_seq#
+       AND SB_CLS_CD = #sb_cls_cd#
+       AND RATE_TP_CD = #rate_tp_cd#
+       AND ORDER_REL = #order_rel#
+       AND SRC_TP_CD = 'A'
+       AND FRT_CD = #frt_cd#
+       AND FRT_NM = #frt_nm#
+       AND CURR_CD = #curr_cd#
+       <isEqual property="unit_cd" compareValue="LOC">AND SPACE_TP_CD = #dtl_unit_cd#</isEqual>
+       <isEqual property="dtl_unit_cd" compareValue="OTH">AND OTH_UNIT_CD = #dtl_unit_cd2#</isEqual>
+       <isEqual property="dtl_unit_cd" compareValue="FIX">AND FIX_UNIT_CD = #dtl_unit_cd2#</isEqual>
+       <isNotEqual property="dtl_unit_cd" compareValue="PE">
+       		<isNotEqual property="dtl_unit_cd" compareValue="BX">
+       			<isNotEqual property="dtl_unit_cd" compareValue="IC">
+       				<isNotEqual property="dtl_unit_cd" compareValue="EA">
+       					<isNotEqual property="dtl_unit_cd" compareValue="CBM">
+       						<isNotEqual property="dtl_unit_cd" compareValue="CBF">
+       							<isNotEqual property="dtl_unit_cd" compareValue="GWT">
+       								<isNotEqual property="dtl_unit_cd" compareValue="GLB">
+       									<isNotEqual property="dtl_unit_cd" compareValue="NWT">
+	       									<isNotEqual property="dtl_unit_cd" compareValue="NLB">
+	       										<isNotEqual property="dtl_unit_cd" compareValue="ORD">
+			       									AND EQ_TPSZ_CD = #dtl_unit_cd#
+	       										</isNotEqual>
+	       									</isNotEqual>
+       									</isNotEqual>
+       								</isNotEqual>
+       							</isNotEqual>
+       						</isNotEqual>
+       					</isNotEqual>
+       				</isNotEqual>
+       			</isNotEqual>
+       		</isNotEqual>
+       </isNotEqual>
+	</update>
+		
+	<parameterMap class="com.clt.apps.fis.wms.whclosing.dto.ProcWHClosingCreateVO" id="callWHClosingCreateProc_Map">
+		<parameter property="cls_dt" javaType="java.lang.String" jdbcType="VARCHAR" mode="IN"/>
+		<parameter property="set_fr_dt" javaType="java.lang.String" jdbcType="VARCHAR" mode="IN"/>
+		<parameter property="set_to_dt" javaType="java.lang.String" jdbcType="VARCHAR" mode="IN"/>
+		<parameter property="sb_cls_cd" javaType="java.lang.String" jdbcType="VARCHAR" mode="IN"/>
+		<parameter property="rate_tp_cd" javaType="java.lang.String" jdbcType="VARCHAR" mode="IN"/>
+		<parameter property="wh_cd" javaType="java.lang.String" jdbcType="VARCHAR" mode="IN"/>
+		<parameter property="ctrt_no" javaType="java.lang.String" jdbcType="VARCHAR" mode="IN"/>
+		<parameter property="org_cd" javaType="java.lang.String" jdbcType="VARCHAR" mode="IN"/>
+		<parameter property="user_id" javaType="java.lang.String" jdbcType="VARCHAR" mode="IN"/>
+		<parameter property="rtn_time_stamp" javaType="java.lang.String" jdbcType="VARCHAR" mode="OUT"/>
+		<parameter property="rtncd" javaType="java.lang.String" jdbcType="VARCHAR" mode="OUT"/>
+		<parameter property="rtnmsg" javaType="java.lang.String" jdbcType="VARCHAR" mode="OUT"/>
+	</parameterMap>
+    <procedure id="callWHClosingCreateProc" parameterMap="callWHClosingCreateProc_Map">
+    	 { CALL PKG_MAKE_TL_WH_CLOSING_CREATE_PRC(?,?,?,?,?,?,?,?,?,?,?,?) } 
+	</procedure>
+	
+	<update id="modifyWhClsSoDtlTotalAmt">
+	/*WHClosing.modifyWhClsSoDtlTotalAmt*/
+	UPDATE TL_WH_CLS_SO_DTL
+	   SET MODI_ID     = #modi_id#
+	     , MODI_OFC_CD = #modi_ofc_cd#
+	     , MODI_SYS_DT = GETDATE()
+	     , MODI_LOC_DT = dbo.TL_GET_TM_ZONE_DATE_DT((SELECT WH_CD FROM TL_WH_CLS WHERE CLS_NO = #cls_no#))
+	     , TOT_AMT = ISNULL(AMT_PL_LVL,0) + ISNULL(AMT_BX_LVL,0) + ISNULL(AMT_IN_LVL,0) + ISNULL(AMT_EA_LVL,0) + ISNULL(AMT_CBM,0) + ISNULL(AMT_CBF,0) + ISNULL(AMT_GRS_KGS,0) + ISNULL(AMT_GRS_LBS,0) 
+	               + ISNULL(AMT_NET_KGS,0) + ISNULL(AMT_NET_LBS,0) + ISNULL(AMT_ORD,0) + ISNULL(AMT_LOC,0) + ISNULL(AMT_OTH,0) + ISNULL(AMT_FIX,0)
+     WHERE CLS_NO = #cls_no#
+       AND CLS_SEQ = #cls_seq#
+       AND SB_CLS_CD = #sb_cls_cd#
+       AND RATE_TP_CD = #rate_tp_cd#
+       AND ORDER_REL = #order_rel#
+       AND SRC_TP_CD = 'A'
+       AND FRT_CD = #frt_cd#
+       AND FRT_NM = #frt_nm#
+       AND CURR_CD = #curr_cd#
+       <isEqual property="unit_cd" compareValue="LOC">
+       		AND SPACE_TP_CD = #dtl_unit_cd#
+       </isEqual>
+       <isNotEqual property="dtl_unit_cd" compareValue="PE">
+       		<isNotEqual property="dtl_unit_cd" compareValue="BX">
+       			<isNotEqual property="dtl_unit_cd" compareValue="IC">
+       				<isNotEqual property="dtl_unit_cd" compareValue="EA">
+       					<isNotEqual property="dtl_unit_cd" compareValue="CBM">
+       						<isNotEqual property="dtl_unit_cd" compareValue="CBF">
+       							<isNotEqual property="dtl_unit_cd" compareValue="GWT">
+       								<isNotEqual property="dtl_unit_cd" compareValue="GLB">
+       									<isNotEqual property="dtl_unit_cd" compareValue="NWT">
+	       									<isNotEqual property="dtl_unit_cd" compareValue="NLB">
+	       										<isNotEqual property="dtl_unit_cd" compareValue="ORD">
+		       										<isNotEqual property="dtl_unit_cd" compareValue="OTH">
+			       										<isNotEqual property="dtl_unit_cd" compareValue="FIX">
+			       											AND EQ_TPSZ_CD = #dtl_unit_cd#
+			       										</isNotEqual>
+		       										</isNotEqual>
+	       										</isNotEqual>
+	       									</isNotEqual>
+       									</isNotEqual>
+       								</isNotEqual>
+       							</isNotEqual>
+       						</isNotEqual>
+       					</isNotEqual>
+       				</isNotEqual>
+       			</isNotEqual>
+       		</isNotEqual>
+       </isNotEqual>
+	</update>
+	<parameterMap class="com.clt.apps.fis.wms.whclosing.dto.ProcWHClosingConfirmVO" id="callWHClosingConfirmCancelProc_Map">
+		<parameter property="cls_no" javaType="java.lang.String" jdbcType="VARCHAR" mode="IN"/>
+		<parameter property="cls_seq" javaType="java.lang.String" jdbcType="VARCHAR" mode="IN"/>
+		<parameter property="org_cd" javaType="java.lang.String" jdbcType="VARCHAR" mode="IN"/>
+		<parameter property="user_id" javaType="java.lang.String" jdbcType="VARCHAR" mode="IN"/>
+		<parameter property="rtncd" javaType="java.lang.String" jdbcType="VARCHAR" mode="OUT"/>
+		<parameter property="rtnmsg" javaType="java.lang.String" jdbcType="VARCHAR" mode="OUT"/>
+	</parameterMap>
+	<!-- <update id="callWHClosingConfirmCancelProc" parameterMap="callWHClosingConfirmCancelProc_Map">
+		{ CALL PKG_MAKE_TL_WH_CLOSING_CANCEL_PRC(#cls_no#, #cls_seq#, #org_cd#, #user_id#, #rtncd#, #rtnmsg#) }
+	</update> -->
+    <procedure id="callWHClosingConfirmCancelProc" parameterMap="callWHClosingConfirmCancelProc_Map">
+		 { CALL PKG_MAKE_TL_WH_CLOSING_CANCEL_PRC(?, ?, ?, ?, ?, ?) } 
+	</procedure>
+	<parameterMap class="com.clt.apps.fis.wms.whclosing.dto.ProcWHClosingConfirmVO" id="callWHClosingConfirmProc_Map">
+		<parameter property="so_no" javaType="java.lang.String" jdbcType="VARCHAR" mode="IN"/>
+		<parameter property="so_cnfm_timestamp" javaType="java.lang.String" jdbcType="VARCHAR" mode="IN"/>
+		<parameter property="org_cd" javaType="java.lang.String" jdbcType="VARCHAR" mode="IN"/>
+		<parameter property="user_id" javaType="java.lang.String" jdbcType="VARCHAR" mode="IN"/>
+		<parameter property="rtncd" javaType="java.lang.String" jdbcType="VARCHAR" mode="OUT"/>
+		<parameter property="rtnmsg" javaType="java.lang.String" jdbcType="VARCHAR" mode="OUT"/>
+	</parameterMap>
+	<procedure id="callWHClosingConfirmProc"  parameterMap="callWHClosingConfirmProc_Map">
+		 { CALL PKG_MAKE_TL_WH_CLOSING_CONFIRM_PRC(?, ?, ?, ?, ?, ?) } 
+	</procedure>
+	
+	<update id="modifyWhClsSoFrtInfo">
+	/*WHClosing.modifyWhClsSoFrtInfo*/
+	UPDATE TL_WH_CLS_SO_FRT
+	   SET MODI_ID     = #modi_id#
+	     , MODI_OFC_CD = #modi_ofc_cd#
+	     , MODI_SYS_DT = GETDATE()
+	     , MODI_LOC_DT = dbo.TL_GET_TM_ZONE_DATE_DT((SELECT WH_CD FROM TL_WH_CLS WHERE CLS_NO = #cls_no# ))
+		 , ADJUST_AMT  = #adjust_amt#
+		 , UNIT_CD     = #unit_cd#
+		 , UNIT_QTY    = #unit_qty#
+		 , UNIT_PRICE  = #unit_price#
+		 , FRT_NM      = #frt_nm#
+	 WHERE CLS_NO = #cls_no# 
+	   AND CLS_SEQ = #cls_seq#
+	   AND SB_CLS_CD = #sb_cls_cd#
+	   AND CLS_FRT_SEQ = #cls_frt_seq#
+	</update>
+	<update id="modifyWhClsSoFrtCnfm">
+	/**wms.WHClosing.modifyWhClsSoFrtCnfm*/
+	UPDATE TL_WH_CLS_SO_FRT
+	   SET FRT_NM            = #frt_nm#
+	     , UNIT_CD			 = #unit_cd#
+	     , UNIT_QTY			 = #unit_qty#
+	     , UNIT_PRICE		 = #unit_price#
+	     , ADJUST_AMT		 = #adjust_amt#
+	     , MODI_ID           = #modi_id#
+		 , MODI_OFC_CD       = #modi_ofc_cd#
+		 , MODI_SYS_DT       = GETDATE()
+		 , MODI_LOC_DT       = dbo.TL_GET_TM_ZONE_DATE_DT(#wh_cd#)
+	 WHERE CLS_NO            = #cls_no#
+	   AND CLS_SEQ           = #cls_seq#
+	   AND SB_CLS_CD		 = #sb_cls_cd#
+	   AND CLS_FRT_SEQ		 = #cls_frt_seq#
+	</update>
+	<typeAlias alias="Grd01ClosingMgmtDto" 	type="com.clt.apps.fis.wms.whclosing.dto.Grd01ClosingMgmtVO"/>
+	<select id="searchClosingStsList" resultClass="Grd01ClosingMgmtDto">
+	/*WHClosing.searchClosingStsList*/
+	SELECT CLS_NO
+	     , CLS_SEQ
+	     , CTRT_NO
+	  FROM TL_WH_CLS_SO
+	 WHERE CLS_NO + CONVERT(VARCHAR(1000), CLS_SEQ) IN (
+	 	<iterate property="cls_no_seq_in" conjunction=",">#cls_no_seq_in[]#</iterate>
+	 							)
+	</select>
+	<select id="getSoCnfmTimestamp" resultClass="java.lang.String">
+	/*WHClosing.getSoCnfmTimestamp*/
+	SELECT REPLACE(REPLACE(REPLACE(REPLACE(CONVERT(varchar(100), GETDATE(), 121),'-',''),':',''),' ',''),'.','')
+	</select>
+	<update id="modifyWhClsSoCnfmTimestamp">
+	/**wms.WHClosing.modifyWhClsSoCnfmTimestamp*/
+	UPDATE TL_WH_CLS_SO
+	   SET SO_CNFM_TIMESTAMP = #so_cnfm_timestamp#
+	     , SO_NO             = #so_no#
+	     , MODI_ID           = #modi_id#
+		 , MODI_OFC_CD       = #modi_ofc_cd#
+		 , MODI_SYS_DT       = GETDATE()
+		 , MODI_LOC_DT       = dbo.TL_GET_TM_ZONE_DATE_DT(WH_CD)
+	 WHERE CLS_NO            = #cls_no#
+	   AND CLS_SEQ           = #cls_seq#
+	</update>
+	
+	<!-- LKH::2015-11-03 WMS4.O -->
+	<select id="searchClosingMgmtDtl" resultClass="WHClosingVO">
+		/*WHClosing.searchClosingMgmtDtl*/
+		SELECT ROW_NUMBER() OVER (ORDER BY CLS.CLS_NO, CLS_SO.CTRT_NO) AS RN /*화면에서 SEQ한값을 넣어 MERGE효과를 중지시킨다*/
+		     , CLS.CLS_NO + CLS_SO.CTRT_NO AS CLS_KEY
+			 , CLS.CLS_NO 
+			 , CLS.CLS_NO + CLS_SO.CTRT_NO + CONVERT(VARCHAR(1000), CLS_SO.CLS_SEQ) AS MERGE_KEY
+			  , CLS.CLS_NO + CLS_SO.CTRT_NO + CONVERT(VARCHAR(1000), CLS_SO.CLS_SEQ) AS MERGE_KEY2
+		     , CLS_SO.CLS_SEQ
+		     , CLS_SO.CTRT_NO
+		     , dbo.TL_GET_CTRT_NM(CLS_SO.CTRT_NO) AS CTRT_NM
+		     , CLS_SO.RTP_NO
+		     , ISNULL(CLS_SO.CUST_CD, ' ') AS CUST_CD	     
+			 , ISNULL((SELECT LOCL_NM FROM TB_TRDP CUST WHERE CUST.TRDP_CD = CLS_SO.CUST_CD AND ISNULL(CUST.DELT_FLG,'N') = 'N' ), ' ') AS CUST_NM
+		     , CLS_S.SB_CLS_CD
+		     , CLS_S.CLS_FRT_SEQ
+		     , CASE WHEN CLS_S.CLS_NO IS NULL THEN 'N'
+		            WHEN CLS_SO.STS_CD = 'C' THEN CASE WHEN (SELECT COUNT(*) 
+																FROM tb_wm_doc_mst A JOIN TB_FRT B ON A.WM_DOC_SEQ = B.WMS_SEQ 
+																WHERE B.INV_SEQ IS NOT NULL AND A.DOC_REF_NO = CLS_SO.SO_NO
+															  ) > 0
+									                THEN 'I'
+									                ELSE CLS_SO.STS_CD
+									                END
+									                
+	                ELSE CLS_SO.STS_CD  
+	                END AS STS_CD
+	         , ( SELECT TOP 1 C.INV_NO 
+						FROM tb_wm_doc_mst A JOIN TB_FRT B ON A.WM_DOC_SEQ = B.WMS_SEQ
+							JOIN  TB_INV_DTL C ON B.INV_SEQ = C.inv_seq AND C.DELT_FLG = 'N'
+						WHERE B.INV_SEQ IS NOT NULL AND A.DOC_REF_NO = CLS_SO.SO_NO
+								AND CLS_S.FRT_SEQ = b.FRT_SEQ
+					) AS INV_NO
+			 , ( SELECT TOP 1 C.INV_SEQ
+						FROM tb_wm_doc_mst A JOIN TB_FRT B ON A.WM_DOC_SEQ = B.WMS_SEQ
+							JOIN  TB_INV_DTL C ON B.INV_SEQ = C.inv_seq AND C.DELT_FLG = 'N'
+						WHERE B.INV_SEQ IS NOT NULL AND A.DOC_REF_NO = CLS_SO.SO_NO
+								AND CLS_S.FRT_SEQ = b.FRT_SEQ
+					) AS INV_SEQ
+		     <!-- , ISNULL(CLS_SO.SO_NO, ' ') AS SO_NO -->
+		     ,( SELECT
+            	TOP 1 A.DOC_REF_NO       
+        		FROM
+            	tb_wm_doc_mst A 
+        		JOIN TB_FRT B 
+                ON A.WM_DOC_SEQ = B.WMS_SEQ        
+        		WHERE 1 = 1
+        		 AND A.DELT_FLG = 'N'
+            	 AND A.DOC_REF_NO = CLS_SO.SO_NO         
+           		 AND CLS_S.FRT_SEQ = b.FRT_SEQ      ) AS SO_NO
+		     , CASE WHEN CLS_S.SB_CLS_CD = 'S' THEN CLS_SO.SELL_RMK
+		            ELSE CLS_SO.BUY_RMK
+		            END AS RMK	     
+		     , CASE WHEN CLS_S.SB_CLS_CD = 'S' THEN CLS_SO.SELL_RMK
+		            ELSE CLS_SO.BUY_RMK
+		            END AS RMK2
+		     , CLS_S.RATE_TP_CD
+		     , CLS_S.ORDER_REL
+		     , CLS_S.FRT_CD
+		     , CLS_S.FRT_NM
+		     , CLS_S.DTL_FRT_NM
+		     , CLS_S.CURR_CD
+		     , CLS_S.DTL_UNIT_CD
+		     , CLS_S.UNIT_CD
+		     , CLS_S.UNIT_QTY
+		     , CLS_S.UNIT_PRICE
+		     , ISNULL(CLS_S.BASIC_AMT, 0) AS BASIC_AMT
+		     , ISNULL(CLS_S.ADJUST_AMT, 0) AS ADJUST_AMT
+		     , ISNULL(CLS_S.BASIC_AMT, 0) + ISNULL(CLS_S.ADJUST_AMT, 0) AS TOT_AMT     
+		     , CASE WHEN CLS_S.CLS_NO IS NULL THEN 'M' ELSE CLS_S.SRC_TP_CD END AS SRC_TP_CD
+		     /*, CLS.CLS_AGR_NO*/
+		     , CLS.WH_CD
+		     , dbo.TL_GET_LOC_NM(CLS.WH_CD) AS WH_NM
+		     , CLS.OFC_CD
+		     , CLS.CLS_DT
+		     , CLS.SET_FR_DT
+		     , CLS.SET_TO_DT
+		     , SUM(ISNULL(CLS_S.BASIC_AMT, 0) + ISNULL(CLS_S.ADJUST_AMT, 0) ) OVER ( PARTITION BY CLS.CLS_NO, CLS_SO.CLS_SEQ, CLS_S.SB_CLS_CD) AS SUB_TOT
+		     ,(SELECT CD.SRT_SEQ 
+	              FROM tb_com_cd_dtl CD 
+	             WHERE CD.COM_CD = 'WR0'
+	               AND CD.CD_VAL = CLS_S.RATE_TP_CD
+	            ) AS CD_DISP_SEQ
+	         ,CLS_S.FRT_SEQ   
+	         ,(SELECT WM_DOC_SEQ FROM TB_WM_DOC_MST WMDOC WHERE WMDOC.DOC_REF_NO = CLS_SO.SO_NO) AS WM_DOC_SEQ      
+		 FROM TL_WH_CLS CLS JOIN TL_WH_CLS_SO CLS_SO ON CLS.CLS_NO =  CLS_SO.CLS_NO JOIN TL_WH_CLS_SO_FRT CLS_S ON CLS_SO.CLS_NO = CLS_S.CLS_NO AND CLS_SO.CLS_SEQ = CLS_S.CLS_SEQ
+			
+		 WHERE 1 = 1
+		   
+		   
+		  <!--  AND ISNULL(CLS_S.BASIC_AMT, 0) + ISNULL(CLS_S.ADJUST_AMT, 0) != 0 -->
+		  	<![CDATA[ 
+		   		AND ISNULL(CLS_S.UNIT_QTY, 0) + ISNULL(CLS_S.ADJUST_AMT, 0) != 0
+		     ]]>
+		   <isEqual property="search_tp" compareValue="IN_CLS_NO">
+		   		AND CLS.CLS_NO = #in_cls_no#
+		   </isEqual>
+		   <isEqual property="search_tp" compareValue="H_CLS_NO">
+		   		AND CLS.CLS_NO IN (
+		   							<iterate property="in_cls_no_in" conjunction=",">#in_cls_no_in[]#</iterate>
+				                  )
+		   </isEqual>
+		   <isEqual property="search_tp" compareValue="IN_SO_NO">
+		   		AND CLS_SO.SO_NO = #in_so_no#
+		   </isEqual>
+		   <isEqual property="search_tp" compareValue="IN_CLS_SO_NO">
+		   		AND CLS.CLS_NO   = #in_cls_no#
+				AND CLS_SO.SO_NO = #in_so_no#
+		   </isEqual>
+		   <isNotEqual property="search_tp" compareValue="IN_CLS_NO">
+		   		<isNotEqual property="search_tp" compareValue="H_CLS_NO">
+		   			<isNotEqual property="search_tp" compareValue="IN_SO_NO">
+		   				<isNotEqual property="search_tp" compareValue="IN_CLS_SO_NO">
+		   					AND CLS.CLS_NO IN (
+										SELECT SUB_D.CLS_NO
+										  FROM TL_WH_CLS_SO_DTL SUB_D
+										 WHERE SUB_D.CLS_NO = CLS.CLS_NO
+										   AND SUB_D.CLS_AGR_NO = #cls_agr_no#
+				                      )
+		   				</isNotEqual>
+		   			</isNotEqual>
+		   		</isNotEqual>
+		   </isNotEqual>
+		 ORDER BY CLS.CLS_NO ASC
+		        /*, CLS_SO.CUST_CD ASC*/
+		        , CLS_SO.CLS_SEQ ASC
+		        , CLS_S.SB_CLS_CD DESC /* SELL, BUY */
+	            , CD_DISP_SEQ ASC /* TYPE의 코드순서별*/
+	            , CLS_S.ORDER_REL ASC
+	            , CLS_S.FRT_CD ASC
+	            , CLS_S.FRT_NM ASC
+	            , CLS_S.CURR_CD ASC
+	            , CLS_S.DISP_SEQ ASC /*입력 시 등록된 순서별*/
+		</select>	
+		
+		<!-- Closing Background Search -->	
+	<typeAlias alias="Grd01ClosingBackgroundSearchDto" 	type="com.clt.apps.fis.wms.whclosing.dto.WHClosingBackgroundSearchVO"/>
+	<select id="searchClosingBackgroundList" resultClass="Grd01ClosingBackgroundSearchDto">
+	/*WHClosing.searchClosingBackgroundList*/
+	SELECT T.CLS_DT
+	      ,T.CLS_AGR_NO
+	      ,dbo.TL_GET_COMM_NM('BS1',T.STS_CD) AS STS_NM
+	      ,T.WH_CD
+	      ,dbo.TL_GET_LOC_NM(T.WH_CD) AS WH_NM 
+	      ,T.CTRT_NO
+	      ,dbo.TL_GET_CTRT_NM(T.CTRT_NO) AS CTRT_NM   
+  		  ,CASE WHEN T.SB_CLS_CD = 'S' THEN 'SELL'
+			WHEN T.SB_CLS_CD = 'B' THEN 'BUY'
+			ELSE 'ALL' END AS SB_CLS_NM
+		  ,(CASE WHEN Isnull(dbo.TL_GET_COMM_NM('WR0',T.RATE_TP_CD),'') <![CDATA[<>]]>  '' THEN dbo.TL_GET_COMM_NM('WR0',T.RATE_TP_CD)
+			ELSE 'ALL' END ) AS RATE_TP_NM
+<!-- 	      ,Isnull(dbo.TL_GET_COMM_NM('WR0',T.RATE_TP_CD),'ALL') AS RATE_TP_NM -->
+	      ,T.RGST_ID
+	      ,T.STS_RSLT
+	  FROM TL_WH_CLS_AGR_MST T
+	 WHERE 1=1
+	   <!--   AND T.FB_CLS_CD = 'B' -->
+	   <!-- <isEqual property="auth_lvl" compareValue="AQ">
+	       AND dbo.TL_GET_USER_BRANCH(T.RGST_ID) IN ( SELECT OFC_CD 
+								                    FROM TB_OFC O
+								                   WHERE O.USE_FLG = 'Y'
+								                     AND O.MODI_OFC_CD =  #org_cd#
+								                   UNION
+								                  SELECT OFC_CD
+								                    FROM TB_OFC O
+								                   WHERE O.USE_FLG = 'Y'
+								                     AND O.OFC_CD =  #org_cd# 
+								                  )
+	   </isEqual>
+	   <isEqual property="auth_lvl" compareValue="LB">
+		       AND dbo.TL_GET_USER_BRANCH(T.RGST_ID) = #org_cd#
+		</isEqual> -->
+		<isNotNull property="ofc_cd">
+			<isNotEmpty property="ofc_cd">
+				   AND dbo.TL_GET_USER_BRANCH(T.RGST_ID) = #org_cd#
+			</isNotEmpty>    	   
+		</isNotNull>
+		
+		<isNotEqual property="wh_cd" compareValue="ALL">
+			   AND T.WH_CD = #wh_cd#
+		</isNotEqual>
+		
+		<isNotNull property="ctrt_no">
+			<isNotEmpty property="ctrt_no">
+				   AND T.CTRT_NO = #ctrt_no#
+			</isNotEmpty>
+		</isNotNull>
+		
+		<isNotNull property="fm_cls_date">
+			<isNotEmpty property="fm_cls_date">
+				   AND T.CLS_DT BETWEEN REPLACE(#fm_cls_date#, '-', '') AND REPLACE(#to_cls_date#, '-', '')  
+			</isNotEmpty>
+		</isNotNull>
+		
+		<isNotNull property="sts_cd">
+			<isNotEqual property="sts_cd" compareValue="ALL">
+				   AND T.STS_CD = #sts_cd#
+			</isNotEqual>
+		</isNotNull>
+		 ORDER BY T.CLS_AGR_NO DESC
+	</select>
+	
+	<select id="searchClosingBackgroundList_CNT" resultClass="Integer">
+	/*WHClosing.searchClosingBackgroundList_CNT*/
+	SELECT COUNT(*)
+	  FROM TL_WH_CLS_AGR_MST T
+	 WHERE 1=1
+	   <!-- AND T.FB_CLS_CD = 'B' -->
+	   <!-- <isEqual property="auth_lvl" compareValue="AQ">
+	       AND dbo.TL_GET_USER_BRANCH(T.RGST_ID) IN ( SELECT OFC_CD 
+								                    FROM TB_OFC O
+								                   WHERE O.USE_FLG = 'Y'
+								                     AND O.MODI_OFC_CD =  #org_cd#
+								                   UNION
+								                  SELECT OFC_CD
+								                    FROM TB_OFC O
+								                   WHERE O.USE_FLG = 'Y'
+								                     AND O.OFC_CD =  #org_cd# 
+								                  )
+	   </isEqual>
+	   <isEqual property="auth_lvl" compareValue="LB">
+		       AND dbo.TL_GET_USER_BRANCH(T.RGST_ID) = #org_cd#
+		</isEqual> -->
+		<isNotNull property="ofc_cd">
+			<isNotEmpty property="ofc_cd">
+				   AND dbo.TL_GET_USER_BRANCH(T.RGST_ID) = #org_cd#
+			</isNotEmpty>    	   
+		</isNotNull>
+		
+		<isNotEqual property="wh_cd" compareValue="ALL">
+			   AND T.WH_CD = #wh_cd#
+		</isNotEqual>
+		
+		<isNotNull property="ctrt_no">
+			<isNotEmpty property="ctrt_no">
+				   AND T.CTRT_NO = #ctrt_no#
+			</isNotEmpty>
+		</isNotNull>
+		
+		<isNotNull property="fm_cls_date">
+			<isNotEmpty property="fm_cls_date">
+				   AND T.CLS_DT BETWEEN REPLACE(#fm_cls_date#, '-', '') AND REPLACE(#to_cls_date#, '-', '')  
+			</isNotEmpty>
+		</isNotNull>
+		
+		<isNotNull property="sts_cd">
+			<isNotEqual property="sts_cd" compareValue="ALL">
+				   AND T.STS_CD = #sts_cd#
+			</isNotEqual>
+		</isNotNull>		 
+	</select>
+	
+	<typeAlias alias="ClosingDetailInOutDto" 	type="com.clt.apps.fis.wms.whclosing.dto.ClosingDetailInOutVO"/>
+	<select id="searchClosingDetailInfo" resultClass="ClosingDetailInOutDto">
+		/*WHClosing.searchClosingDetailInfo*/
+		SELECT
+	        CLS.CLS_NO        in_cls_no,
+	        CONVERT(VARCHAR(15), CONVERT(DATETIME, CLS.CLS_DT), 110) AS CLS_DT		     
+			     , CONVERT(VARCHAR(15), CONVERT(DATETIME, CLS.SET_FR_DT), 110) AS SET_FR_DT
+			     , CONVERT(VARCHAR(15), CONVERT(DATETIME, CLS.SET_TO_DT), 110) AS SET_TO_DT
+			     , CLS.OFC_CD
+			     , dbo.TL_GET_ORG_NM(CLS.OFC_CD) AS OFC_NM
+			     , CLS.WH_CD
+			     , dbo.TL_GET_LOC_NM(CLS.WH_CD) AS WH_NM
+			     , CLS_SO.CTRT_NO
+			     , dbo.TL_GET_CTRT_NM(CLS_SO.CTRT_NO) AS CTRT_NM	
+			    <!--  , CLS_SO.RTP_NO -->
+			     , dbo.TL_GET_ROWTOCOLL_CLOSING_DETAIL(CLS.CLS_NO,'|') AS CUST_CD_ARR
+		  FROM TL_WH_CLS CLS
+		     , (SELECT CLS_NO, CTRT_NO
+		     		<!-- , RTP_NO  -->
+		          FROM TL_WH_CLS_SO CLS_SO
+		         WHERE 1=1
+		         <isNotNull property="in_cls_no">
+			         <isNotEmpty property="in_cls_no">
+				           AND CLS_SO.CLS_NO = #in_cls_no# 
+			         </isNotEmpty>
+		         </isNotNull>
+		         
+		         <isNotNull property="cls_agr_no">
+			         <isNotEmpty property="cls_agr_no">
+					   AND CLS_SO.CLS_NO IN (
+												SELECT SUB_D.CLS_NO
+												  FROM TL_WH_CLS_SO_DTL SUB_D
+												 WHERE SUB_D.CLS_NO = CLS_SO.CLS_NO
+												   AND SUB_D.CLS_AGR_NO = #cls_agr_no#
+						                      )
+					 </isNotEmpty>
+		         </isNotNull>
+		         GROUP BY CLS_NO
+		         		, CTRT_NO
+		         		<!-- , RTP_NO -->
+		       ) CLS_SO
+		 WHERE CLS.CLS_NO = CLS_SO.CLS_NO
+		 <isNotNull property="in_cls_no">
+			 <isNotEmpty property="in_cls_no">
+				   AND CLS.CLS_NO = #in_cls_no#
+			</isNotEmpty>
+		 </isNotNull>
+		 
+		 <isNotNull property="cls_agr_no">
+			 <isNotEmpty property="cls_agr_no">
+				   AND CLS.CLS_NO IN (
+											SELECT SUB_D.CLS_NO
+											  FROM TL_WH_CLS_SO_DTL SUB_D
+											 WHERE SUB_D.CLS_NO = CLS.CLS_NO
+											   AND SUB_D.CLS_AGR_NO = #cls_agr_no#
+					                      )
+			</isNotEmpty>
+		 </isNotNull>
+		 
+		 <!-- <isEqual property="auth_lvl" compareValue="AQ">
+		       AND CLS.OFC_CD IN (SELECT OFC_CD 
+		                            FROM TB_OFC O
+		                           WHERE O.USE_FLG = 'Y'
+		                             AND O.MODI_OFC_CD =  #org_cd#
+		                           UNION
+		                          SELECT OFC_CD
+		                            FROM TB_OFC O
+		                           WHERE O.USE_FLG = 'Y'
+		                             AND O.OFC_CD =  #org_cd#  
+		                         )
+		</isEqual>
+		<isEqual property="auth_lvl" compareValue="LB">
+		       AND CLS.OFC_CD = #org_cd#
+		</isEqual>	  -->
+	</select>	
+	
+	<!-- Long.Le (S) -->
+		<typeAlias alias="DailyClosingVO" 	type="com.clt.apps.fis.wms.whclosing.dto.DailyClosingVO"/>
+		<select id="searchDailyClosingByItemList" resultClass="DailyClosingVO">
+		/*WHClosing.searchDailyClosingByItemList*/
+		select a2.* from (
+		select
+			ROW_NUMBER() OVER (ORDER BY a1.CLS_LOC_DT ASC) as ROWNUM, 
+			a1.* 
+		from(select 
+				T.CLS_LOC_DT,
+		         T.ITEM_CD,
+		         T.ITEM_NM,
+		         SUM (T.STC_QTY) AS STC_QTY,
+		         SUM (T.ALLC_QTY) AS ALLC_QTY,
+		         SUM (T.HOLD_QTY) AS HOLD_QTY,
+		         SUM (T.DMG_QTY) AS DMG_QTY,
+		         SUM (T.TOT_QTY) AS TOT_QTY,
+		         SUM (T.ITEM_CBM) AS ITEM_CBM,
+		         SUM (T.ITEM_CBF) AS ITEM_CBF,
+		         SUM (T.ITEM_GRS_KGS) AS ITEM_GRS_KGS,
+		         SUM (T.ITEM_GRS_LBS) AS ITEM_GRS_LBS,
+		         SUM (T.ITEM_NET_KGS) AS ITEM_NET_KGS,
+		         SUM (T.ITEM_NET_LBS) AS ITEM_NET_LBS,
+		         T.WH_CD,
+             	 T.WH_NM,
+		         T.CTRT_NO,
+		         dbo.TL_GET_CTRT_NM (T.CTRT_NO) AS CTRT_NM
+		    FROM (SELECT I.CLS_LOC_DT,
+		    			 I.ITEM_CD,
+				         I.ITEM_NM,
+				         ISNULL (I.IN_QTY, 0) - ISNULL (I.ALLC_QTY, 0) - ISNULL (I.HOLD_QTY, 0) - ISNULL (I.DMG_QTY, 0)  AS STC_QTY,
+				         ISNULL (I.ALLC_QTY, 0) - ISNULL (I.OUT_QTY, 0) AS ALLC_QTY,
+				         ISNULL (I.HOLD_QTY, 0) AS HOLD_QTY,
+				         ISNULL (I.DMG_QTY, 0) AS DMG_QTY,
+				         ISNULL (I.IN_QTY, 0) - ISNULL (I.OUT_QTY, 0) AS TOT_QTY,
+				         <![CDATA[ 
+				         CASE WHEN ISNULL(I.IN_CBM, 0)     - ISNULL(I.OUT_CBM, 0)     < 0 THEN 0 ELSE ISNULL(I.IN_CBM, 0)     - ISNULL(I.OUT_CBM, 0)     END AS ITEM_CBM,
+				         CASE WHEN ISNULL(I.IN_CBF, 0)     - ISNULL(I.OUT_CBF, 0)     < 0 THEN 0 ELSE ISNULL(I.IN_CBF, 0)     - ISNULL(I.OUT_CBF, 0)     END AS ITEM_CBF,
+				         CASE WHEN ISNULL(I.IN_GRS_KGS, 0) - ISNULL(I.OUT_GRS_KGS, 0) < 0 THEN 0 ELSE ISNULL(I.IN_GRS_KGS, 0) - ISNULL(I.OUT_GRS_KGS, 0) END AS ITEM_GRS_KGS,
+				         CASE WHEN ISNULL(I.IN_GRS_LBS, 0) - ISNULL(I.OUT_GRS_LBS, 0) < 0 THEN 0 ELSE ISNULL(I.IN_GRS_LBS, 0) - ISNULL(I.OUT_GRS_LBS, 0) END AS ITEM_GRS_LBS,
+				         CASE WHEN ISNULL(I.IN_NET_KGS, 0) - ISNULL(I.OUT_NET_KGS, 0) < 0 THEN 0 ELSE ISNULL(I.IN_NET_KGS, 0) - ISNULL(I.OUT_NET_KGS, 0) END AS ITEM_NET_KGS,
+				         CASE WHEN ISNULL(I.IN_NET_LBS, 0) - ISNULL(I.OUT_NET_LBS, 0) < 0 THEN 0 ELSE ISNULL(I.IN_NET_LBS, 0) - ISNULL(I.OUT_NET_LBS, 0) END AS ITEM_NET_LBS,
+				         ]]>
+				         I.WH_CD,
+		             	 dbo.TL_GET_LOC_NM (I.WH_CD) AS WH_NM,		         
+				         I.CTRT_NO,
+				         dbo.TL_GET_CTRT_NM (I.CTRT_NO) AS CTRT_NM
+				    FROM TL_WH_CLS_INV_ITEM I
+				       , TL_CTRT_CUST_ITEM CI
+				   WHERE I.CTRT_NO 			= CI.CTRT_NO
+				     AND I.ITEM_SYS_NO 		= CI.ITEM_SYS_NO
+				     AND CI.ITEM_USE_FLG 	= 'Y'
+				     AND ISNULL(I.IN_QTY, 0) - ISNULL(I.OUT_QTY, 0) > 0
+				     AND I.WH_CD 	= #wh_cd#
+				     <isNotNull property="ctrt_no">
+						 <isNotEmpty property="ctrt_no">
+								AND I.CTRT_NO 	= #ctrt_no#                                        /* CONTRACT NO */
+						 </isNotEmpty>
+				     </isNotNull>
+				     
+				     <isNotNull property="item_cd">
+						 <isNotEmpty property="item_cd">		                     
+								AND I.ITEM_CD 	= #item_cd#                                        /* ITEM CODE */
+						 </isNotEmpty> 
+				     </isNotNull>
+				     
+				     <isNotNull property="prop_date_fm">
+						 <isNotEmpty property="prop_date_fm">		                     
+								<![CDATA[ AND I.CLS_LOC_DT >= ]]> REPLACE (#prop_date_fm#, '-', '')     	/* CLOSING DATE */
+						 </isNotEmpty>		                     
+				     </isNotNull>
+				     
+				     <isNotNull property="prop_date_to">
+						 <isNotEmpty property="prop_date_to">		                     
+								<![CDATA[ AND I.CLS_LOC_DT <= ]]> REPLACE (#prop_date_to#, '-', '')
+						 </isNotEmpty>
+				     </isNotNull>
+				
+                 ) T
+                 GROUP BY T.CLS_LOC_DT,
+				 T.ITEM_CD,
+		         T.ITEM_NM,
+		         T.WH_CD,
+		         T.WH_NM,
+		         T.CTRT_NO
+				
+                ) a1
+                )a2
+				
+				 <![CDATA[ where a2.ROWNUM > #beginIdx# AND a2.ROWNUM <= #topCnt#	]]> 
+				 
+				 ORDER BY a2.CTRT_NO, a2.ITEM_CD
+				 
+				  
+		</select>
+		
+		<select id="searchDailyClosingByItemList_CNT" resultClass="Integer">
+		/*WmsWHClosingSQL.xml > searchDailyClosingByItemList_CNT*/
+		
+		SELECT
+			COUNT (*)
+		FROM
+			(
+				SELECT
+					I.CLS_LOC_DT,
+					I.ITEM_CD,
+					I.WH_CD,
+					I.CTRT_NO
+		    FROM TL_WH_CLS_INV_ITEM I
+		       , TL_CTRT_CUST_ITEM CI
+		   WHERE I.CTRT_NO 			= CI.CTRT_NO
+		     AND I.ITEM_SYS_NO 		= CI.ITEM_SYS_NO
+		     AND CI.ITEM_USE_FLG 	= 'Y'
+		     AND ISNULL(I.IN_QTY, 0) - ISNULL(I.OUT_QTY, 0) > 0
+		     AND I.WH_CD 	= #wh_cd#
+		     <isNotNull property="ctrt_no">
+				 <isNotEmpty property="ctrt_no">
+						AND I.CTRT_NO 	= #ctrt_no#                                        /* CONTRACT NO */
+				 </isNotEmpty>
+		     </isNotNull>
+		     
+		     <isNotNull property="item_cd">
+				 <isNotEmpty property="item_cd">		                     
+						AND I.ITEM_CD 	= #item_cd#                                        /* ITEM CODE */
+				 </isNotEmpty> 
+		     </isNotNull>
+		     
+		     <isNotNull property="prop_date_fm">
+				 <isNotEmpty property="prop_date_fm">		                     
+						<![CDATA[ AND I.CLS_LOC_DT >= ]]> REPLACE (#prop_date_fm#, '-', '')     	/* CLOSING DATE */
+				 </isNotEmpty>		                     
+		     </isNotNull>
+		     
+		     <isNotNull property="prop_date_to">
+				 <isNotEmpty property="prop_date_to">		                     
+						<![CDATA[ AND I.CLS_LOC_DT <= ]]> REPLACE (#prop_date_to#, '-', '')
+				 </isNotEmpty>
+		     </isNotNull>
+		     GROUP BY
+				I.CLS_LOC_DT,
+				I.ITEM_CD,
+				I.WH_CD,
+				I.CTRT_NO
+	              ) T
+		</select>
+		
+		<select id="searchDailyClosingByLotList" resultClass="DailyClosingVO">
+		/* WHClosing.searchDailyClosingByLotList */
+		SELECT T2.*
+		FROM(
+				SELECT ROW_NUMBER() OVER (ORDER BY T1.CLS_LOC_DT ASC) as ROWNUM,
+						T1.*
+				FROM(
+					  SELECT T.CLS_LOC_DT,
+					  		 T.ITEM_CD,
+					         T.ITEM_NM,
+					         T.INBOUND_DT,
+					         T.LOT_NO,
+					         T.LOT_ID,
+					         SUM (T.STC_QTY) AS STC_QTY,
+					         SUM (T.ALLC_QTY) AS ALLC_QTY,
+					         SUM (T.HOLD_QTY) AS HOLD_QTY,
+					         SUM (T.DMG_QTY) AS DMG_QTY,
+					         SUM (T.TOT_QTY) AS TOT_QTY,
+					         SUM (T.ITEM_CBM) AS ITEM_CBM,
+					         SUM (T.ITEM_CBF) AS ITEM_CBF,
+					         SUM (T.ITEM_GRS_KGS) AS ITEM_GRS_KGS,
+					         SUM (T.ITEM_GRS_LBS) AS ITEM_GRS_LBS,
+					         SUM (T.ITEM_NET_KGS) AS ITEM_NET_KGS,
+					         SUM (T.ITEM_NET_LBS) AS ITEM_NET_LBS,
+					         T.WH_CD,
+					         T.CTRT_NO,
+					         dbo.TL_GET_CTRT_NM (T.CTRT_NO) AS CTRT_NM,
+					         T.EXP_DT,
+					         T.LOT_04,
+					         T.LOT_05
+					    FROM (SELECT I.CLS_LOC_DT,
+					    			 I.ITEM_CD,
+							         I.ITEM_NM,
+							         CONVERT(VARCHAR(10), CONVERT(DATETIME, L.LOT_ATTRIB_01, 102), 102) AS INBOUND_DT,
+							         L.LOT_ATTRIB_02 AS LOT_NO,
+							         L.LOT_ID AS LOT_ID,
+							         ISNULL (I.IN_QTY, 0) - ISNULL (I.ALLC_QTY, 0) - ISNULL (I.HOLD_QTY, 0) - ISNULL (I.DMG_QTY, 0)  AS STC_QTY,
+							         ISNULL (I.ALLC_QTY, 0) - ISNULL (I.OUT_QTY, 0) AS ALLC_QTY,
+							         ISNULL (I.HOLD_QTY, 0) AS HOLD_QTY,
+							         ISNULL (I.DMG_QTY, 0) AS DMG_QTY,
+							         ISNULL (I.IN_QTY, 0) - ISNULL (I.OUT_QTY, 0) AS TOT_QTY,
+							          <![CDATA[ 
+							          CASE WHEN ISNULL(I.IN_CBM, 0)     - ISNULL(I.OUT_CBM, 0)     < 0 THEN 0 ELSE ISNULL(I.IN_CBM, 0)     - ISNULL(I.OUT_CBM, 0)     END AS ITEM_CBM,
+							          CASE WHEN ISNULL(I.IN_CBF, 0)     - ISNULL(I.OUT_CBF, 0)     < 0 THEN 0 ELSE ISNULL(I.IN_CBF, 0)     - ISNULL(I.OUT_CBF, 0)     END AS ITEM_CBF,
+							          CASE WHEN ISNULL(I.IN_GRS_KGS, 0) - ISNULL(I.OUT_GRS_KGS, 0) < 0 THEN 0 ELSE ISNULL(I.IN_GRS_KGS, 0) - ISNULL(I.OUT_GRS_KGS, 0) END AS ITEM_GRS_KGS,
+							          CASE WHEN ISNULL(I.IN_GRS_LBS, 0) - ISNULL(I.OUT_GRS_LBS, 0) < 0 THEN 0 ELSE ISNULL(I.IN_GRS_LBS, 0) - ISNULL(I.OUT_GRS_LBS, 0) END AS ITEM_GRS_LBS,
+							          CASE WHEN ISNULL(I.IN_NET_KGS, 0) - ISNULL(I.OUT_NET_KGS, 0) < 0 THEN 0 ELSE ISNULL(I.IN_NET_KGS, 0) - ISNULL(I.OUT_NET_KGS, 0) END AS ITEM_NET_KGS,
+							          CASE WHEN ISNULL(I.IN_NET_LBS, 0) - ISNULL(I.OUT_NET_LBS, 0) < 0 THEN 0 ELSE ISNULL(I.IN_NET_LBS, 0) - ISNULL(I.OUT_NET_LBS, 0) END AS ITEM_NET_LBS,
+							          ]]>
+							         I.WH_CD,
+					                 dbo.TL_GET_LOC_NM (I.WH_CD) AS WH_NM,
+							         I.CTRT_NO,
+							         dbo.TL_GET_CTRT_NM (I.CTRT_NO) AS CTRT_NM,
+							         CONVERT(VARCHAR(10), CONVERT(DATETIME, L.LOT_ATTRIB_03, 102), 102) AS EXP_DT,
+							         L.LOT_ATTRIB_04 AS LOT_04,
+							         L.LOT_ATTRIB_05 AS LOT_05
+							    FROM TL_WH_CLS_INV_LOT I,
+							         TL_CTRT_CUST_ITEM CI,
+							         TL_CTRT_CUST_ITEM_LOT L
+							   WHERE I.CTRT_NO = CI.CTRT_NO
+							     AND I.ITEM_SYS_NO = CI.ITEM_SYS_NO
+							     AND CI.ITEM_USE_FLG = 'Y'
+							     AND I.CTRT_NO = L.CTRT_NO
+							     AND I.ITEM_SYS_NO = L.ITEM_SYS_NO
+							     AND I.LOT_ID = L.LOT_ID
+							     AND ISNULL (I.IN_QTY, 0) - ISNULL (I.OUT_QTY, 0) > 0
+							     
+							     <isNotNull property="ctrt_no">
+									<isNotEmpty property="ctrt_no">
+									     AND I.CTRT_NO = #ctrt_no#                                        /* CONTRACT NO */
+							        </isNotEmpty>		     
+							     </isNotNull>
+							     AND I.WH_CD = #wh_cd#
+							     
+							     <isNotNull property="item_cd">
+							         <isNotEmpty property="item_cd">		                     
+							             AND I.ITEM_CD = #item_cd#                                        /* ITEM CODE */
+							         </isNotEmpty>
+							     </isNotNull>
+							     
+							     <isNotNull property="prop_no">
+								     <isNotEmpty property="prop_no">
+								         <isEqual property="prop_no_tp" compareValue="LOT_ID">		     
+									         AND L.LOT_ID = #prop_no#                                         /* LOT ID */
+								         </isEqual>		     
+								         <isEqual property="prop_no_tp" compareValue="LOT_NO">		     
+									         AND L.LOT_ATTRIB_02 = #prop_no#                                  /* LOT NO */
+								         </isEqual>           		                              
+								         <isEqual property="prop_no_tp" compareValue="LOT_04">		                     
+								             AND L.LOT_ATTRIB_04 = #prop_no#                                  /* LOT 04 */
+								         </isEqual>		        		                              
+								         <isEqual property="prop_no_tp" compareValue="LOT_05">		                     
+								             AND L.LOT_ATTRIB_05 = #prop_no#                                  /* LOT 05 */
+								         </isEqual>
+								     </isNotEmpty>
+							     </isNotNull>
+					     
+					     <isNotNull  property="prop_date_fm">
+						     <isNotEmpty property="prop_date_fm">		                     
+						   <![CDATA[ AND I.CLS_LOC_DT >= ]]> REPLACE (#prop_date_fm#, '-', '')     	/* CLOSING DATE */
+						     </isNotEmpty>		                     
+					     </isNotNull>
+					     
+					     <isNotNull property="prop_date_to">
+						     <isNotEmpty property="prop_date_to">		                     
+						   <![CDATA[ AND I.CLS_LOC_DT <= ]]> REPLACE (#prop_date_to#, '-', '')
+						     </isNotEmpty>
+					     </isNotNull>
+			                 ) T
+					GROUP BY T.CLS_LOC_DT,
+						     T.ITEM_CD,
+					         T.ITEM_NM,
+					         T.INBOUND_DT,
+					         T.LOT_NO,
+					         T.LOT_ID,
+					         T.WH_CD,
+					         T.CTRT_NO,
+					         T.EXP_DT,
+					         T.LOT_04,
+					         T.LOT_05
+				) T1
+			)T2	
+			 <![CDATA[ where T2.ROWNUM > #beginIdx# AND T2.ROWNUM <= #topCnt#	]]> 
+			ORDER BY T2.CTRT_NO, T2.ITEM_CD, T2.INBOUND_DT
+		</select>
+		
+		<select id="searchDailyClosingByLotList_CNT" resultClass="Integer">
+		/* WmsWHClosingSQL.xml > searchDailyClosingByLotList_CNT */
+		
+			SELECT
+				COUNT (*)
+			FROM
+				(
+					SELECT
+						T.*
+					FROM
+						(
+							SELECT
+								I.CLS_LOC_DT,
+								I.ITEM_CD,
+								CONVERT (
+									VARCHAR (10),
+									CONVERT (
+										DATETIME,
+										L.LOT_ATTRIB_01,
+										102
+									),
+									102
+								) AS INBOUND_DT,
+								L.LOT_ATTRIB_02 AS LOT_NO,
+								L.LOT_ID AS LOT_ID,
+								I.WH_CD,
+								I.CTRT_NO,
+								CONVERT (
+									VARCHAR (10),
+									CONVERT (
+										DATETIME,
+										L.LOT_ATTRIB_03,
+										102
+									),
+									102
+								) AS EXP_DT,
+								L.LOT_ATTRIB_04 AS LOT_04,
+								L.LOT_ATTRIB_05 AS LOT_05
+					
+				    FROM TL_WH_CLS_INV_LOT I,
+				         TL_CTRT_CUST_ITEM CI,
+				         TL_CTRT_CUST_ITEM_LOT L
+				   WHERE I.CTRT_NO = CI.CTRT_NO
+				     AND I.ITEM_SYS_NO = CI.ITEM_SYS_NO
+				     AND CI.ITEM_USE_FLG = 'Y'
+				     AND I.CTRT_NO = L.CTRT_NO
+				     AND I.ITEM_SYS_NO = L.ITEM_SYS_NO
+				     AND I.LOT_ID = L.LOT_ID
+				     AND ISNULL (I.IN_QTY, 0) - ISNULL (I.OUT_QTY, 0) > 0
+				     
+				     <isNotNull property="ctrt_no">
+						<isNotEmpty property="ctrt_no">
+						     AND I.CTRT_NO = #ctrt_no#                                        /* CONTRACT NO */
+				        </isNotEmpty>		     
+				     </isNotNull>
+				     AND I.WH_CD = #wh_cd#
+				     
+				     <isNotNull property="item_cd">
+				         <isNotEmpty property="item_cd">		                     
+				             AND I.ITEM_CD = #item_cd#                                        /* ITEM CODE */
+				         </isNotEmpty>
+				     </isNotNull>
+				     
+				     <isNotNull property="prop_no">
+					     <isNotEmpty property="prop_no">
+					         <isEqual property="prop_no_tp" compareValue="LOT_ID">		     
+						         AND L.LOT_ID = #prop_no#                                         /* LOT ID */
+					         </isEqual>		     
+					         <isEqual property="prop_no_tp" compareValue="LOT_NO">		     
+						         AND L.LOT_ATTRIB_02 = #prop_no#                                  /* LOT NO */
+					         </isEqual>           		                              
+					         <isEqual property="prop_no_tp" compareValue="LOT_04">		                     
+					             AND L.LOT_ATTRIB_04 = #prop_no#                                  /* LOT 04 */
+					         </isEqual>		        		                              
+					         <isEqual property="prop_no_tp" compareValue="LOT_05">		                     
+					             AND L.LOT_ATTRIB_05 = #prop_no#                                  /* LOT 05 */
+					         </isEqual>
+					     </isNotEmpty>
+				     </isNotNull>
+		     
+		     <isNotNull  property="prop_date_fm">
+			     <isNotEmpty property="prop_date_fm">		                     
+			   <![CDATA[ AND I.CLS_LOC_DT >= ]]> REPLACE (#prop_date_fm#, '-', '')     	/* CLOSING DATE */
+			     </isNotEmpty>		                     
+		     </isNotNull>
+		     
+		     <isNotNull property="prop_date_to">
+			     <isNotEmpty property="prop_date_to">		                     
+			   <![CDATA[ AND I.CLS_LOC_DT <= ]]> REPLACE (#prop_date_to#, '-', '')
+			     </isNotEmpty>
+		     </isNotNull>
+                 ) T
+		GROUP BY T.CLS_LOC_DT,
+			     T.ITEM_CD,		        
+		         T.INBOUND_DT,
+		         T.LOT_NO,
+		         T.LOT_ID,
+		         T.WH_CD,
+		         T.CTRT_NO,
+		         T.EXP_DT,
+		         T.LOT_04,
+		         T.LOT_05 ) T1
+		
+		</select>
+		
+		<select id="searchDailyClosingByLocList" resultClass="DailyClosingVO">
+			/* WHClosing.searchDailyClosingByLocList */
+			SELECT T.*
+				FROM (
+				  SELECT 
+				  		 ROW_NUMBER() OVER (ORDER BY I.CLS_LOC_DT ASC) as ROWNUM,
+				  		 I.CLS_LOC_DT,
+				  		 I.ITEM_CD,
+				         I.ITEM_NM,
+				         L.LOT_ATTRIB_01,
+				         CONVERT(VARCHAR(10), CONVERT(DATETIME, L.LOT_ATTRIB_01, 102), 102) AS INBOUND_DT,
+				         L.LOT_ATTRIB_02 AS LOT_NO,
+				         L.LOT_ID AS LOT_ID,
+				         I.WH_LOC_CD,
+		             dbo.TL_GET_WH_LOC_NM (I.WH_CD, I.WH_LOC_CD) AS WH_LOC_NM,
+				         ISNULL(I.IN_QTY, 0) - ISNULL (I.ALLC_QTY, 0) - ISNULL (I.HOLD_QTY, 0) - ISNULL (I.DMG_QTY, 0)  AS STC_QTY,
+				         ISNULL (I.ALLC_QTY, 0) - ISNULL (I.OUT_QTY, 0) AS ALLC_QTY,
+				         ISNULL (I.HOLD_QTY, 0) AS HOLD_QTY,
+				         ISNULL (I.DMG_QTY, 0) AS DMG_QTY,
+				         ISNULL (I.IN_QTY, 0) - ISNULL (I.OUT_QTY, 0) AS TOT_QTY,
+				         <![CDATA[ 
+				         CASE WHEN ISNULL(I.IN_CBM, 0)     - ISNULL(I.OUT_CBM, 0)     < 0 THEN 0 ELSE ISNULL(I.IN_CBM, 0)     - ISNULL(I.OUT_CBM, 0)     END AS ITEM_CBM,
+				         CASE WHEN ISNULL(I.IN_CBF, 0)     - ISNULL(I.OUT_CBF, 0)     < 0 THEN 0 ELSE ISNULL(I.IN_CBF, 0)     - ISNULL(I.OUT_CBF, 0)     END AS ITEM_CBF,
+				         CASE WHEN ISNULL(I.IN_GRS_KGS, 0) - ISNULL(I.OUT_GRS_KGS, 0) < 0 THEN 0 ELSE ISNULL(I.IN_GRS_KGS, 0) - ISNULL(I.OUT_GRS_KGS, 0) END AS ITEM_GRS_KGS,
+				         CASE WHEN ISNULL(I.IN_GRS_LBS, 0) - ISNULL(I.OUT_GRS_LBS, 0) < 0 THEN 0 ELSE ISNULL(I.IN_GRS_LBS, 0) - ISNULL(I.OUT_GRS_LBS, 0) END AS ITEM_GRS_LBS,
+				         CASE WHEN ISNULL(I.IN_NET_KGS, 0) - ISNULL(I.OUT_NET_KGS, 0) < 0 THEN 0 ELSE ISNULL(I.IN_NET_KGS, 0) - ISNULL(I.OUT_NET_KGS, 0) END AS ITEM_NET_KGS,
+				         CASE WHEN ISNULL(I.IN_NET_LBS, 0) - ISNULL(I.OUT_NET_LBS, 0) < 0 THEN 0 ELSE ISNULL(I.IN_NET_LBS, 0) - ISNULL(I.OUT_NET_LBS, 0) END AS ITEM_NET_LBS,
+				         ]]>
+				         I.WH_CD,
+		             dbo.TL_GET_LOC_NM (I.WH_CD) AS WH_NM,		         		         
+				         I.CTRT_NO,
+				         dbo.TL_GET_CTRT_NM (I.CTRT_NO) AS CTRT_NM,
+				         CONVERT(VARCHAR(10), CONVERT(DATETIME, L.LOT_ATTRIB_03, 102), 102) AS EXP_DT,
+				         L.LOT_ATTRIB_04 AS LOT_04,
+				         L.LOT_ATTRIB_05 AS LOT_05,
+				         I.WIB_BK_NO,
+				         B.CUST_ORD_NO
+				    FROM TL_WH_CLS_INV_LOC I LEFT JOIN TL_WH_IB B ON I.WIB_BK_NO = B.WIB_BK_NO,
+				         TL_CTRT_CUST_ITEM CI,
+				         TL_CTRT_CUST_ITEM_LOT L
+				   WHERE I.CTRT_NO = CI.CTRT_NO
+				     AND I.ITEM_SYS_NO = CI.ITEM_SYS_NO
+				     AND CI.ITEM_USE_FLG = 'Y'
+				     AND I.CTRT_NO = L.CTRT_NO
+				     AND I.ITEM_SYS_NO = L.ITEM_SYS_NO
+				     AND I.LOT_ID = L.LOT_ID
+				     AND ISNULL (I.IN_QTY, 0) - ISNULL (I.OUT_QTY, 0) > 0
+				     <isNotNull property="ctrt_no">
+						 <isNotEmpty property="ctrt_no">
+								AND I.CTRT_NO = #ctrt_no#                                        /* CONTRACT NO */
+						 </isNotEmpty> 		     
+				     </isNotNull>
+							AND I.WH_CD = #wh_cd#
+					
+					<isNotNull property="item_cd">
+						 <isNotEmpty property="item_cd">		                     
+								AND I.ITEM_CD = #item_cd#                                        /* ITEM CODE */
+						 </isNotEmpty> 
+					</isNotNull>		
+					
+					<isNotNull property="prop_no">
+						<isNotEmpty property="prop_no">
+							<isEqual property="prop_no_tp" compareValue="LOT_ID">		     
+								AND L.LOT_ID = #prop_no#                                         /* LOT ID */
+							</isEqual>		     
+							<isEqual property="prop_no_tp" compareValue="LOT_NO">		     
+								AND L.LOT_ATTRIB_02 = #prop_no#                                  /* LOT NO */
+							</isEqual>           		                              
+							<isEqual property="prop_no_tp" compareValue="LOT_04">		                     
+								AND L.LOT_ATTRIB_04 = #prop_no#                                  /* LOT 04 */
+							</isEqual>		        		                              
+							<isEqual property="prop_no_tp" compareValue="LOT_05">		                     
+								AND L.LOT_ATTRIB_05 = #prop_no#                                  /* LOT 05 */
+							</isEqual>
+						</isNotEmpty> 
+					</isNotNull>
+		     
+		     		<isNotNull property="prop_date_fm">
+			     	 <isNotEmpty property="prop_date_fm">		                     
+					   <![CDATA[ AND I.CLS_LOC_DT >= ]]> REPLACE (#prop_date_fm#, '-', '')     	/* CLOSING DATE */
+					 </isNotEmpty> 		                     
+		     		</isNotNull>
+		     		
+		     		<isNotNull property="prop_date_to">
+					 <isNotEmpty property="prop_date_to">		                     
+					   <![CDATA[ AND I.CLS_LOC_DT <= ]]> REPLACE (#prop_date_to#, '-', '')
+					 </isNotEmpty> 
+		     		</isNotNull>
+				     
+				     <isNotNull property="wh_loc_cd">
+				         <isNotEmpty property="wh_loc_cd">		                     
+				             AND I.WH_LOC_CD = #wh_loc_cd#   /* LOCATION CODE */
+				         </isNotEmpty> 		                     
+				     </isNotNull>
+				     
+				     <isNotNull property="wib_bk_no">
+				         <isNotEmpty property="wib_bk_no">		                     
+				             AND I.WIB_BK_NO = #wib_bk_no#   /* IN BOOKING NO */
+				         </isNotEmpty> 
+				     </isNotNull>
+				     
+				     <isNotNull property="cust_ord_no">
+				         <isNotEmpty property="cust_ord_no">		                     
+				             AND B.CUST_ORD_NO = #cust_ord_no#   /* CUST ORDER NO */
+						 </isNotEmpty>        
+				     </isNotNull>
+		       
+		       )T
+		       
+		       <![CDATA[ where T.ROWNUM > #beginIdx# AND T.ROWNUM <= #topCnt#	]]> 
+		       
+				ORDER BY T.CTRT_NO, T.ITEM_CD, T.LOT_ATTRIB_01, T.WH_LOC_CD, T.WIB_BK_NO	
+		     
+		</select>
+		
+		<select id="searchDailyClosingByLocList_CNT" resultClass="Integer">
+			/* WmsWHClosingSQL.xml > searchDailyClosingByLocList_CNT */
+				
+				  SELECT COUNT(*)
+				    FROM TL_WH_CLS_INV_LOC I LEFT JOIN TL_WH_IB B ON I.WIB_BK_NO = B.WIB_BK_NO,
+				         TL_CTRT_CUST_ITEM CI,
+				         TL_CTRT_CUST_ITEM_LOT L
+				   WHERE I.CTRT_NO = CI.CTRT_NO
+				     AND I.ITEM_SYS_NO = CI.ITEM_SYS_NO
+				     AND CI.ITEM_USE_FLG = 'Y'
+				     AND I.CTRT_NO = L.CTRT_NO
+				     AND I.ITEM_SYS_NO = L.ITEM_SYS_NO
+				     AND I.LOT_ID = L.LOT_ID
+				     AND ISNULL (I.IN_QTY, 0) - ISNULL (I.OUT_QTY, 0) > 0
+				     <isNotNull property="ctrt_no">
+						 <isNotEmpty property="ctrt_no">
+								AND I.CTRT_NO = #ctrt_no#                                        /* CONTRACT NO */
+						 </isNotEmpty> 		     
+				     </isNotNull>
+							AND I.WH_CD = #wh_cd#
+					
+					<isNotNull property="item_cd">
+						 <isNotEmpty property="item_cd">		                     
+								AND I.ITEM_CD = #item_cd#                                        /* ITEM CODE */
+						 </isNotEmpty> 
+					</isNotNull>		
+					
+					<isNotNull property="prop_no">
+						<isNotEmpty property="prop_no">
+							<isEqual property="prop_no_tp" compareValue="LOT_ID">		     
+								AND L.LOT_ID = #prop_no#                                         /* LOT ID */
+							</isEqual>		     
+							<isEqual property="prop_no_tp" compareValue="LOT_NO">		     
+								AND L.LOT_ATTRIB_02 = #prop_no#                                  /* LOT NO */
+							</isEqual>           		                              
+							<isEqual property="prop_no_tp" compareValue="LOT_04">		                     
+								AND L.LOT_ATTRIB_04 = #prop_no#                                  /* LOT 04 */
+							</isEqual>		        		                              
+							<isEqual property="prop_no_tp" compareValue="LOT_05">		                     
+								AND L.LOT_ATTRIB_05 = #prop_no#                                  /* LOT 05 */
+							</isEqual>
+						</isNotEmpty> 
+					</isNotNull>
+		     
+		     		<isNotNull property="prop_date_fm">
+			     	 <isNotEmpty property="prop_date_fm">		                     
+					   <![CDATA[ AND I.CLS_LOC_DT >= ]]> REPLACE (#prop_date_fm#, '-', '')     	/* CLOSING DATE */
+					 </isNotEmpty> 		                     
+		     		</isNotNull>
+		     		
+		     		<isNotNull property="prop_date_to">
+					 <isNotEmpty property="prop_date_to">		                     
+					   <![CDATA[ AND I.CLS_LOC_DT <= ]]> REPLACE (#prop_date_to#, '-', '')
+					 </isNotEmpty> 
+		     		</isNotNull>
+				     
+				     <isNotNull property="wh_loc_cd">
+				         <isNotEmpty property="wh_loc_cd">		                     
+				             AND I.WH_LOC_CD = #wh_loc_cd#   /* LOCATION CODE */
+				         </isNotEmpty> 		                     
+				     </isNotNull>
+				     
+				     <isNotNull property="wib_bk_no">
+				         <isNotEmpty property="wib_bk_no">		                     
+				             AND I.WIB_BK_NO = #wib_bk_no#   /* IN BOOKING NO */
+				         </isNotEmpty> 
+				     </isNotNull>
+				     
+				     <isNotNull property="cust_ord_no">
+				         <isNotEmpty property="cust_ord_no">		                     
+				             AND B.CUST_ORD_NO = #cust_ord_no#   /* CUST ORDER NO */
+						 </isNotEmpty>        
+				     </isNotNull>
+		</select>
+	<!-- Long.Le (E) -->
+	
+	
+	<typeAlias alias="Grd01ClosingDetailDto" 	type="com.clt.apps.fis.wms.whclosing.dto.Grd01ClosingDetailVO"/>
+	<select id="searchClosingDetailDtl" resultClass="Grd01ClosingDetailDto">
+	/*WHClosing.searchClosingDetailDtl*/
+	SELECT T.*
+<!-- 	     , ROWNUM AS RN /*화면에서 SEQ한값을 넣어 MERGE효과를 중지시킨다*/      -->
+	     , T.CLS_NO + CONVERT(VARCHAR(10), T.CLS_SEQ, 102) + T.SB_CLS_CD + T.RATE_TP_CD + T.PRE_CLS_DT + T.TRANS_DT + T.BK_NO + T.ORDER_REL 
+	       + T.ITEM_SYS_NO + CONVERT (VARCHAR(10), T.ITEM_SEQ, 102) + T.WH_LOC_CD  AS MERGE_KEY
+	     , T.CLS_NO + CONVERT(VARCHAR(10), T.CLS_SEQ, 102) + T.SB_CLS_CD + T.RATE_TP_CD + T.PRE_CLS_DT + T.TRANS_DT + T.BK_NO + T.ORDER_REL 
+	       + T.ITEM_SYS_NO + CONVERT (VARCHAR(10), T.ITEM_SEQ, 102) + T.LOT_ID + CONVERT(VARCHAR(10), T.EA_QTY, 102) + T.WH_LOC_CD + T.SPACE_TP_CD + EQ_TPSZ_CD + EQ_NO + SEAL_NO AS SUB_KEY
+	     , T.CLS_NO + CONVERT(VARCHAR(10), T.CLS_SEQ, 102) + T.SB_CLS_CD + T.RATE_TP_CD + T.PRE_CLS_DT + T.TRANS_DT + T.BK_NO AS SUB_BK_KEY
+	  FROM (
+			SELECT DENSE_RANK() OVER( ORDER BY CLS_SO.CLS_NO ASC, CLS_SO.CLS_SEQ ASC) AS SEQ
+			     , CLS_SO.CLS_NO
+			     , CLS_SO.CLS_SEQ
+			     , ISNULL(CLS_SO.CUST_CD, ' ') AS CUST_CD	
+	             , CASE WHEN CLS_SO.STS_CD = 'C' THEN 
+										       CASE WHEN (SELECT COUNT(*) 
+																FROM tb_wm_doc_mst A JOIN TB_FRT B ON A.WM_DOC_SEQ = B.WMS_SEQ 
+																WHERE B.INV_SEQ IS NOT NULL AND A.DOC_REF_NO = CLS_SO.SO_NO
+															  ) > 0  
+									                THEN 'I' /* I : Invoiced */
+									                ELSE CLS_SO.STS_CD
+									                END
+									                
+	                     ELSE CLS_SO.STS_CD  
+	                     END AS STS_CD
+<!-- 			     , ISNULL((SELECT CUST_LOC_NM FROM TL_CUST CUST WHERE CUST.CUST_CD = CLS_SO.CUST_CD AND CUST.USE_FLG = 'Y' ), ' ') AS CUST_NM -->
+			     , ISNULL((SELECT LOCL_NM FROM TB_TRDP CUST WHERE CUST.TRDP_CD = CLS_SO.CUST_CD AND ISNULL(CUST.DELT_FLG,'N') = 'N' ), ' ') AS CUST_NM
+			     , SUB_DTL.SB_CLS_CD
+			     , SUB_DTL.CLS_DTL_SEQ
+			     , SUB_DTL.RATE_TP_CD
+<!-- 			     , ISNULL(TO_CHAR(TO_DATE(SUB_DTL.PRE_CLS_DT, 'YYYYMMDD'), 'YYYY-MM-DD'), ' ') AS PRE_CLS_DT -->
+<!-- 			     , Isnull(CONVERT(VARCHAR(10), CONVERT(DATETIME,SUB_DTL.PRE_CLS_DT, 102), 102), ' ') AS PRE_CLS_DT -->
+			     ,  CASE
+					WHEN SUB_DTL.PRE_CLS_DT != NULL THEN CONVERT (VARCHAR (10),CONVERT (DATETIME, SUB_DTL.PRE_CLS_DT), 102)
+					ELSE '' 
+					END as PRE_CLS_DT
+			     , SUB_DTL.TRANS_DT
+			     , ISNULL(SUB_DTL.BK_NO, ' ') AS BK_NO
+			     , ISNULL(SUB_DTL.ORD_TP_CD, ' ') AS ORD_TP_CD
+			     , ISNULL(SUB_DTL.ORDER_REL, ' ') AS ORDER_REL
+			     , ISNULL(SUB_DTL.LOAD_TP_CD, ' ') AS LOAD_TP_CD
+			     , SUB_DTL.FRT_CD		     	     
+			     , SUB_DTL.FRT_NM
+			     , SUB_DTL.FRT_CD AS FRT_CD_ORG	     	     
+			     , SUB_DTL.FRT_NM AS FRT_NM_ORG
+			     , SUB_DTL.CTRT_NO
+			     , SUB_DTL.RTP_NO
+			     , SUB_DTL.WH_CD
+			     , SUB_DTL.OFC_CD		     
+			     , SUB_DTL.PO_SYS_NO
+			     , SUB_DTL.ITEM_SYS_NO
+			     , SUB_DTL.ITEM_SEQ
+			     , SUB_DTL.PO_NO
+			     , SUB_DTL.ITEM_CD
+			     , SUB_DTL.ITEM_NM
+			     , ISNULL(SUB_DTL.LOT_ID, ' ') AS LOT_ID
+			     , SUB_DTL.STOCK_PERIOD
+			     , CASE WHEN SUB_DTL.RATE_TP_CD = 'OTH' THEN SUB_DTL.OTH_UNIT_CD 
+			            ELSE  
+			               CASE WHEN SUB_DTL.FIX_UNIT_CD IS NOT NULL THEN SUB_DTL.FIX_UNIT_CD
+			                    ELSE 
+					                  CASE WHEN SUB_DTL.ITEM_SYS_NO IS NULL THEN '' 
+					                       ELSE (
+					                               dbo.TL_GET_WH_PACK_MST_INFO(CI.PKG_LV1_QTY, CI.PKG_LV1_UNIT_CD, CI.ITEM_PKGBASEQTY, CI.ITEM_PKGUNIT
+				                                   , CI.PKG_LV3_QTY, CI.PKG_LV3_UNIT_CD, CI.PKG_LV4_QTY, CI.PKG_LV4_UNIT_CD)
+				                                ) 
+				                      END
+				           END
+		           END AS PKG_INFO
+			     , CASE WHEN SUB_DTL.RATE_TP_CD = 'OTH' THEN SUB_DTL.OTH_QTY 
+			            ELSE 
+			                 CASE WHEN SUB_DTL.FIX_UNIT_CD IS NOT NULL THEN SUB_DTL.FIX_QTY
+			                      ELSE SUB_DTL.EA_QTY
+			                 END
+			       END AS EA_QTY
+			     , SUB_DTL.PL_OVER_WGT
+			     , SUB_DTL.PL_LVL
+			     , SUB_DTL.BX_LVL
+			     , SUB_DTL.IN_LVL
+			     , SUB_DTL.EA_LVL
+			     , SUB_DTL.AMT_PL_LVL
+			     , SUB_DTL.AMT_BX_LVL
+			     , SUB_DTL.AMT_IN_LVL
+			     , SUB_DTL.AMT_EA_LVL
+			     , SUB_DTL.WH_LOC_CD
+			     , ISNULL(dbo.TL_GET_WH_LOC_NM(SUB_DTL.WH_CD, SUB_DTL.WH_LOC_CD), ' ') AS WH_LOC_NM
+			     , SUB_DTL.SPACE_TP_CD
+			     , ISNULL(dbo.TL_GET_COMM_NM('WS0', SUB_DTL.SPACE_TP_CD), ' ') AS SPACE_TP_NM
+			     , SUB_DTL.AMT_LOC
+			     , SUB_DTL.CBM
+			     , SUB_DTL.CBF
+			     , SUB_DTL.GRS_KGS
+			     , SUB_DTL.GRS_LBS
+			     , SUB_DTL.NET_KGS
+			     , SUB_DTL.NET_LBS
+			     , SUB_DTL.AMT_CBM
+			     , SUB_DTL.AMT_CBF
+			     , SUB_DTL.AMT_GRS_KGS
+			     , SUB_DTL.AMT_GRS_LBS
+			     , SUB_DTL.AMT_NET_KGS
+			     , SUB_DTL.AMT_NET_LBS
+			     , ISNULL(SUB_DTL.EQ_TPSZ_CD, ' ') AS EQ_TPSZ_CD
+			     , ISNULL(SUB_DTL.EQ_NO, ' ') AS EQ_NO
+			     , ISNULL(SUB_DTL.SEAL_NO, ' ') AS SEAL_NO
+			     , SUB_DTL.AMT_EQ
+			     , SUB_DTL.CURR_CD		
+			     , SUB_DTL.CURR_CD AS CURR_CD_ORG  
+			     , SUB_DTL.AMT_ORD
+			     , SUB_DTL.TOT_AMT
+			     , SUB_DTL.OTH_COST_NO
+			     , SUB_DTL.SRC_TP_CD
+			     , SUB_DTL.PKG_LV1_UNIT_CD
+			     , SUB_DTL.PKG_LV1_QTY
+			     , SUB_DTL.PKG_LV2_UNIT_CD
+			     , SUB_DTL.PKG_LV2_QTY
+			     , SUB_DTL.PKG_LV3_UNIT_CD
+			     , SUB_DTL.PKG_LV3_QTY
+			     , SUB_DTL.PKG_LV4_UNIT_CD
+			     , SUB_DTL.PKG_LV4_QTY
+			     , SUB_DTL.PKG_PL_STD_QTY
+			     , SUB_DTL.PKG_PL_OVER_WGT
+			     , SUB_DTL.AMT_OTH
+			     , SUB_DTL.OTH_UNIT_CD
+			     , SUB_DTL.AMT_FIX
+			     , SUB_DTL.FIX_UNIT_CD
+<!-- 			     , CD.DISP_SEQ AS CODE_DISP_SEQ -->
+			  FROM TL_WH_CLS_SO CLS_SO
+			     , TL_WH_CLS_SO_DTL SUB_DTL
+			     LEFT OUTER JOIN
+				        TL_CTRT_CUST_ITEM CI 
+				            ON SUB_DTL.CTRT_NO = CI.CTRT_NO 
+				            and SUB_DTL.ITEM_SYS_NO  = CI.ITEM_SYS_NO,
+				TB_COM_CD_DTL CD
+			 WHERE CLS_SO.CLS_NO = SUB_DTL.CLS_NO
+			   AND CLS_SO.CLS_SEQ = SUB_DTL.CLS_SEQ
+			   
+			   	<isEqual property="search_tp" compareValue="CLS_NO">
+				    AND SUB_DTL.CLS_NO = #cls_no#
+			   </isEqual>
+			   <isEqual property="search_tp" compareValue="IN_CLS_NO">
+				    AND SUB_DTL.CLS_NO = #in_cls_no#
+			   </isEqual>
+			   <isNotEqual property="search_tp" compareValue="CLS_NO">
+				   <isNotEqual property="search_tp" compareValue="IN_CLS_NO">
+				   		AND SUB_DTL.CLS_NO IN (
+												SELECT SUB_D.CLS_NO
+												  FROM TL_WH_CLS_SO_DTL SUB_D
+												 WHERE SUB_D.CLS_NO = SUB_DTL.CLS_NO
+												   AND SUB_D.CLS_AGR_NO = #cls_agr_no#
+						                      )
+				   </isNotEqual>
+			   </isNotEqual>
+			   
+			   <isNotEqual property="sb_cls_cd" compareValue="ALL">
+			     AND SUB_DTL.SB_CLS_CD  = #sb_cls_cd#
+			   </isNotEqual>
+			   <isNotEqual property="rate_tp_cd" compareValue="ALL">
+			     AND SUB_DTL.RATE_TP_CD  = #rate_tp_cd#
+			   </isNotEqual>
+			   <isNotEqual property="cust_cd" compareValue="ALL">
+			     AND CLS_SO.CUST_CD  = #cust_cd#
+			   </isNotEqual>
+<!-- 			   AND CD.GRP_CD = 'WR0' -->
+			   AND CD.COM_CD = 'WR0'   
+<!-- 		       AND CD.CODE_CD = SUB_DTL.RATE_TP_CD -->
+		       AND CD.CD_VAL = SUB_DTL.RATE_TP_CD
+	       ) T
+	     ORDER 
+	        BY T.CLS_SEQ ASC /*CLS_SO.CUST_CD*/
+	         , T.SB_CLS_CD DESC
+<!-- 	         , T.CODE_DISP_SEQ ASC -->
+	         , T.PRE_CLS_DT ASC
+		     , T.TRANS_DT ASC
+		     , T.BK_NO ASC
+		     , T.ORDER_REL ASC		     
+		     , T.ITEM_SYS_NO ASC
+		     , ISNULL(T.ITEM_SEQ, 0) ASC
+		     , T.LOT_ID ASC
+	         , T.STOCK_PERIOD ASC
+		     , T.EA_QTY ASC
+		     , T.PL_OVER_WGT ASC
+		     , T.PL_LVL ASC
+		     , T.BX_LVL ASC
+		     , T.IN_LVL ASC
+		     , T.EA_LVL ASC
+		     , T.CBM ASC
+			 , T.CBF ASC
+			 , T.GRS_KGS ASC
+			 , T.GRS_LBS ASC
+			 , T.NET_KGS ASC
+			 , T.NET_LBS ASC
+		     , T.WH_LOC_NM ASC
+		     , T.SPACE_TP_NM ASC
+		     , T.EQ_TPSZ_CD ASC
+			 , T.EQ_NO ASC
+			 , T.SEAL_NO ASC
+		     , T.FRT_CD ASC
+		     , T.FRT_NM ASC
+		     , T.CURR_CD ASC
+		</select>
+		
+		<select id="searchClosingDetailDtlNoAmount" resultClass="Grd01ClosingDetailDto">
+			/*WHClosing.searchClosingDetailDtlNoAmount*/
+			SELECT T.*
+<!-- 		     , ROWNUM AS RN /*화면에서 SEQ한값을 넣어 MERGE효과를 중지시킨다*/      -->
+			, ROW_NUMBER() OVER (ORDER BY T.CLS_SEQ DESC) as RN
+		     , T.CLS_NO + CONVERT(VARCHAR(10), T.CLS_SEQ, 102) + T.SB_CLS_CD + T.RATE_TP_CD + T.PRE_CLS_DT + T.TRANS_DT + T.BK_NO + T.ORDER_REL + T.ITEM_SYS_NO + CONVERT(VARCHAR(10), T.ITEM_SEQ, 102) + T.WH_LOC_CD  AS MERGE_KEY
+			, T.CLS_NO +  CONVERT(VARCHAR(10), T.CLS_SEQ, 102) + T.SB_CLS_CD + T.RATE_TP_CD + T.PRE_CLS_DT + T.TRANS_DT + T.BK_NO + T.ORDER_REL           + T.ITEM_SYS_NO + CONVERT(VARCHAR(10), T.ITEM_SEQ, 102) + T.LOT_ID +  CONVERT(VARCHAR(10), T.EA_QTY, 102) + T.WH_LOC_CD + T.SPACE_TP_CD + EQ_TPSZ_CD + EQ_NO + SEAL_NO AS SUB_KEY        
+			, T.CLS_NO +  CONVERT(VARCHAR(10), T.CLS_SEQ) + T.SB_CLS_CD + T.RATE_TP_CD + T.PRE_CLS_DT + T.TRANS_DT + T.BK_NO AS SUB_BK_KEY
+			, Isnull(dbo.TL_GET_WH_LOC_NM(T.WH_CD, T.WH_LOC_CD), ' ') AS WH_LOC_NM        
+	        , Isnull(dbo.TL_GET_COMM_NM('WS0', T.SPACE_TP_CD), ' ') AS SPACE_TP_NM
+			, CASE WHEN T.STS_CD_ORG = 'C' THEN                    
+						CASE WHEN (SELECT COUNT(*) 
+									FROM tb_wm_doc_mst A JOIN TB_FRT B ON A.WM_DOC_SEQ = B.WMS_SEQ 
+									WHERE B.INV_SEQ IS NOT NULL AND A.DOC_REF_NO = T.SO_NO_ORG
+								  ) > 0                             THEN 'I' /* I : Invoiced */                           
+					        ELSE T.STS_CD_ORG                           
+	            			END ELSE T.STS_CD_ORG                          
+	        	END AS STS_CD
+			 , CASE WHEN T.RATE_TP_CD = 'OTH' THEN T.OTH_UNIT_CD          
+		            ELSE                      
+		            	CASE WHEN T.FIX_UNIT_CD IS NOT NULL THEN T.FIX_UNIT_CD                         
+		                ELSE 
+		                	CASE 
+			                    WHEN T.ITEM_SYS_NO IS NULL THEN ''                               
+			                    ELSE (                                      dbo.TL_GET_WH_PACK_MST_INFO(CI.PKG_LV1_QTY,
+			                    CI.PKG_LV1_UNIT_CD,
+			                    CI.ITEM_PKGBASEQTY,
+			                    CI.ITEM_PKGUNIT                                         ,
+			                    CI.PKG_LV3_QTY,
+			                    CI.PKG_LV3_UNIT_CD,
+			                    CI.PKG_LV4_QTY,
+			                    CI.PKG_LV4_UNIT_CD)                                      )                             
+		                END                 
+		            END       
+		        END AS PKG_INFO,
+<!-- 		        Isnull((SELECT CUST_LOC_NM FROM TL_CUST CUST WHERE CUST.CUST_CD = T.CUST_CD AND CUST.USE_FLG = 'Y' ), ' ') AS CUST_NM -->
+					ISNULL((SELECT LOCL_NM FROM TB_TRDP CUST WHERE CUST.TRDP_CD = T.CUST_CD AND ISNULL(CUST.DELT_FLG,'N') = 'N' ), ' ') AS CUST_NM
+		  FROM (
+				SELECT DENSE_RANK() OVER(ORDER BY CLS_SO.CLS_NO ASC, CLS_SO.CLS_SEQ ASC) AS SEQ,
+			            CLS_SO.CLS_NO          ,
+			            CLS_SO.CLS_SEQ          ,
+			            Isnull(MAX(CLS_SO.CUST_CD), ' ') AS CUST_CD,
+			            SUB_DTL.SB_CLS_CD          ,
+			            '' AS CLS_DTL_SEQ          ,
+			            SUB_DTL.RATE_TP_CD          ,
+<!-- 			            Isnull(CONVERT(VARCHAR(10), CONVERT(DATETIME,SUB_DTL.PRE_CLS_DT, 102), 102), ' ') AS PRE_CLS_DT          , -->
+			            CASE
+							WHEN SUB_DTL.PRE_CLS_DT != NULL THEN CONVERT (VARCHAR (10),CONVERT (DATETIME, SUB_DTL.PRE_CLS_DT), 102)
+							ELSE '' 
+							END as PRE_CLS_DT,
+			            SUB_DTL.TRANS_DT,
+			            Isnull(SUB_DTL.BK_NO, ' ') AS BK_NO          ,
+			            Isnull(MAX(SUB_DTL.ORD_TP_CD), ' ') AS ORD_TP_CD          ,
+			            Isnull(SUB_DTL.ORDER_REL, ' ') AS ORDER_REL          ,
+			            Isnull(MAX(SUB_DTL.LOAD_TP_CD), ' ') AS LOAD_TP_CD                 ,
+			            MAX(SUB_DTL.CTRT_NO) AS CTRT_NO          ,
+			            MAX(SUB_DTL.RTP_NO) AS RTP_NO          ,
+			            MAX(SUB_DTL.WH_CD) AS WH_CD          ,
+			            MAX(SUB_DTL.OFC_CD) AS OFC_CD          ,
+			            MAX(CLS_SO.SO_NO) AS SO_NO_ORG          ,
+			            MAX(CLS_SO.STS_CD) AS STS_CD_ORG  ,
+			            '' AS PO_SYS_NO          ,
+			            SUB_DTL.ITEM_SYS_NO          ,
+			            SUB_DTL.ITEM_SEQ          ,
+			            '' AS PO_NO          ,
+			            MAX(SUB_DTL.ITEM_CD) AS ITEM_CD          ,
+			            MAX(SUB_DTL.ITEM_NM) AS ITEM_NM          ,
+			            Isnull(SUB_DTL.LOT_ID, ' ') AS LOT_ID          ,
+			            SUB_DTL.STOCK_PERIOD                             ,
+			            CASE 
+			                WHEN SUB_DTL.RATE_TP_CD = 'OTH' THEN SUB_DTL.OTH_QTY                  
+			                ELSE                       
+				                CASE 
+				                    WHEN SUB_DTL.FIX_UNIT_CD IS NOT NULL THEN SUB_DTL.FIX_QTY                           
+				                    ELSE SUB_DTL.EA_QTY                      
+				                END            
+			            END AS EA_QTY                       ,
+			            SUB_DTL.PL_OVER_WGT          ,
+			            SUB_DTL.PL_LVL          ,
+			            SUB_DTL.BX_LVL          ,
+			            SUB_DTL.IN_LVL          ,
+			            SUB_DTL.EA_LVL                ,
+			            SUB_DTL.WH_LOC_CD                    ,
+			            SUB_DTL.SPACE_TP_CD                    ,
+			            MAX(SUB_DTL.AMT_LOC) AS AMT_LOC          ,
+			            SUB_DTL.CBM          ,
+			            SUB_DTL.CBF          ,
+			            SUB_DTL.GRS_KGS          ,
+			            SUB_DTL.GRS_LBS          ,
+			            SUB_DTL.NET_KGS          ,
+			            SUB_DTL.NET_LBS          ,
+			            MAX(SUB_DTL.AMT_CBM) AS AMT_CBM          ,
+			            MAX(SUB_DTL.AMT_CBF) AS  AMT_CBF                ,
+			            Isnull(SUB_DTL.EQ_TPSZ_CD, ' ') AS EQ_TPSZ_CD          ,
+			            Isnull(SUB_DTL.EQ_NO, ' ') AS EQ_NO          ,
+			            Isnull(SUB_DTL.SEAL_NO, ' ') AS SEAL_NO          ,
+			            MAX(SUB_DTL.AMT_EQ) AS  AMT_EQ                    ,
+			            MAX(SUB_DTL.AMT_ORD) AS AMT_ORD          ,
+			            MAX(SUB_DTL.OTH_COST_NO) AS OTH_COST_NO          ,
+			            MAX(SUB_DTL.SRC_TP_CD) AS SRC_TP_CD          ,
+			            MAX(SUB_DTL.PKG_LV1_UNIT_CD) AS PKG_LV1_UNIT_CD          ,
+			            MAX(SUB_DTL.PKG_LV1_QTY) AS PKG_LV1_QTY          ,
+			            MAX(SUB_DTL.PKG_LV2_UNIT_CD) AS PKG_LV2_UNIT_CD          ,
+			            MAX(SUB_DTL.PKG_LV2_QTY) AS PKG_LV2_QTY          ,
+			            MAX(SUB_DTL.PKG_LV3_UNIT_CD) AS PKG_LV3_UNIT_CD          ,
+			            MAX(SUB_DTL.PKG_LV3_QTY) AS PKG_LV3_QTY          ,
+			            MAX(SUB_DTL.PKG_LV4_UNIT_CD) AS PKG_LV4_UNIT_CD          ,
+			            MAX(SUB_DTL.PKG_LV4_QTY) AS PKG_LV4_QTY          ,
+			            MAX(SUB_DTL.PKG_PL_STD_QTY) AS PKG_PL_STD_QTY          ,
+			            MAX(SUB_DTL.PKG_PL_OVER_WGT) AS PKG_PL_OVER_WGT          ,
+			            MAX(SUB_DTL.AMT_OTH) AS AMT_OTH          ,
+			            MAX(SUB_DTL.OTH_UNIT_CD) AS OTH_UNIT_CD          ,
+			            MAX(SUB_DTL.AMT_FIX) AS AMT_FIX          ,
+			            MAX(SUB_DTL.FIX_UNIT_CD) AS FIX_UNIT_CD          ,
+			            SUM(SUB_DTL.TOT_AMT) AS TOT_AMT
+				  FROM TL_WH_CLS_SO CLS_SO
+				     , TL_WH_CLS_SO_DTL SUB_DTL
+				 WHERE CLS_SO.CLS_NO = SUB_DTL.CLS_NO
+				   AND CLS_SO.CLS_SEQ = SUB_DTL.CLS_SEQ		
+				   <isEqual property="search_tp" compareValue="CLS_NO">
+					    AND SUB_DTL.CLS_NO = #cls_no#
+				   </isEqual>
+				   <isEqual property="search_tp" compareValue="IN_CLS_NO">
+					    AND SUB_DTL.CLS_NO = #in_cls_no#
+				   </isEqual>
+				   <isNotEqual property="search_tp" compareValue="CLS_NO">
+					   <isNotEqual property="search_tp" compareValue="IN_CLS_NO">
+					   		AND SUB_DTL.CLS_NO IN (
+												SELECT SUB_D.CLS_NO
+												  FROM TL_WH_CLS_SO_DTL SUB_D
+												 WHERE SUB_D.CLS_NO = SUB_DTL.CLS_NO
+												   AND SUB_D.CLS_AGR_NO = #cls_agr_no#
+						                      )
+					   </isNotEqual>
+				   </isNotEqual>
+				   
+				   <isNotEmpty property="sb_cls_cd">
+					   <isNotEqual property="sb_cls_cd" compareValue="ALL">
+					     AND SUB_DTL.SB_CLS_CD  = #sb_cls_cd#
+					   </isNotEqual>
+				   </isNotEmpty>
+				   <isNotEmpty property="rate_tp_cd">
+					   <isNotEqual property="rate_tp_cd" compareValue="ALL">
+					     AND SUB_DTL.RATE_TP_CD  = #rate_tp_cd#
+					   </isNotEqual>
+					</isNotEmpty>
+					<isNotEmpty property="cust_cd">
+					   <isNotEqual property="cust_cd" compareValue="ALL">
+					     AND CLS_SO.CUST_CD  = #cust_cd#
+					   </isNotEqual>
+				   </isNotEmpty>
+				 GROUP BY CLS_SO.CLS_NO
+				        , CLS_SO.CLS_SEQ
+				        , SUB_DTL.SB_CLS_CD
+				        , SUB_DTL.RATE_TP_CD
+				        , SUB_DTL.PRE_CLS_DT
+				        , SUB_DTL.TRANS_DT
+				        , SUB_DTL.BK_NO
+				        , SUB_DTL.ORDER_REL
+				        , SUB_DTL.ITEM_SYS_NO
+				        , SUB_DTL.ITEM_SEQ
+				        , SUB_DTL.LOT_ID
+				        , SUB_DTL.STOCK_PERIOD
+				        , (CASE WHEN SUB_DTL.RATE_TP_CD = 'OTH' THEN SUB_DTL.OTH_QTY 
+				                ELSE 
+				                     CASE WHEN SUB_DTL.FIX_UNIT_CD IS NOT NULL THEN SUB_DTL.FIX_QTY
+				                          ELSE SUB_DTL.EA_QTY
+				                     END
+				           END)
+				        , SUB_DTL.PL_OVER_WGT
+				        , SUB_DTL.PL_LVL
+				        , SUB_DTL.BX_LVL
+				        , SUB_DTL.IN_LVL
+				        , SUB_DTL.EA_LVL
+				        , CBM
+				        , CBF
+				        , GRS_KGS
+				        , GRS_LBS
+				        , NET_KGS
+				        , NET_LBS		        
+				        , SUB_DTL.WH_LOC_CD
+				        , SUB_DTL.SPACE_TP_CD  
+				        , SUB_DTL.EQ_TPSZ_CD  
+				        , SUB_DTL.EQ_NO  
+				        , SUB_DTL.SEAL_NO        
+		       ) T
+		       LEFT OUTER JOIN TL_CTRT_CUST_ITEM CI ON T.CTRT_NO = CI.CTRT_NO and T.ITEM_SYS_NO  = CI.ITEM_SYS_NO,
+				TB_COM_CD_DTL CD
+		   WHERE 1=1
+				AND CD.COM_CD = 'WR0'
+				AND CD.CD_VAL = T.RATE_TP_CD
+		   ORDER BY T.CLS_SEQ ASC            ,
+		        T.SB_CLS_CD DESC            ,
+		        T.PRE_CLS_DT ASC         ,
+		        T.TRANS_DT ASC         ,
+		        T.BK_NO ASC         ,
+		        T.ORDER_REL ASC                ,
+		        T.ITEM_SYS_NO ASC         ,
+		        Isnull(T.ITEM_SEQ,
+		        0) ASC         ,
+		        T.LOT_ID ASC         ,
+		        T.STOCK_PERIOD ASC         ,
+		        T.EA_QTY ASC         ,
+		        T.PL_OVER_WGT ASC         ,
+		        T.PL_LVL ASC         ,
+		        T.BX_LVL ASC         ,
+		        T.IN_LVL ASC         ,
+		        T.EA_LVL ASC         ,
+		        T.CBM ASC      ,
+		        T.CBF ASC      ,
+		        T.GRS_KGS ASC      ,
+		        T.GRS_LBS ASC      ,
+		        T.NET_KGS ASC      ,
+		        T.NET_LBS ASC         ,
+		        T.EQ_TPSZ_CD ASC      ,
+		        T.EQ_NO ASC      ,
+		        T.SEAL_NO ASC
+	</select>
+	
+	<!-- Hoai.Vo (S) -->
+		<!-- Closing Search -->	
+	<typeAlias alias="ClosingSearchVO" 	type="com.clt.apps.fis.wms.whclosing.dto.ClosingSearchVO"/>
+ 	<select id="searchClosingList" parameterClass="java.util.HashMap" resultClass="ClosingSearchVO">
+		/*WHClosing.searchClosingList*/
+		SELECT ROW_NUMBER() OVER (ORDER BY (select 1)) AS RN 
+		     , DENSE_RANK() OVER( ORDER BY CLS.CLS_NO ASC, CLS_SO.CLS_SEQ, CLS_S.SB_CLS_CD DESC) AS SEQ 
+		     , CLS.CLS_NO + CONVERT(VARCHAR(10), CLS_SO.CLS_SEQ) + CLS_S.SB_CLS_CD AS SUB_KEY 
+		     , ' ' AS RMK_IMG 
+		     , CLS.CLS_NO
+		     , CLS_S.SB_CLS_CD
+		     ,(CASE CLS_S.SB_CLS_CD
+					WHEN 'S' THEN 'SELL'
+					WHEN 'B' THEN 'BUY'
+					ELSE ''
+				END) AS SB_CLS_NM
+		     , CLS_SO.CTRT_NO
+		     , dbo.TL_GET_CTRT_NM(CLS_SO.CTRT_NO) AS CTRT_NM
+		     , CLS_SO.RTP_NO
+		     , CLS_SO.CUST_CD
+		     , (SELECT LOCL_NM FROM TB_TRDP CUST WHERE CUST.TRDP_CD = CLS_SO.CUST_CD AND ISNULL(CUST.DELT_FLG,'N') = 'N' ) AS CUST_NM
+		     , CASE WHEN CLS_SO.STS_CD = 'C' THEN 
+										       CASE WHEN (SELECT COUNT(*) 
+																FROM tb_wm_doc_mst A JOIN TB_FRT B ON A.WM_DOC_SEQ = B.WMS_SEQ 
+																WHERE B.INV_SEQ IS NOT NULL AND A.DOC_REF_NO = CLS_SO.SO_NO
+															  ) > 0  
+									                THEN 'I' /* I : Invoiced */
+									                ELSE CLS_SO.STS_CD
+									                END
+									                
+	                     ELSE CLS_SO.STS_CD  
+	                     END AS STS_CD
+		     , dbo.TL_GET_COMM_NM('WCS'
+              ,(CASE WHEN CLS_SO.STS_CD = 'C' THEN 
+			       CASE WHEN (SELECT COUNT(*) 
+							FROM tb_wm_doc_mst A JOIN TB_FRT B ON A.WM_DOC_SEQ = B.WMS_SEQ 
+							WHERE B.INV_SEQ IS NOT NULL AND A.DOC_REF_NO = CLS_SO.SO_NO
+						  ) > 0 
+	                THEN 'I' /* I : Invoiced */
+	                ELSE CLS_SO.STS_CD
+	                END
+		                
+               ELSE CLS_SO.STS_CD  
+               END)
+              ) AS STS_NM
+		     , (SELECT TOP 1 C.INV_NO 
+					FROM tb_wm_doc_mst A JOIN TB_FRT B ON A.WM_DOC_SEQ = B.WMS_SEQ
+						JOIN  TB_INV_DTL C ON B.INV_SEQ = C.inv_seq
+					WHERE B.INV_SEQ IS NOT NULL AND A.DOC_REF_NO = CLS_SO.SO_NO) AS INV_NO
+		     , ISNULL(CLS_SO.SO_NO, ' ') AS SO_NO
+		     , 'View' AS FRT_VIEW
+		     , ISNULL(CASE WHEN CLS_S.SB_CLS_CD = 'S' THEN CLS_SO.SELL_RMK
+		            ELSE CLS_SO.BUY_RMK
+		            END, ' ') AS RMK	     
+		     , CLS_S.RATE_TP_CD
+		     , dbo.TL_GET_COMM_NM('WR0',CLS_S.RATE_TP_CD) AS RATE_TP_NM
+		     , CLS_S.ORDER_REL
+		     , dbo.TL_GET_COMM_NM('WB1',CLS_S.ORDER_REL) AS ORDER_REL_NM
+		     , CLS_S.FRT_CD
+		     , CLS_S.FRT_NM
+		     , CLS_S.CURR_CD
+		     , CLS_S.BASIC_AMT
+		     , CLS_S.ADJUST_AMT
+		     <!-- , ISNULL(CLS_S.BASIC_AMT, 0) + ISNULL(CLS_S.ADJUST_AMT, 0) AS TOT_AMT TinLuong Modify 20160317-->   
+		     , ISNULL(CLS_S.UNIT_QTY, 0) * ISNULL(CLS_S.UNIT_PRICE, 0) AS TOT_AMT     
+		     , CLS_S.UNIT_CD
+		     , CLS_S.UNIT_QTY
+		     , CLS_S.UNIT_PRICE
+	         , CLS.WH_CD
+<!-- 	         , (SELECT DISP_SEQ  -->
+<!-- 	              FROM TB_COM_CD CD  -->
+<!-- 	             WHERE CD.PRNT_COM_CD = 'WR0' -->
+<!-- 	               AND CD.COM_CD = CLS_S.RATE_TP_CD -->
+<!-- 	            ) AS CD_DISP_SEQ -->
+	         , SUM(ISNULL(CLS_S.BASIC_AMT, 0) + ISNULL(CLS_S.ADJUST_AMT, 0)) OVER ( PARTITION BY CLS.CLS_NO, CLS_SO.CLS_SEQ, CLS_S.SB_CLS_CD, CLS_S.CURR_CD) AS SUB_TOT
+		  FROM TL_WH_CLS CLS JOIN TL_WH_CLS_SO CLS_SO ON CLS.CLS_NO = CLS_SO.CLS_NO LEFT JOIN
+		    <!--  A.BASIC_AMT -> A.UNIT_QTY  -->
+		     <![CDATA[ 
+		      (SELECT * FROM TL_WH_CLS_SO_FRT A WHERE ISNULL(A.UNIT_QTY, 0) + ISNULL(A.ADJUST_AMT, 0) != 0) CLS_S 
+		     ]]> ON  CLS_SO.CLS_NO = CLS_S.CLS_NO AND CLS_SO.CLS_SEQ = CLS_S.CLS_SEQ
+		     
+		 WHERE 1 = 1
+		   
+		      
+	<isEqual property="auth_lvl" compareValue="AQ">
+	       AND CLS.OFC_CD IN (SELECT OFC_CD 
+			                    FROM TB_OFC O
+			                   WHERE O.USE_FLG = 'Y'
+			                     AND O.MODI_OFC_CD =  #org_cd#
+			                   UNION
+			                  SELECT OFC_CD
+			                    FROM TB_OFC O
+			                   WHERE O.USE_FLG = 'Y'
+			                     AND O.OFC_CD =  #org_cd# 
+			                  )
+	</isEqual>
+	
+	<isEqual property="auth_lvl" compareValue="LB">
+	       AND CLS.OFC_CD = #org_cd#
+	</isEqual>       
+	
+	<isNotNull property="fm_cls_date">
+		<isNotEmpty property="fm_cls_date">	
+			   AND CLS.CLS_DT BETWEEN REPLACE(#fm_cls_date#, '-', '') AND REPLACE(#to_cls_date#, '-', '') 
+	 	</isNotEmpty> 
+	</isNotNull>       
+	
+	<isNotNull property="ofc_cd">
+		<isNotEmpty property="ofc_cd">	   
+			   AND CLS.OFC_CD = #ofc_cd#
+		</isNotEmpty>
+	</isNotNull>
+	
+	<isNotNull property="ctrt_no">
+		<isNotEmpty property="ctrt_no">	   
+			   AND CLS_SO.CTRT_NO = #ctrt_no#
+		</isNotEmpty>
+	</isNotNull>
+	
+	<isNotNull property="cust_cd">
+		<isNotEmpty property="cust_cd">	   
+			   AND CLS_SO.CUST_CD = #cust_cd#
+		</isNotEmpty>
+	</isNotNull>
+	
+	<isNotNull property="cls_no">
+		<isNotEmpty property="cls_no">	   
+			   AND CLS.CLS_NO = #cls_no#
+		</isNotEmpty>
+	</isNotNull>
+	
+	<isNotNull property="wh_cd">
+		<isNotEmpty property="wh_cd">	   
+			   AND CLS.WH_CD = #wh_cd#
+		</isNotEmpty>
+	</isNotNull>
+	
+	<isNotEqual property="sb_cls_cd" compareValue="ALL">	
+		   AND CLS_S.SB_CLS_CD = #sb_cls_cd#
+	</isNotEqual>
+	<isNotEqual property="rate_tp_cd" compareValue="ALL">	
+		   AND CLS_S.RATE_TP_CD = #rate_tp_cd#
+	</isNotEqual>
+	<isNotEqual property="sts_cd" compareValue="ALL">	   
+		   AND (CASE WHEN CLS_SO.STS_CD = 'C' THEN 
+									       CASE WHEN (SELECT COUNT(*) 
+																FROM tb_wm_doc_mst A JOIN TB_FRT B ON A.WM_DOC_SEQ = B.WMS_SEQ 
+																WHERE B.INV_SEQ IS NOT NULL AND A.DOC_REF_NO = CLS_SO.SO_NO
+															  ) > 0 
+								                THEN 'I' /* I : Invoiced */
+								                ELSE CLS_SO.STS_CD
+								                END
+								                
+	                    ELSE CLS_SO.STS_CD  
+	                    END) = #sts_cd#
+	</isNotEqual>
+		 ORDER BY CLS.CLS_NO ASC
+		        /*CLS_SO.CUST_CD ASC */
+		        , CLS_SO.CLS_SEQ ASC
+		        , CLS_S.SB_CLS_CD DESC /* SELL, BUY */
+		        , CLS_S.CURR_CD ASC
+	            /*, CD_DISP_SEQ ASC */ /* TYPE의 코드순서별*/
+	            , CLS_S.ORDER_REL ASC
+	            , CLS_S.FRT_CD ASC   
+	            , CLS_S.FRT_NM ASC         
+	            , CLS_S.DISP_SEQ ASC /*입력 시 등록된 순서별*/
+	</select>
+	
+	<select id="searchWarehouseCombo" resultClass="ClosingSearchVO">
+	/*WHClosing.searchWarehouseCombo*/
+		SELECT 
+		   WH_CD,
+		   WH_NM		  
+		FROM TL_WH
+		WHERE USE_FLG = 'Y'	   
+	</select>
+	<!-- Hoai.Vo (E) -->
+	
+	<typeAlias alias="ClosingFBStatusDto" 	type="com.clt.apps.fis.wms.whclosing.dto.ClosingFBStatusVO"/>
+	<select id="searchClosingStatus" resultClass="ClosingFBStatusDto">
+	/*WHClosing.searchClosingStatus*/
+	SELECT COUNT(*) AS STS_CD
+	  FROM TL_WH_CLS_AGR_MST T
+	 WHERE T.WH_CD = #wh_cd#
+	   AND T.CLS_MTH = SUBSTRING(REPLACE(#cls_dt#, '-', ''), 1,6)	
+	   AND T.STS_CD = 'O'	   
+	</select>
+	
+	<update id="modifyWhClsSoDtl">
+	/*WHClosing.modifyWhClsSoDtl*/
+	UPDATE TL_WH_CLS_SO_DTL
+	   SET TOT_AMT     = #tot_amt#
+	     , PL_OVER_WGT = #pl_over_wgt#
+	     , PL_LVL      = #pl_lvl#
+	     , BX_LVL      = #bx_lvl#
+	     , IN_LVL      = #in_lvl#
+	     , EA_LVL      = #ea_lvl#
+	     , AMT_PL_LVL  = #amt_pl_lvl#
+	     , AMT_BX_LVL  = #amt_bx_lvl#
+	     , AMT_IN_LVL  = #amt_in_lvl#
+	     , AMT_EA_LVL  = #amt_ea_lvl#
+	     , AMT_LOC     = #amt_loc#    
+	     , CBM         = #cbm#        
+	     , CBF         = #cbf#        
+	     , GRS_KGS     = #grs_kgs#    
+	     , GRS_LBS     = #grs_lbs#    
+	     , NET_KGS     = #net_kgs#    
+	     , NET_LBS     = #net_lbs#    
+	     , AMT_CBM     = #amt_cbm#    
+	     , AMT_CBF     = #amt_cbf#    
+	     , AMT_GRS_KGS = #amt_grs_kgs#
+	     , AMT_GRS_LBS = #amt_grs_lbs#
+	     , AMT_NET_KGS = #amt_net_kgs#
+	     , AMT_NET_LBS = #amt_net_lbs#
+	     , EQ_TPSZ_CD  = #eq_tpsz_cd# 
+	     , EQ_NO       = #eq_no#      
+	     , SEAL_NO     = #seal_no#    
+	     , AMT_EQ      = #amt_eq# 
+	     <isEmpty property="frt_cd_org">
+	     	<isNotNull property="frt_cd">
+		     	<isNotEmpty property="frt_cd">
+		     		, FRT_CD      = #frt_cd#
+		     		, FRT_NM      = #frt_nm#
+		     	</isNotEmpty>
+	     	</isNotNull>
+	     </isEmpty>
+	     
+	     <isEmpty property="curr_cd_org">
+	     	<isNotNull property="curr_cd">
+		     	<isNotEmpty property="curr_cd">
+		     		, CURR_CD     = #curr_cd#
+		     	</isNotEmpty>
+	     	</isNotNull>
+	     </isEmpty>
+	     , MODI_ID     = #modi_id#
+	     , MODI_OFC_CD = #modi_ofc_cd#
+	     , MODI_SYS_DT = GETDATE()
+	     , MODI_LOC_DT = dbo.TL_GET_TM_ZONE_DATE_DT(#wh_cd#)
+	 WHERE CLS_NO = #cls_no# 
+	   AND CLS_SEQ = #cls_seq#
+	   AND SB_CLS_CD = #sb_cls_cd#
+	   AND CLS_DTL_SEQ = #cls_dtl_seq# 
+	</update>
+	
+	<update id="modifyWhClsSubDtlNoAmount">
+	/*WHClosing.modifyWhClsSubDtlNoAmount*/
+	UPDATE TL_WH_CLS_SO_DTL
+	   SET PL_OVER_WGT = #pl_over_wgt#
+	     , PL_LVL      = #pl_lvl#
+	     , BX_LVL      = #bx_lvl#
+	     , IN_LVL      = #in_lvl#
+	     , EA_LVL      = #ea_lvl#
+	     , CBM         = #cbm#        
+	     , CBF         = #cbf#        
+	     , GRS_KGS     = #grs_kgs#    
+	     , GRS_LBS     = #grs_lbs#    
+	     , NET_KGS     = #net_kgs#    
+	     , NET_LBS     = #net_lbs#    
+	     , EQ_TPSZ_CD  = #eq_tpsz_cd# 
+	     , EQ_NO       = #eq_no#      
+	     , SEAL_NO     = #seal_no#    
+	     , MODI_ID     = #modi_id#
+	     , MODI_OFC_CD = #modi_ofc_cd#
+	     , MODI_SYS_DT = GETDATE()
+	     , MODI_LOC_DT = dbo.TL_GET_TM_ZONE_DATE_DT(#wh_cd#)
+	 WHERE CLS_NO = #cls_no# 
+	   AND CLS_SEQ = #cls_seq#
+	   AND SB_CLS_CD = #sb_cls_cd#
+	   AND RATE_TP_CD = #rate_tp_cd#
+	   <isEmpty property="pre_cls_dt">
+			AND PRE_CLS_DT = ''
+	   </isEmpty>
+	   
+	   <isNotNull property="pre_cls_dt">
+		   <isNotEmpty property="pre_cls_dt">
+				AND PRE_CLS_DT = REPLACE(#pre_cls_dt#, '-', '')
+		   </isNotEmpty>
+	   </isNotNull>
+	   
+	   <isEmpty property="trans_dt">
+			AND TRANS_DT = ''
+	   </isEmpty>
+	   <isNotNull property="trans_dt">
+		   <isNotEmpty property="trans_dt">
+				AND TRANS_DT = REPLACE(#trans_dt#, '-', '') 
+		   </isNotEmpty>
+	   </isNotNull>
+	   
+	   <isEmpty property="bk_no">
+			AND BK_NO = ''
+	   </isEmpty>
+	   <isNotNull property="bk_no">
+		   <isNotEmpty property="bk_no">
+				AND BK_NO = #bk_no#    
+		   </isNotEmpty>
+	   </isNotNull>
+	   AND ORDER_REL = #order_rel#
+	   
+	   <isEmpty property="item_sys_no">
+			AND ITEM_SYS_NO = ''
+	   </isEmpty>
+	   <isNotNull property="item_sys_no">
+		   <isNotEmpty property="item_sys_no">
+				AND ITEM_SYS_NO = #item_sys_no#    
+		   </isNotEmpty>
+	   </isNotNull>
+	   
+	   <isEmpty property="item_seq">
+			AND ITEM_SEQ = ''
+	   </isEmpty>
+	   <isNotNull property="item_seq">
+		   <isNotEmpty property="item_seq">
+				AND ITEM_SEQ = #item_seq#    
+		   </isNotEmpty>
+	   </isNotNull>
+	   
+	   <isEmpty property="lot_id">
+			AND LOT_ID = ''
+	   </isEmpty>
+	   <isNotNull property="lot_id">
+		   <isNotEmpty property="lot_id">
+				AND LOT_ID = #lot_id#    
+		   </isNotEmpty>
+	   </isNotNull>
+	AND ISNULL(STOCK_PERIOD,0) = #stock_period#
+	AND ISNULL(((CASE WHEN RATE_TP_CD = 'OTH' THEN OTH_QTY 
+		                ELSE 
+		                     CASE WHEN FIX_UNIT_CD IS NOT NULL THEN FIX_QTY
+		                          ELSE EA_QTY
+		                     END
+		           END)),0) = #ea_qty#
+		           
+	   <isEmpty property="wh_loc_cd">
+			AND WH_LOC_CD = ''
+	   </isEmpty>
+	   <isNotNull property="wh_loc_cd">
+		   <isNotEmpty property="wh_loc_cd">
+				AND WH_LOC_CD = #wh_loc_cd#    
+		   </isNotEmpty>
+	   </isNotNull>
+	   
+	   <isEmpty property="space_tp_cd">
+			AND SPACE_TP_CD = ''
+	   </isEmpty>
+	   <isNotNull property="space_tp_cd">
+		   <isNotEmpty property="space_tp_cd">
+				AND SPACE_TP_CD = #space_tp_cd#    
+		   </isNotEmpty>
+	   </isNotNull>
+	</update>
+	
+	<typeAlias alias="ClosingSubExistsInfoDto" 	type="com.clt.apps.fis.wms.whclosing.dto.ClosingSubExistsInfoVO"/>
+	<select id="searchWhClsSoExistsInfo" resultClass="ClosingSubExistsInfoDto">
+	/*WHClosing.searchWhClsSoExistsInfo*/
+	SELECT CLS_SO.CLS_NO
+	     , CLS_SO.CLS_SEQ	    
+	  FROM TL_WH_CLS_SO CLS_SO	     
+	 WHERE CLS_SO.CLS_NO    = #cls_no#
+	   AND CLS_SO.CUST_CD   = #cust_cd#	   
+	</select>
+	
+	<insert id="saveWhClsSoForDtl">
+	/*WmsWHClosingSQL.xml > saveWhClsSoForDtl*/
+	INSERT INTO TL_WH_CLS_SO
+	     ( CLS_NO
+	     , CLS_SEQ
+	     , WH_CD
+	     , OFC_CD
+	     , CTRT_NO
+	     , RTP_NO
+	     , CUST_CD
+	     , STS_CD
+	     , SELL_RMK
+	     , BUY_RMK
+	     , SO_NO
+	     , RGST_ID
+	     , RGST_OFC_CD
+	     , RGST_SYS_DT
+	     , RGST_LOC_DT
+	     , MODI_ID
+	     , MODI_OFC_CD
+	     , MODI_SYS_DT
+	     , MODI_LOC_DT
+	     )
+	SELECT top 1 CLS_NO
+	     , #cls_seq#
+	     , WH_CD
+	     , OFC_CD
+	     , CTRT_NO
+	     , RTP_NO
+	     , #cust_cd#
+	     , #sts_cd#
+	     <isEqual property="sb_cls_cd" compareValue="S">
+	     ,#rmk#
+	     ,NULL
+	     </isEqual>
+	      <isEqual property="sb_cls_cd" compareValue="B">
+	      ,NULL
+	      ,#rmk#
+	     </isEqual>
+	   	 , NULL
+	     , #rgst_id#
+		 , #rgst_ofc_cd#
+		 , GETDATE()
+		 , dbo.TL_GET_TM_ZONE_DATE_DT(WH_CD)
+		 , #rgst_id#
+		 , #rgst_ofc_cd#
+		 , GETDATE()
+		 , dbo.TL_GET_TM_ZONE_DATE_DT(WH_CD) 
+	  FROM TL_WH_CLS_SO
+	 WHERE CLS_NO = #cls_no#
+	</insert>
+	
+	<insert id="saveWhClsSoDtl">
+	/*WHClosing.saveWhClsSoDtl*/
+	INSERT INTO TL_WH_CLS_SO_DTL 
+	     ( CLS_NO
+	     , CLS_SEQ
+	     , SB_CLS_CD
+	     , CLS_DTL_SEQ
+	     , RATE_TP_CD
+	     , PRE_CLS_DT
+	     , TRANS_DT
+	     , BK_NO
+	     , ORD_TP_CD
+	     , ORDER_REL
+	     , LOAD_TP_CD
+	     , FRT_CD
+	     , FRT_NM
+	     , CTRT_NO
+	     , RTP_NO
+	     , WH_CD
+	     , OFC_CD
+	     , CUST_CD
+	     , PO_SYS_NO
+	     , ITEM_SYS_NO
+	     , ITEM_SEQ
+	     , PO_NO
+	     , ITEM_CD
+	     , ITEM_NM
+	     , LOT_ID
+	     , STOCK_PERIOD
+	     /*, PKGUNIT
+	     , PKGQTY*/
+	     , EA_QTY
+	     , PL_OVER_WGT
+	     , PL_LVL
+	     , BX_LVL
+	     , IN_LVL
+	     , EA_LVL
+	     , AMT_PL_LVL
+	     , AMT_BX_LVL
+	     , AMT_IN_LVL
+	     , AMT_EA_LVL
+	     , WH_LOC_CD
+	     , SPACE_TP_CD
+	     , AMT_LOC
+	     , CBM
+	     , CBF
+	     , GRS_KGS
+	     , GRS_LBS
+	     , NET_KGS
+	     , NET_LBS
+	     , AMT_CBM
+	     , AMT_CBF
+	     , AMT_GRS_KGS
+	     , AMT_GRS_LBS
+	     , AMT_NET_KGS
+	     , AMT_NET_LBS
+	     , EQ_TPSZ_CD
+	     , EQ_NO
+	     , SEAL_NO
+	     , AMT_EQ
+	     , CURR_CD
+	     , AMT_ORD
+	     , TOT_AMT
+	     , OTH_COST_NO
+	     , SRC_TP_CD
+	     , PKG_LV1_UNIT_CD
+	     , PKG_LV1_QTY
+	     , PKG_LV2_UNIT_CD
+	     , PKG_LV2_QTY
+	     , PKG_LV3_UNIT_CD
+	     , PKG_LV3_QTY
+	     , PKG_LV4_UNIT_CD
+	     , PKG_LV4_QTY
+	     , PKG_PL_STD_QTY
+	     , PKG_PL_OVER_WGT
+	     , AMT_OTH
+	     , AMT_FIX
+	     , RGST_ID
+	     , RGST_OFC_CD
+	     , RGST_SYS_DT
+	     , RGST_LOC_DT
+	     , MODI_ID
+	     , MODI_OFC_CD
+	     , MODI_SYS_DT
+	     , MODI_LOC_DT 
+	     )
+    SELECT CLS_NO
+	     , CLS_SEQ
+	     , #sb_cls_cd#
+	     , (SELECT ISNULL(MAX(CLS_DTL_SEQ),0) + 1 
+	          FROM TL_WH_CLS_SO_DTL
+	         WHERE CLS_NO = #cls_no#
+	           AND CLS_SEQ = #cls_seq#
+	           AND SB_CLS_CD = #sb_cls_cd#
+	       )
+	     , #rate_tp_cd#
+	     , REPLACE(#pre_cls_dt#, '-', '')
+	     , REPLACE(#trans_dt#, '-', '')
+	     , #bk_no#
+	     , #ord_tp_cd#
+	     , #order_rel#
+	     , #load_tp_cd#
+	     , #frt_cd#
+	     , #frt_nm#
+	     , CTRT_NO
+	     , RTP_NO
+	     , WH_CD
+	     , OFC_CD
+	     , CUST_CD
+	     , #po_sys_no#
+	     , #item_sys_no#
+	     <isEmpty property="item_seq">
+	     	, (SELECT ISNULL(MAX(ITEM_SEQ),0) + 1
+			       FROM TL_WH_CLS_SO_DTL
+			      WHERE CLS_NO = #cls_no#
+	                AND CLS_SEQ = #cls_seq#
+	                AND SB_CLS_CD = #sb_cls_cd#
+	                <isEmpty property="item_sys_no">
+                		AND ITEM_SYS_NO IS NULL
+	                </isEmpty>
+	                <isNotEmpty property="item_sys_no">
+                		AND ITEM_SYS_NO = #item_sys_no#    
+	                </isNotEmpty>
+			    )
+	     </isEmpty>
+	     <isNotEmpty property="item_seq">
+			 , #item_seq#    
+	     </isNotEmpty>
+	     , #po_no#
+	     , #item_cd#
+	     , #item_nm#
+	     , #lot_id#
+	     , convert(NUMERIC(4,0), #stock_period#)
+	     /*, pkgunit
+	     , pkgqty*/
+	     , CONVERT(numeric(18,3), CAST(#ea_qty# AS FLOAT))
+	     , CONVERT(numeric(3,1), CAST(#pl_over_wgt# AS FLOAT))
+	     , CONVERT(numeric(8,0), CAST(#pl_lvl# AS FLOAT))
+	     , CONVERT(numeric(8,0), CAST(#bx_lvl# AS FLOAT))
+	     , CONVERT(numeric(8,0), CAST(#in_lvl# AS FLOAT))
+	     , CONVERT(numeric(8,0), CAST(#ea_lvl# AS FLOAT))
+	     , CONVERT(numeric(15,2), CAST(#amt_pl_lvl# AS FLOAT))
+	     , CONVERT(numeric(15,2), CAST(#amt_bx_lvl# AS FLOAT))
+	     , CONVERT(numeric(15,2), CAST(#amt_in_lvl# AS FLOAT))
+	     , CONVERT(numeric(15,2), CAST(#amt_ea_lvl# AS FLOAT))
+	     , #wh_loc_cd#
+	     , #space_tp_cd#
+	     , CONVERT(numeric(15,3), CAST(#amt_loc# AS FLOAT))
+	     , CONVERT(numeric(15,5), CAST(#cbm# AS FLOAT))
+	     , CONVERT(numeric(15,5), CAST(#cbf# AS FLOAT))
+	     , CONVERT(numeric(15,5), CAST(#grs_kgs# AS FLOAT))
+	     , CONVERT(numeric(15,5), CAST(#grs_lbs# AS FLOAT))
+	     , CONVERT(numeric(15,5), CAST(#net_kgs# AS FLOAT))
+	     , CONVERT(numeric(15,5), CAST(#net_lbs# AS FLOAT))
+	     , CONVERT(numeric(15,5), CAST(#amt_cbm# AS FLOAT))
+	     , CONVERT(numeric(15,5), CAST(#amt_cbf# AS FLOAT))
+	     , CONVERT(numeric(15,5), CAST(#amt_grs_kgs# AS FLOAT))
+	     , CONVERT(numeric(15,5), CAST(#amt_grs_lbs# AS FLOAT))
+	     , CONVERT(numeric(15,5), CAST(#amt_net_kgs# AS FLOAT))
+	     , CONVERT(numeric(15,5), CAST(#amt_net_lbs# AS FLOAT))
+	     , #eq_tpsz_cd#
+	     , #eq_no#
+	     , #seal_no#
+	     , CONVERT(numeric(15,2), CAST(#amt_eq# AS FLOAT))
+	     , #curr_cd#
+	     , CONVERT(numeric(15,2), CAST(#amt_ord# AS FLOAT))
+	     , CONVERT(numeric(15,2), CAST(#tot_amt# AS FLOAT))
+	     , #oth_cost_no#
+	     , #src_tp_cd#
+	     , #pkg_lv1_unit_cd#
+	     , CONVERT(numeric(15,0), CAST(#pkg_lv1_qty# AS FLOAT))
+	     , #pkg_lv2_unit_cd#
+	     , CONVERT(numeric(15,0), CAST(#pkg_lv2_qty# AS FLOAT))
+	     , #pkg_lv3_unit_cd#
+	     , CONVERT(numeric(15,0), CAST(#pkg_lv3_qty# AS FLOAT))
+	     , #pkg_lv4_unit_cd#
+	     , CONVERT(numeric(15,0), CAST(#pkg_lv4_qty# AS FLOAT))
+	     , CONVERT(numeric(15,0), CAST(#pkg_pl_std_qty# AS FLOAT))
+	     , CONVERT(numeric(3,1), CAST(#pkg_pl_over_wgt# AS FLOAT))
+	     , 0
+	     , 0
+	     , #rgst_id#
+	     , #rgst_ofc_cd#
+	     , GETDATE()
+	     , dbo.TL_GET_TM_ZONE_DATE_DT(#wh_cd#)
+	     , #rgst_id#
+	     , #rgst_ofc_cd#
+	     , GETDATE()
+	     , dbo.TL_GET_TM_ZONE_DATE_DT(#wh_cd#)
+	  FROM TL_WH_CLS_SO
+	 WHERE CLS_NO     = #cls_no#
+	   AND CLS_SEQ    = #cls_seq#  
+	</insert>
+	
+	<update id="modifyWhClsSoFrtForUnitAmtQtyZero">
+	/*WHClosing.modifyWhClsSoFrtForUnitAmtQtyZero*/
+	UPDATE TL_WH_CLS_SO_FRT
+	   SET BASIC_AMT = 0
+	     , UNIT_QTY = 0
+	     , UNIT_PRICE = 0
+	     , MODI_ID     = #modi_id#
+		 , MODI_OFC_CD = #modi_ofc_cd#
+		 , MODI_SYS_DT = GETDATE()
+		 , MODI_LOC_DT = dbo.TL_GET_TM_ZONE_DATE_DT(#wh_cd#)
+	 WHERE CLS_NO = #cls_no#
+	 	<isNotNull property="cls_seq">
+		 	<isNotEmpty property="cls_seq">
+			  AND CLS_SEQ = #cls_seq#
+		 	</isNotEmpty>
+	 	</isNotNull>
+	 	
+	 	<isNotNull property="sb_cls_cd">
+		 	<isNotEmpty property="sb_cls_cd">
+			  AND SB_CLS_CD = #sb_cls_cd#
+		 	</isNotEmpty>
+	 	</isNotNull>
+	 	
+	 	<isNotNull property="rate_tp_cd">
+		 	<isNotEmpty property="rate_tp_cd">
+			  AND RATE_TP_CD = #rate_tp_cd#
+		 	</isNotEmpty>
+	 	</isNotNull>
+	 	
+	 	<isNotNull property="order_rel">
+		 	<isNotEmpty property="order_rel">
+			  AND ORDER_REL = #order_rel#
+		 	</isNotEmpty>
+	 	</isNotNull>
+	 	
+	 	<isNotNull property="frt_cd">
+		 	<isNotEmpty property="frt_cd">
+			  AND FRT_CD = #frt_cd#
+		 	</isNotEmpty>
+	 	</isNotNull>
+	 	
+	 	<isNotNull property="frt_nm">
+		 	<isNotEmpty property="frt_nm">
+			  AND DTL_FRT_NM = #frt_nm#
+		 	</isNotEmpty>
+	 	</isNotNull>
+	 	
+	 	<isNotNull property="curr_cd">
+		 	<isNotEmpty property="curr_cd">
+			  AND CURR_CD = #curr_cd#
+		 	</isNotEmpty>
+	 	</isNotNull>
+       AND SRC_TP_CD = 'A'
+	</update>
+	
+	<update id="modifyWhClsSoFrtForUnitSum">
+	/*WHClosing.modifyWhClsSoFrtForUnitSum*/
+	MERGE
+		INTO TL_WH_CLS_SO_FRT A
+		USING (
+				SELECT TT.* FROM (
+		        SELECT CLS_NO, CLS_SEQ, SB_CLS_CD, RATE_TP_CD, ORDER_REL, FRT_CD, FRT_NM, CURR_CD
+				     , L.DTL_UNIT_CD
+				     , L.DTL_UNIT_CD AS UNIT_CD     
+				     , CASE WHEN L.LV = 1 THEN AMT_PL_LVL 
+				            WHEN L.LV = 2 THEN AMT_BX_LVL
+				            WHEN L.LV = 3 THEN AMT_IN_LVL
+				            WHEN L.LV = 4 THEN AMT_EA_LVL
+				            WHEN L.LV = 5 THEN AMT_CBM
+				            WHEN L.LV = 6 THEN AMT_CBF
+				            WHEN L.LV = 7 THEN AMT_GRS_KGS
+				            WHEN L.LV = 8 THEN AMT_GRS_LBS
+				            WHEN L.LV = 9 THEN AMT_NET_KGS
+				            WHEN L.LV = 10 THEN AMT_NET_LBS
+				            WHEN L.LV = 11 THEN AMT_ORD
+				            ELSE 0 END AS BASIC_AMT
+				     , CASE WHEN L.LV = 1 THEN PL_LVL
+				            WHEN L.LV = 2 THEN BX_LVL
+				            WHEN L.LV = 3 THEN IN_LVL
+				            WHEN L.LV = 4 THEN EA_LVL 
+				            WHEN L.LV = 5 THEN CBM
+				            WHEN L.LV = 6 THEN CBF
+				            WHEN L.LV = 7 THEN GRS_KGS
+				            WHEN L.LV = 8 THEN GRS_LBS
+				            WHEN L.LV = 9 THEN NET_KGS
+				            WHEN L.LV = 10 THEN NET_LBS
+				            WHEN L.LV = 11 THEN ORD 
+				            ELSE 0 END AS UNIT_QTY     
+				  FROM (      
+				  <![CDATA[ 
+				        SELECT SUM(CASE WHEN AMT_PL_LVL != 0 THEN PL_LVL ELSE 0 END) AS PL_LVL
+				             , SUM(CASE WHEN AMT_BX_LVL != 0 THEN BX_LVL ELSE 0 END) AS BX_LVL
+				             , SUM(CASE WHEN AMT_IN_LVL != 0 THEN IN_LVL ELSE 0 END) AS IN_LVL
+				             , SUM(CASE WHEN AMT_EA_LVL != 0 THEN EA_LVL ELSE 0 END) AS EA_LVL
+				             , SUM(ISNULL(AMT_PL_LVL,0)) AS AMT_PL_LVL
+				             , SUM(ISNULL(AMT_BX_LVL,0)) AS AMT_BX_LVL
+				             , SUM(ISNULL(AMT_IN_LVL,0)) AS AMT_IN_LVL
+				             , SUM(ISNULL(AMT_EA_LVL,0)) AS AMT_EA_LVL
+				             , SUM(CASE WHEN AMT_CBM != 0 THEN CBM ELSE 0 END) AS CBM
+				             , SUM(CASE WHEN AMT_CBF != 0 THEN CBF ELSE 0 END) AS CBF
+				             , SUM(CASE WHEN AMT_GRS_KGS != 0 THEN GRS_KGS ELSE 0 END) AS GRS_KGS
+				             , SUM(CASE WHEN AMT_GRS_LBS != 0 THEN GRS_LBS ELSE 0 END) AS GRS_LBS
+				             , SUM(CASE WHEN AMT_NET_KGS != 0 THEN NET_KGS ELSE 0 END) AS NET_KGS
+				             , SUM(CASE WHEN AMT_NET_LBS != 0 THEN NET_LBS ELSE 0 END) AS NET_LBS
+				             , SUM(ISNULL(AMT_CBM,0)) AS AMT_CBM
+				             , SUM(ISNULL(AMT_CBF,0)) AS AMT_CBF
+				             , SUM(ISNULL(AMT_GRS_KGS,0)) AS AMT_GRS_KGS
+				             , SUM(ISNULL(AMT_GRS_LBS,0)) AS AMT_GRS_LBS
+				             , SUM(ISNULL(AMT_NET_KGS,0)) AS AMT_NET_KGS
+				             , SUM(ISNULL(AMT_NET_LBS,0)) AS AMT_NET_LBS             
+				             , SUM(CASE WHEN AMT_ORD != 0 THEN 1 ELSE 0 END) AS ORD
+				             , SUM(ISNULL(AMT_ORD,0)) AS AMT_ORD
+				             , CLS_NO, CLS_SEQ, SB_CLS_CD, RATE_TP_CD, ORDER_REL, FRT_CD, FRT_NM, CURR_CD
+				          FROM TL_WH_CLS_SO_DTL CLS_DTL ]]>
+				         WHERE CLS_NO = #cls_no#
+				         	<isNotNull property="cls_seq">
+					         	<isNotEmpty property="cls_seq">
+								  AND CLS_SEQ = #cls_seq#
+					         	</isNotEmpty>
+				         	</isNotNull>
+				         	
+				         	<isNotNull property="sb_cls_cd">
+					         	<isNotEmpty property="sb_cls_cd">
+								  AND SB_CLS_CD = #sb_cls_cd#
+					         	</isNotEmpty>
+				         	</isNotNull>
+				         	
+				         	<isNotNull property="rate_tp_cd">
+					         	<isNotEmpty property="rate_tp_cd">
+								  AND RATE_TP_CD = #rate_tp_cd#
+					         	</isNotEmpty>
+				         	</isNotNull>
+				         	
+				         	<isNotNull property="order_rel">
+					         	<isNotEmpty property="order_rel">
+								  AND ORDER_REL = #order_rel#
+					         	</isNotEmpty>
+				         	</isNotNull>
+				         	
+				         	<isNotNull property="frt_cd">
+					         	<isNotEmpty property="frt_cd">
+								  AND FRT_CD = #frt_cd#
+					         	</isNotEmpty>
+				         	</isNotNull>
+				         	
+				         	<isNotNull property="frt_nm">
+					         	<isNotEmpty property="frt_nm">
+								  AND FRT_NM = #frt_nm#
+					         	</isNotEmpty>
+				         	</isNotNull>
+				         	
+				         	<isNotNull property="curr_cd">
+					         	<isNotEmpty property="curr_cd">
+								  AND CURR_CD = #curr_cd#
+					         	</isNotEmpty>
+				         	</isNotNull>
+				           AND SRC_TP_CD = 'A'
+				         GROUP BY CLS_NO, CLS_SEQ, SB_CLS_CD, RATE_TP_CD, ORDER_REL, FRT_CD, FRT_NM, CURR_CD
+				       ) T
+				       , (SELECT 1 LV, 'PE' DTL_UNIT_CD
+							UNION ALL
+						  SELECT 2 LV, 'BX' DTL_UNIT_CD
+							UNION ALL
+						  SELECT 3 LV, 'IC' DTL_UNIT_CD
+							UNION ALL
+						  SELECT 4 LV, 'EA' DTL_UNIT_CD
+							UNION ALL
+						  SELECT 5 LV, 'CBM' DTL_UNIT_CD
+							UNION ALL
+						  SELECT 6 LV, 'CBF' DTL_UNIT_CD
+							UNION ALL
+						  SELECT 7 LV, 'GWT' DTL_UNIT_CD
+							UNION ALL
+						  SELECT 8 LV, 'GLB' DTL_UNIT_CD
+							UNION ALL
+						  SELECT 9 LV, 'NWT' DTL_UNIT_CD
+							UNION ALL
+						  SELECT 10 LV, 'NLB' DTL_UNIT_CD
+							UNION ALL
+						  SELECT 11 LV, 'ORD' DTL_UNIT_CD	
+				          ) L
+				) TT
+				WHERE TT.BASIC_AMT != 0				
+				UNION ALL
+				SELECT CLS_NO, CLS_SEQ, SB_CLS_CD, RATE_TP_CD, ORDER_REL, FRT_CD, FRT_NM, CURR_CD
+				     , 'OTH_' + OTH_UNIT_CD AS DTL_UNIT_CD
+				     , OTH_UNIT_CD AS UNIT_CD
+				     , SUM(ISNULL(AMT_OTH,0)) AS BASIC_AMT
+				     , SUM(ISNULL(OTH_QTY,0)) AS  UNIT_QTY
+				  FROM TL_WH_CLS_SO_DTL CLS_DTL
+				 WHERE CLS_DTL.CLS_NO = #cls_no#
+				 <isNotNull property="cls_seq">
+					 <isNotEmpty property="cls_seq">
+						  AND CLS_SEQ = #cls_seq#
+					 </isNotEmpty>
+				 </isNotNull>
+				 
+				 <isNotNull property="sb_cls_cd">
+					 <isNotEmpty property="sb_cls_cd">
+						  AND SB_CLS_CD = #sb_cls_cd#
+					 </isNotEmpty>
+				 </isNotNull>
+				 
+				 <isNotNull property="rate_tp_cd">
+					 <isNotEmpty property="rate_tp_cd">
+						  AND RATE_TP_CD = #rate_tp_cd#
+					 </isNotEmpty>
+				 </isNotNull>
+				 
+				 <isNotNull property="order_rel">
+					 <isNotEmpty property="order_rel">
+						  AND ORDER_REL = #order_rel#
+					 </isNotEmpty>
+				 </isNotNull>
+				 
+				 <isNotNull property="frt_cd">
+					 <isNotEmpty property="frt_cd">
+						  AND FRT_CD = #frt_cd#
+					 </isNotEmpty>
+				 </isNotNull>
+				 
+				 <isNotNull property="frt_nm">
+					 <isNotEmpty property="frt_nm">
+						  AND FRT_NM = #frt_nm#
+					 </isNotEmpty>
+				 </isNotNull>
+				 
+				 <isNotNull property="curr_cd">
+					 <isNotEmpty property="curr_cd">
+						  AND CURR_CD = #curr_cd#
+					 </isNotEmpty>
+				 </isNotNull>
+				   <![CDATA[ AND AMT_OTH != 0 ]]>
+				   AND SRC_TP_CD = 'A'
+				 GROUP BY CLS_NO, CLS_SEQ, SB_CLS_CD, RATE_TP_CD, ORDER_REL, FRT_CD, FRT_NM, CURR_CD, OTH_UNIT_CD
+				UNION ALL
+				SELECT CLS_NO, CLS_SEQ, SB_CLS_CD, RATE_TP_CD, ORDER_REL, FRT_CD, FRT_NM, CURR_CD
+				     , 'FIX_' + FIX_UNIT_CD AS DTL_UNIT_CD
+				     , FIX_UNIT_CD AS UNIT_CD
+				     , SUM(ISNULL(AMT_FIX,0)) AS BASIC_AMT
+				     , SUM(ISNULL(FIX_QTY,0)) AS  UNIT_QTY
+				  FROM TL_WH_CLS_SO_DTL CLS_DTL
+				 WHERE CLS_DTL.CLS_NO = #cls_no#
+				 <isNotNull property="cls_seq">
+					 <isNotEmpty property="cls_seq">
+						  AND CLS_SEQ = #cls_seq#
+					 </isNotEmpty>
+				 </isNotNull>
+				 
+				 <isNotNull property="sb_cls_cd">
+					 <isNotEmpty property="sb_cls_cd">
+						  AND SB_CLS_CD = #sb_cls_cd#
+					 </isNotEmpty>
+				 </isNotNull>
+				 
+				 <isNotNull property="rate_tp_cd">
+					 <isNotEmpty property="rate_tp_cd">
+						  AND RATE_TP_CD = #rate_tp_cd#
+					 </isNotEmpty>
+				 </isNotNull>
+				 
+				 <isNotNull property="order_rel">
+					 <isNotEmpty property="order_rel">
+						  AND ORDER_REL = #order_rel#
+					 </isNotEmpty>
+				 </isNotNull>
+				 
+				 <isNotNull property="frt_cd">
+					 <isNotEmpty property="frt_cd">
+						  AND FRT_CD = #frt_cd#
+					 </isNotEmpty>
+				 </isNotNull>
+				 
+				 <isNotNull property="frt_nm">
+					 <isNotEmpty property="frt_nm">
+						  AND FRT_NM = #frt_nm#
+					 </isNotEmpty>
+				 </isNotNull>
+				 
+				 <isNotNull property="curr_cd">
+					 <isNotEmpty property="curr_cd">
+						  AND CURR_CD = #curr_cd#
+					 </isNotEmpty>
+				 </isNotNull>
+				   <![CDATA[ AND AMT_FIX != 0 ]]>
+				   AND SRC_TP_CD = 'A'
+				 GROUP BY CLS_NO, CLS_SEQ, SB_CLS_CD, RATE_TP_CD, ORDER_REL, FRT_CD, FRT_NM, CURR_CD, FIX_UNIT_CD
+				UNION ALL
+				SELECT CLS_NO, CLS_SEQ, SB_CLS_CD, RATE_TP_CD, ORDER_REL, FRT_CD, FRT_NM, CURR_CD
+				     , EQ_TPSZ_CD AS DTL_UNIT_CD
+				     , EQ_TPSZ_CD AS UNIT_CD
+				     , SUM(AMT_EQ) AS BASIC_AMT
+				     , SUM(1) AS  UNIT_QTY
+				  FROM TL_WH_CLS_SO_DTL CLS_DTL
+				 WHERE CLS_DTL.CLS_NO = #cls_no#
+				 <isNotNull property="cls_seq">
+					 <isNotEmpty property="cls_seq">
+						  AND CLS_SEQ = #cls_seq#
+					 </isNotEmpty>
+				 </isNotNull>
+				 
+				 <isNotNull property="sb_cls_cd">
+					 <isNotEmpty property="sb_cls_cd">
+						  AND SB_CLS_CD = #sb_cls_cd#
+					 </isNotEmpty>
+				 </isNotNull>
+				 
+				 <isNotNull property="rate_tp_cd">
+					 <isNotEmpty property="rate_tp_cd">
+						  AND RATE_TP_CD = #rate_tp_cd#
+					 </isNotEmpty>
+				 </isNotNull>
+				 
+				 <isNotNull property="order_rel">
+					 <isNotEmpty property="order_rel">
+						  AND ORDER_REL = #order_rel#
+					 </isNotEmpty>
+				 </isNotNull>
+				 
+				 <isNotNull property="frt_cd">
+					 <isNotEmpty property="frt_cd">
+						  AND FRT_CD = #frt_cd#
+					 </isNotEmpty>
+				 </isNotNull>
+				 
+				 <isNotNull property="frt_nm">
+					 <isNotEmpty property="frt_nm">
+						  AND FRT_NM = #frt_nm#
+					 </isNotEmpty>
+				 </isNotNull>
+				 
+				 <isNotNull property="curr_cd">
+					 <isNotEmpty property="curr_cd">
+						  AND CURR_CD = #curr_cd#
+					 </isNotEmpty>
+				 </isNotNull>
+				   AND EQ_TPSZ_CD IS NOT NULL
+				   <![CDATA[ AND AMT_EQ != 0 ]]>
+				   AND SRC_TP_CD = 'A'
+				 GROUP BY CLS_NO, CLS_SEQ, SB_CLS_CD, RATE_TP_CD, ORDER_REL, FRT_CD, FRT_NM, CURR_CD, EQ_TPSZ_CD 
+				UNION ALL
+				SELECT CLS_NO, CLS_SEQ, SB_CLS_CD, RATE_TP_CD, ORDER_REL, FRT_CD, FRT_NM, CURR_CD
+				     , SPACE_TP_CD AS DTL_UNIT_CD
+				     , 'LOC' AS UNIT_CD
+				     , SUM(AMT_LOC) AS BASIC_AMT
+				     , SUM(1) AS  UNIT_QTY
+				  FROM TL_WH_CLS_SO_DTL CLS_DTL
+				 WHERE CLS_DTL.CLS_NO = #cls_no#
+				 <isNotNull property="cls_seq">
+					 <isNotEmpty property="cls_seq">
+						  AND CLS_SEQ = #cls_seq#
+					 </isNotEmpty>
+				 </isNotNull>
+				 
+				 <isNotNull property="sb_cls_cd">
+					 <isNotEmpty property="sb_cls_cd">
+						  AND SB_CLS_CD = #sb_cls_cd#
+					 </isNotEmpty>
+				 </isNotNull>
+				 
+				 <isNotNull property="rate_tp_cd">
+					 <isNotEmpty property="rate_tp_cd">
+						  AND RATE_TP_CD = #rate_tp_cd#
+					 </isNotEmpty>
+				 </isNotNull>
+				 
+				 <isNotNull property="order_rel">
+					 <isNotEmpty property="order_rel">
+						  AND ORDER_REL = #order_rel#
+					 </isNotEmpty>
+				 </isNotNull>
+				 
+				 <isNotNull property="frt_cd">
+					 <isNotEmpty property="frt_cd">
+						  AND FRT_CD = #frt_cd#
+					 </isNotEmpty>
+				 </isNotNull>
+				 
+				 <isNotNull property="frt_nm">
+					 <isNotEmpty property="frt_nm">
+						  AND FRT_NM = #frt_nm#
+					 </isNotEmpty>
+				 </isNotNull>
+				 
+				 <isNotNull property="curr_cd">
+					 <isNotEmpty property="curr_cd">
+						  AND CURR_CD = #curr_cd#
+					 </isNotEmpty>
+				 </isNotNull>
+				   AND SPACE_TP_CD IS NOT NULL
+				   <![CDATA[ AND AMT_LOC != 0 ]]>
+				   AND SRC_TP_CD = 'A'
+				 GROUP BY CLS_NO, CLS_SEQ, SB_CLS_CD, RATE_TP_CD, ORDER_REL, FRT_CD, FRT_NM, CURR_CD, SPACE_TP_CD   
+		      ) B
+		   ON (    A.CLS_NO      = B.CLS_NO   
+               AND A.CLS_SEQ     = B.CLS_SEQ 
+	           AND A.SB_CLS_CD   = B.SB_CLS_CD  
+	           AND A.RATE_TP_CD  = B.RATE_TP_CD 	           
+	           AND A.ORDER_REL   = B.ORDER_REL
+	           AND A.FRT_CD      = B.FRT_CD
+	           AND A.DTL_FRT_NM  = B.FRT_NM 
+	           AND A.CURR_CD     = B.CURR_CD
+	           AND A.DTL_UNIT_CD = B.DTL_UNIT_CD
+	           AND A.SRC_TP_CD   = 'A'
+	          )
+		WHEN MATCHED THEN
+				UPDATE SET A.BASIC_AMT   = B.BASIC_AMT
+				         , A.UNIT_QTY    = B.UNIT_QTY
+				         , A.UNIT_PRICE  = CASE WHEN ISNULL(B.UNIT_QTY,0) = 0 THEN 0 ELSE ROUND((B.BASIC_AMT + ISNULL(A.ADJUST_AMT,0)) / B.UNIT_QTY, 3) END
+					     , A.MODI_ID     = #modi_id#
+					     , A.MODI_OFC_CD = #modi_ofc_cd#
+					     , A.MODI_SYS_DT = GETDATE()
+					     , A.MODI_LOC_DT = dbo.TL_GET_TM_ZONE_DATE_DT(#wh_cd#);
+	</update>
+	
+	<select id="searchWhClsSoFrtExistsInfo" resultClass="ClosingSubExistsInfoDto">
+	/*WHClosing.searchWhClsSoFrtExistsInfo*/
+	SELECT CLS_SO.CLS_NO as cls_no
+	     , CLS_SO.CLS_SEQ as cls_seq
+	     , CLS_S.SB_CLS_CD	as sb_cls_cd
+	     , CLS_S.CLS_FRT_SEQ	as cls_frt_seq
+	  FROM TL_WH_CLS_SO CLS_SO
+	     , TL_WH_CLS_SO_FRT CLS_S
+	 WHERE CLS_SO.CLS_NO = CLS_S.CLS_NO
+	   AND CLS_SO.CLS_SEQ = CLS_S.CLS_SEQ
+	   <isNotNull property="cls_no">
+		   <isNotEmpty property="cls_no">
+		   		AND CLS_SO.CLS_NO    = #cls_no#
+		   </isNotEmpty>
+	   </isNotNull>
+	   AND CLS_SO.CLS_SEQ   = #cls_seq#
+	   AND CLS_S.SB_CLS_CD  = #sb_cls_cd#
+	   AND CLS_S.RATE_TP_CD = #rate_tp_cd#
+	   AND CLS_S.ORDER_REL  = #order_rel#
+	   AND CLS_S.SRC_TP_CD = 'A'
+	   <isEmpty property="frt_cd">
+			AND CLS_S.FRT_CD IS NULL
+	   </isEmpty>
+	   <isNull property="frt_cd">
+			AND CLS_S.FRT_CD IS NULL
+	   </isNull>
+	   <isNotNull property="frt_cd">
+		   <isNotEmpty property="frt_cd">
+				AND CLS_S.FRT_CD     = #frt_cd#  
+		   </isNotEmpty>
+	   </isNotNull>
+	   
+	   <isNull property="frt_nm">
+			AND CLS_S.DTL_FRT_NM IS NULL
+	   </isNull>
+	   <isEmpty property="frt_nm">
+			AND CLS_S.DTL_FRT_NM IS NULL
+	   </isEmpty>
+	   <isNotNull property="frt_nm">
+		   <isNotEmpty property="frt_nm">
+				AND CLS_S.DTL_FRT_NM  = #frt_nm#  
+		   </isNotEmpty>
+	   </isNotNull>
+	   
+	   <isEmpty property="curr_cd">
+			AND CLS_S.CURR_CD IS NULL
+	   </isEmpty>
+	   <isNull property="curr_cd">
+			AND CLS_S.CURR_CD IS NULL
+	   </isNull>
+	   <isNotNull property="curr_cd">
+		   <isNotEmpty property="curr_cd">
+				AND CLS_S.CURR_CD    = #curr_cd#
+		   </isNotEmpty>
+	   </isNotNull>
+	   AND CLS_S.DTL_UNIT_CD  = #dtl_unit_cd#
+	</select>
+	
+	<insert id="saveWhClsSoFrtForDtl">
+	/*WHClosing.saveWhClsSoFrtForDtl*/
+	INSERT INTO TL_WH_CLS_SO_FRT
+	     ( CLS_NO
+	     , CLS_SEQ
+	     , SB_CLS_CD
+	     , CLS_FRT_SEQ
+	     , RATE_TP_CD
+	     , ORDER_REL
+	     , SRC_TP_CD
+	     , FRT_CD
+	     , FRT_NM
+	     , DTL_FRT_NM
+	     , CURR_CD
+	     , DTL_UNIT_CD
+	     , UNIT_CD
+	     , UNIT_QTY
+	     , UNIT_PRICE
+	     , BASIC_AMT
+	     , ADJUST_AMT
+	     , DISP_SEQ
+	     , RGST_ID
+	     , RGST_OFC_CD
+	     , RGST_SYS_DT
+	     , RGST_LOC_DT
+	     , MODI_ID
+	     , MODI_OFC_CD
+	     , MODI_SYS_DT
+	     , MODI_LOC_DT
+	     )
+	SELECT CLS_NO
+	     , CLS_SEQ
+	     , #sb_cls_cd#
+	     , #cls_frt_seq#
+	     , #rate_tp_cd#
+	     , #order_rel#
+	     , #src_tp_cd#
+	     , #frt_cd#
+	     , #frt_nm#
+	     , #frt_nm#
+	     , #curr_cd#
+	     , #dtl_unit_cd#
+	     , #unit_cd#
+	     , 0 /* UNIT_QTY 뒤에서 SUM후 UPDATE */
+	     , 0 /* UNIT_PRICE 뒤에서 SUM후 UPDATE */
+	     , 0 /* BASIC_AMOUNT 뒤에서 SUM후 UPDATE */
+	     , 0 /* ADJUST_AMT */
+	     , (SELECT ISNULL(MAX(CLS_FRT_SEQ),0) + 1 
+	          FROM TL_WH_CLS_SO_FRT
+	         WHERE CLS_NO = #cls_no#
+	           AND CLS_SEQ = #cls_seq#
+	       )
+	     , #rgst_id#
+		 , #rgst_ofc_cd#
+		 , GETDATE()
+		 , dbo.TL_GET_TM_ZONE_DATE_DT(WH_CD)
+		 , #rgst_id#
+		 , #rgst_ofc_cd#
+		 , GETDATE()
+		 , dbo.TL_GET_TM_ZONE_DATE_DT(WH_CD) 
+	  FROM TL_WH_CLS_SO
+	 WHERE CLS_NO  = #cls_no#
+	   AND CLS_SEQ = #cls_seq#
+	</insert>
+	
+	<select id="searchClosingCustConfirmInvoicedStsList" resultClass="Grd01ClosingDetailDto">
+	/*WHClosing.searchClosingCustConfirmInvoicedStsList*/
+	SELECT CLS_NO
+	     , CLS_SEQ
+	     , CUST_CD
+	  FROM TL_WH_CLS_SO CLS_SO
+	 WHERE CLS_NO + CUST_CD IN (
+<!-- 	 							<foreach collection="cls_no_cust_in" item="cls_no_cust" separator=",">#cls_no_cust#</foreach> -->
+	 							<iterate property="cls_no_cust_in" conjunction="," >  #cls_no_cust_in[]#  </iterate>
+	 						    )
+	   AND (CASE WHEN CLS_SO.STS_CD = 'C' THEN 
+									       CASE WHEN (SELECT COUNT(*) 
+																FROM tb_wm_doc_mst A JOIN TB_FRT B ON A.WM_DOC_SEQ = B.WMS_SEQ 
+																WHERE B.INV_SEQ IS NOT NULL AND A.DOC_REF_NO = CLS_SO.SO_NO
+															  ) > 0 
+								                THEN 'I' /* I : Invoiced */
+								                ELSE CLS_SO.STS_CD
+								                END
+								                
+                     ELSE CLS_SO.STS_CD  
+                     END) IN ('I', 'C')
+                     
+                     
+	</select>
+	
+	<update id="modifyWhClsResetForWhOthCost">
+		/*WHClosing.modifyWhClsResetForWhOthCost*/
+		UPDATE TL_WH_OTH_COST
+		   SET CLS_NO      = NULL
+		     , CLS_DT      = NULL
+		     , STS_CD      = #sts_cd#
+		     , MODI_ID     = #modi_id#
+	         , MODI_OFC_CD = #modi_ofc_cd#
+	         , MODI_SYS_DT = GETDATE()
+	         , MODI_LOC_DT = dbo.TL_GET_TM_ZONE_DATE_DT(WH_CD)
+		 WHERE 1=1
+		 	<isEqual property="reset_tp" compareValue="OTH_NO">
+				AND OTH_COST_NO = #oth_cost_no#
+		 	</isEqual>
+		 	<isNotEqual property="reset_tp" compareValue="OTH_NO">
+				AND OTH_COST_NO IN (SELECT OTH_COST_NO
+				                      FROM TL_WH_CLS_SO_DTL
+				                     WHERE CLS_NO = #cls_no#
+                                    )
+		 	</isNotEqual>
+	</update>
+	
+	<delete id="deleteWhClsSoDtlPartial">
+	/*WHClosing.deleteWhClsSoDtlPartial*/
+	DELETE FROM TL_WH_CLS_SO_DTL
+	 WHERE CLS_NO = #cls_no# 
+	   AND CLS_SEQ = #cls_seq#
+	   AND SB_CLS_CD = #sb_cls_cd#
+	   AND CLS_DTL_SEQ = #cls_dtl_seq#
+	</delete>
+	
+	<delete id="deleteWhClsSoDtlPartialNoAmount">
+	/*WHClosing.deleteWhClsSoDtlPartialNoAmount*/
+	DELETE FROM TL_WH_CLS_SO_DTL
+	 WHERE CLS_NO = #cls_no# 
+	   AND CLS_SEQ = #cls_seq#
+	   AND SB_CLS_CD = #sb_cls_cd#
+	   AND RATE_TP_CD = #rate_tp_cd#
+	</delete>
+	
+	<select id="searchWhClsFrtDtlCnt" resultClass="String">
+	/*WHClosing.searchWhClsFrtDtlCnt*/
+	SELECT SUM(FRT_CNT) + SUM(DTL_CNT) AS CNT
+	  FROM (
+			SELECT COUNT(1) AS FRT_CNT
+			     , 0 AS DTL_CNT
+			  FROM TL_WH_CLS_SO_FRT
+			 WHERE CLS_NO = #cls_no#
+			   AND ISNULL(BASIC_AMT,0) + ISNULL(ADJUST_AMT,0) != 0
+			 UNION ALL
+			SELECT 0 AS FRT_CNT
+			     , COUNT(1) AS DTL_CNT
+			  FROM TL_WH_CLS_SO_DTL
+			 WHERE CLS_NO = #cls_no#
+	     ) T
+	</select>
+	
+	<delete id="deleteWhClsSo">
+	/*WHClosing.deleteWhClsSo*/
+	DELETE FROM TL_WH_CLS_SO
+	 WHERE CLS_NO = #cls_no#
+	</delete>	
+	<delete id="deleteWhCls">
+	/*WHClosing.deleteWhCls*/
+	DELETE FROM TL_WH_CLS
+	 WHERE CLS_NO = #cls_no# 
+	</delete>	
+	
+	<select id="getBillingCusts" parameterClass="java.util.HashMap" resultClass="String">
+		/*wms.WHClosing> getBillingCusts*/
+		SELECT
+			C.CTRT_CUST_CD
+		FROM
+			TL_CTRT C
+		WHERE 1 = 1
+		AND ctrt_use_flg = 'Y'
+		AND CTRT_NO = #ctrt_no#
+    </select>
+</sqlMap>

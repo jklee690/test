@@ -1,0 +1,58 @@
+{
+    "MSG_IBUP_HTML_FILENAME"              : "파일명",
+    "MSG_IBUP_HTML_FILE_STATUS"           : "파일상태",
+    "MSG_IBUP_HTML_TRANSFER_CNT"          : "전송파일",
+    "MSG_IBUP_HTML_TRANSFER_AMT"          : "전송용량",
+    "MSG_IBUP_HTML_PROGRESS_BAR"          : "진행",
+    "MSG_IBUP_HTML_BTN_DOWNLOAD"          : "다운로드",
+    "MSG_IBUP_HTML_BTN_ADDFILE"           : "파일추가",
+    "MSG_IBUP_HTML_BTN_DELFILE"           : "파일삭제",
+    "MSG_IBUP_HTML_BTN_SAVESTATUS"        : "저장",
+    
+    "MSG_IBUP_ERR_NO_SELECTED_DOWN"       : "다운로드할 파일을 선택해 주세요.",
+    "MSG_IBUP_ERR_NO_SELECTED_DEL"        : "삭제할 파일을 선택해 주세요.",
+    
+    "MSG_IBUP_ERR_NO_STATUS_CHANGE"       : "상태가 변하지 않았습니다.",
+    
+    "MSG_IBUP_ERR_FAIL_UPLOAD"            : "업로드할수 없었던 파일은 아래와 같습니다.\n",
+    "MSG_IBUP_ERR_FAIL_DELETE"            : "삭제 할 수 없었던 파일은 아래와 같습니다.\n",
+    
+    "MSG_IBUP_ERR_REQUEST_AFTER_END_URL"  : "종료 처리 중 에러가 발생 했습니다. 샘플 JSP result.jsp 를 참고해주세요 ",
+    "MSG_IBUP_ERR_REQUEST_TYPE_ERR"       : "Request 데이터의 eventName 을 지정해주세요.",
+    "MSG_IBUP_ERR_REQUEST_JSON_ERR"       : "Request 데이터의 JSON 형식이 잘못 되었습니다.",
+    "MSG_IBUP_ERR_REQUEST_XNK_ERR"        : "Request XML 형식이 잘 못 되었습니다.",
+    
+    "MSG_IBUP_ERR_JSON_ERR"               : "JSON 형태가 올바르지 않습니다.",
+    "MSG_IBUP_ERR_SERVER_ERROR"           : "알 수 없는 서버에러가 발생 했습니다.",
+    "MSG_IBUP_ERR_EVENT_FUN_ERROR"        : "함수는 반드시 true값을 반환해야 합니다.",
+    
+    "PROGRESS_INFO_STRS" : ['대기중', '전송중', '전송중지', '전송완료', '삭제대상', '전송실패', '삭제실패'],
+    
+    "ERR_NOT_SUPPORT_XHR": "XMLHttpRequest객체를 지원하지 않는 브라우져입니다.",
+    
+    "ERR_OCCUR_INIT_IBUPLOAD": "IBUploader가 초기화되지 않았습니다.",
+    "ERR_ID_ADDFILE_BTN": "파일추가 버튼으로 지정할 요소의 ID값이 잘못되었습니다.",
+    
+    "ERR_IF_DUP_NAME": "이미 추가된 파일입니다.",
+    "ERR_IF_LMT_TYPE": "제한된 종류의 파일입니다.",
+    "ERR_IF_LMT_COUNT": "업로드 제한개수를 초과했습니다.",
+    
+    "ERR_REMOVE_NO_TARGET": "삭제할 대상이 없습니다.",
+    "ERR_REMOVE_WRONG_ID": "삭제할 대상을 찾을 수 없습니다.",
+    
+    "ERR_UPDATE_FAILED": "파일 전송 중 오류가 발생했습니다.",
+    
+    "ERR_PROG_NO_VALUE": "진행상태 정보 요청 중 오류가 발생했습니다.",
+    "ERR_PROG_NO_RESPONSE": "서버의 응답이 없습니다.",
+    
+    "ERR_SET_FILENAME": "업로드 리스트에 등록할 파일의 fileName 속성값이 없습니다.",
+    "ERR_SET_SAVEDNAME": "{0} 파일의 uniqueFileName 속성값이 없습니다.",
+    
+    "ERR_DOWN_NO_SELECTED": "선택된 파일이 없습니다.",
+    "ERR_DOWN_NOT_EXIST": "요청한 파일이 서버에 존재하지 않습니다.",
+    "ERR_DOWN_FAILED": "[{0}] 파일을 서버에서 찾을 수 없어 다운로드가 실패했습니다.",
+    
+    "ERR_USER_EVT_FALSE": "함수는 호출 결과 true값을 반환해야 합니다."
+    
+    
+}

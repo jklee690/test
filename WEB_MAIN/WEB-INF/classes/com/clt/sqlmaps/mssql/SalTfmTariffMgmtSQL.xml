@@ -1,0 +1,4356 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE sqlMap PUBLIC "-//ibatis.apache.org//DTD SQL Map 2.0//EN"
+    "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="sal.tfm.tariff">
+
+<typeAlias alias="FrtTrfVO"		type="com.clt.apps.fis.sal.tfm.tariff.dto.FrtTrfVO"/>	<!-- Tariff 등록 및 조회 정보   -->
+<typeAlias alias="FrtTrfDtlVO"	type="com.clt.apps.fis.sal.tfm.tariff.dto.FrtTrfDtlVO"/><!-- Tariff Detail 등록 및 조회 정보   -->
+	
+	<!-- Tariff List조회   -->
+    <select id="selectTariffList" parameterClass="java.util.HashMap" resultClass="FrtTrfVO">
+		<!-- 
+		SELECT	a.trf_ctrt_no,		a.trdp_cd,			b.eng_nm as trdp_nm,
+				a.trdp_clnt_nm,		a.sell_buy_tp_cd,
+				a.pol_cd,			a.pod_cd,			a.dest_del_cd,	a.trf_curr_cd,
+				a.trf_term_fm_dt,	a.trf_term_to_dt,	a.delt_flg,
+				<isEqual property="trf_tp_cd" compareValue="S">
+				c.LOC_NM pol_nm,	d.LOC_NM pod_nm,	e.LOC_NM dest_del_nm
+				</isEqual>
+				<isEqual property="trf_tp_cd" compareValue="A">
+				c.NOD_ENG_NM pol_nm,	d.NOD_ENG_NM pod_nm,	e.NOD_ENG_NM dest_del_nm
+				</isEqual>
+		FROM	tb_frt_trf a
+				LEFT OUTER JOIN tb_trdp B ON a.trdp_cd = b.trdp_cd
+		<isEqual property="trf_tp_cd" compareValue="S">
+				LEFT OUTER JOIN	TB_LOC c ON a.pol_cd = c.LOC_CD
+				LEFT OUTER JOIN	TB_LOC d ON a.pod_cd = d.LOC_CD
+				LEFT OUTER JOIN	TB_LOC e ON a.dest_del_cd = e.LOC_CD
+		</isEqual>
+		<isEqual property="trf_tp_cd" compareValue="A">
+				LEFT OUTER JOIN	TB_nod c ON a.pol_cd = c.nod_CD
+				LEFT OUTER JOIN	TB_nod d ON a.pod_cd = d.nod_CD
+				LEFT OUTER JOIN	TB_nod e ON a.dest_del_cd = e.nod_CD
+		</isEqual>
+		
+		WHERE	a.trf_tp_cd = #trf_tp_cd# 
+		<isNotNull prepend="AND" property="sell_buy_tp_cd">
+			a.sell_buy_tp_cd = #sell_buy_tp_cd#
+		</isNotNull>
+		<isNotNull prepend="AND" property="pol_cd">
+			a.pol_cd = #pol_cd#
+		</isNotNull>
+		<isNotNull prepend="AND" property="pod_cd">
+			a.pod_cd = #pod_cd#
+		</isNotNull>
+		<isNotNull prepend="AND" property="trdp_cd">
+			a.trdp_cd = #trdp_cd#
+		</isNotNull>
+		<isNotEmpty property="trf_term_dt">
+           	<![CDATA[ AND	CONVERT(VARCHAR, a.trf_term_to_dt, 112) >= #trf_term_dt# ]]>
+		</isNotEmpty>            
+		<isNotEmpty property="trf_term_dt">
+			<![CDATA[ AND	CONVERT(VARCHAR, a.trf_term_fm_dt, 112) <= #trf_term_dt# ]]>
+		</isNotEmpty>
+		
+		ORDER BY  a.trf_ctrt_no
+		   -->
+		 
+		SELECT  TRF.TRF_CTRT_NO, TRF.TRDP_CD, 
+				(SELECT X.ENG_NM FROM TB_TRDP X WHERE X.TRDP_CD = TRF.TRDP_CD) AS TRDP_NM,
+				TRF.TRDP_CLNT_NM, TRF.TRF_TP_CD, TRF.TRDP_TP_CD, TRF.SELL_BUY_TP_CD, 
+				TRF.BND_CLSS_CD, 
+				TRF.POL_CD,
+				(SELECT X.LOC_NM FROM TB_LOC X WHERE X.LOC_CD = TRF.POL_CD) AS POL_NM,
+				TRF.POD_CD,
+				(SELECT X.LOC_NM FROM TB_LOC X WHERE X.LOC_CD = TRF.POD_CD) AS POD_NM,
+				TRF.DEST_DEL_CD,
+				(SELECT X.LOC_NM FROM TB_LOC X WHERE X.LOC_CD = TRF.DEST_DEL_CD) AS DEST_DEL_NM,
+				TRF.TRF_TERM_FM_DT, TRF.TRF_TERM_TO_DT, 
+				TRF.DELT_FLG, TRF.TRF_CURR_CD, TRF.TRF_CTRT_RMK, 
+				TRF.RGST_OFC_CD, CONVERT(VARCHAR(8), TRF.RGST_TMS, 120) AS RGST_TMS, TRF.RGST_USRID, TRF.MODI_OFC_CD, CONVERT(VARCHAR(8), TRF.MODI_TMS, 120) AS MODI_TMS, TRF.MODI_USRID
+		  FROM  TB_FRT_TRF TRF
+		 WHERE  TRF.DELT_FLG = 'N'
+		<isNotEmpty property="trf_tp_cd">
+		   AND  TRF.TRF_TP_CD = #trf_tp_cd#
+		</isNotEmpty>   
+		<isNotEmpty property="pol_cd">
+		   AND  TRF.POL_CD = #pol_cd#
+		</isNotEmpty>
+		<isNotEmpty property="pod_cd">
+		   AND  TRF.POD_CD = #pod_cd#
+		</isNotEmpty>
+		<isNotEmpty property="trdp_cd">
+		   AND  TRF.TRDP_CD = #trdp_cd#
+		</isNotEmpty>
+		<isNotEmpty property="trf_term_dt">
+		<![CDATA[
+		   AND  TRF.TRF_TERM_FM_DT <= #trf_term_dt#
+		   AND  TRF.TRF_TERM_TO_DT >= #trf_term_dt#
+		]]>
+		</isNotEmpty>
+		<isNotEmpty property="bnd_clss_cd">
+		   AND  TRF.BND_CLSS_CD = #bnd_clss_cd#
+		</isNotEmpty>
+		<isNotEmpty property="sell_buy_tp_cd">
+		   AND  TRF.SELL_BUY_TP_CD = #sell_buy_tp_cd#
+		</isNotEmpty>
+		<isNotEmpty property="dest_del_cd">
+		   AND  TRF.DEST_DEL_CD = #dest_del_cd#
+		</isNotEmpty>
+	  ORDER BY  TRF.RGST_TMS
+    </select>
+	
+    <!-- Tariff Deatil List조회   -->
+    <select id="selectTariffDtlList" parameterClass="java.util.HashMap" resultClass="FrtTrfDtlVO">
+    	<!-- 
+		SELECT	trf_dtl_seq,	frt_cd,			frt_nm,		pck_wgt,
+				aply_ut_cd,		cntr_tpsz_cd,	cntr_sl_flg,
+				pck_wgt,		trf_amt,		rmk dtl_rmk
+		FROM	TB_FRT_TRF_DTL a
+		WHERE	a.trf_ctrt_no = #trf_ctrt_no#
+		   -->
+		
+		
+		SELECT DTL.TRF_CTRT_NO, DTL.TRF_DTL_SEQ, DTL.FRT_CD, DTL.FRT_NM, DTL.TRF_CURR_CD,
+DTL.APLY_UT_CD, DTL.MIN_AMT, DTL.MAX_AMT, DTL.CNTR_TPSZ_CD, DTL.TRF_AMT, DTL.RMK,
+DTL.FROM_SEC, DTL.TO_SEC, DTL.RT_CLSS_CD, DTL.IATA_FLG,
+DTL.CNTR_SL_FLG, DTL.PCK_WGT, DTL.DELT_FLG,
+DTL.RGST_OFC_CD, REPLACE(CONVERT(VARCHAR(10), DTL.RGST_TMS, 120),'-','') AS RGST_TMS, DTL.RGST_USRID, DTL.MODI_OFC_CD, REPLACE(CONVERT(VARCHAR(8), DTL.MODI_TMS, 120),'-','') AS MODI_TMS, DTL.MODI_USRID
+FROM TB_FRT_TRF_DTL DTL
+WHERE DTL.TRF_CTRT_NO = #trf_ctrt_no#
+AND DTL.DELT_FLG = 'N'
+<isNotEmpty property="iata_flg">
+AND DTL.IATA_FLG = #iata_flg#
+</isNotEmpty>
+
+ORDER BY  DTL.TRF_DTL_SEQ
+<!-- AND DTL.TRF_DTL_SEQ = #trf_dtl_seq#   -->
+    </select>
+    
+	<!-- Tariff Insert   -->
+    <insert id="insertTariff" parameterClass="FrtTrfVO">
+    <!-- 
+		INSERT INTO TB_FRT_TRF(
+			trf_ctrt_no,	trdp_cd,		trdp_clnt_nm,	trf_tp_cd,
+			pol_cd,	pod_cd,	dest_del_cd,	trf_curr_cd,
+			trf_term_fm_dt,	trf_term_to_dt,	sell_buy_tp_cd,
+			rgst_usrid,        rgst_ofc_cd,       rgst_tms,		
+			modi_usrid,        modi_ofc_cd,       modi_tms,       delt_flg
+		)VALUES(
+			#trf_ctrt_no#,	#trdp_cd#,	#trdp_clnt_nm#,	#trf_tp_cd#,
+			#pol_cd#,		#pod_cd#,	#dest_del_cd#,	#trf_curr_cd#,
+			#trf_term_fm_dt#,	#trf_term_to_dt#,	#sell_buy_tp_cd#,
+			#rgst_usrid#,	#rgst_ofc_cd#,	getDate(),
+			#modi_usrid#,	#modi_ofc_cd#,	getDate(),          'N'
+		)
+		   -->
+		 
+		 INSERT INTO TB_FRT_TRF (
+TRF_CTRT_NO, 
+BND_CLSS_CD, 
+TRDP_CD, 
+TRDP_CLNT_NM, 
+TRF_TP_CD, 
+POL_CD, 
+POD_CD, 
+DEST_DEL_CD, 
+TRF_CURR_CD, 
+TRF_TERM_FM_DT, 
+TRF_TERM_TO_DT, 
+TRF_CTRT_RMK, 
+RGST_USRID, 
+RGST_OFC_CD, 
+RGST_TMS, 
+MODI_USRID, 
+MODI_OFC_CD, 
+MODI_TMS, 
+DELT_FLG, 
+SELL_BUY_TP_CD,
+TRDP_TP_CD
+)
+VALUES (
+#trf_ctrt_no#, 
+#bnd_clss_cd#, 
+#trdp_cd#, 
+#trdp_clnt_nm#, 
+#trf_tp_cd#, 
+#pol_cd#, 
+#pod_cd#, 
+#dest_del_cd#, 
+#trf_curr_cd#, 
+#trf_term_fm_dt#, 
+#trf_term_to_dt#, 
+#trf_ctrt_rmk#, 
+#rgst_usrid#, 
+#rgst_ofc_cd#, 
+GETDATE(), 
+#modi_usrid#, 
+#modi_ofc_cd#, 
+GETUTCDATE(), 
+'N', 
+#sell_buy_tp_cd#,
+#trdp_tp_cd#
+)
+    </insert>
+	
+    <!-- Tariff Update   -->
+    <update id="updateTariff" parameterClass="FrtTrfVO">
+		<!-- 
+		UPDATE	TB_FRT_TRF
+		   SET	trdp_cd= #trdp_cd#,
+		   		trdp_clnt_nm= #trdp_clnt_nm#,		pol_cd= #pol_cd#,	
+		   		pod_cd= #pod_cd#,					dest_del_cd= #dest_del_cd#,    
+		   		trf_curr_cd= #trf_curr_cd#,			trf_term_fm_dt= #trf_term_fm_dt#, 
+		   		trf_term_to_dt= #trf_term_to_dt#,	sell_buy_tp_cd= #sell_buy_tp_cd#, 
+				modi_usrid= #modi_usrid#,			modi_ofc_cd= #modi_ofc_cd#,    
+				modi_tms= getDate(),				delt_flg = #delt_flg#
+		WHERE	trf_ctrt_no	= #trf_ctrt_no#
+		   -->
+		 UPDATE  TB_FRT_TRF 
+			SET 
+			<isNotNull property="trf_ctrt_no">
+				 TRF_CTRT_NO = #trf_ctrt_no#,
+			</isNotNull>
+			<isNotNull property="bnd_clss_cd">
+				 BND_CLSS_CD = #bnd_clss_cd#, 
+			</isNotNull>
+			<isNotNull property="trdp_cd">
+				 TRDP_CD = #trdp_cd#, 
+			</isNotNull>
+			<isNotNull property="trdp_clnt_nm">
+				 TRDP_CLNT_NM = #trdp_clnt_nm#, 
+			</isNotNull>
+			<isNotNull property="trf_tp_cd">
+				 TRF_TP_CD = #trf_tp_cd#, 
+			</isNotNull>
+			<isNotNull property="pol_cd">
+				 POL_CD = #pol_cd#, 
+			</isNotNull>
+			<isNotNull property="pod_cd">
+				 POD_CD = #pod_cd#, 
+			</isNotNull>
+			<isNotNull property="dest_del_cd">
+				 DEST_DEL_CD = #dest_del_cd#, 
+			</isNotNull>
+			<isNotNull property="trf_curr_cd">
+				 TRF_CURR_CD = #trf_curr_cd#, 
+			</isNotNull>
+			<isNotNull property="trf_term_fm_dt">
+				 TRF_TERM_FM_DT = #trf_term_fm_dt#, 
+			</isNotNull>
+			<isNotNull property="trf_term_to_dt">
+				 TRF_TERM_TO_DT = #trf_term_to_dt#, 
+			</isNotNull>
+			<isNotNull property="trf_ctrt_rmk">
+				 TRF_CTRT_RMK = #trf_ctrt_rmk#, 
+			</isNotNull>
+			<isNotNull property="modi_usrid">
+				 MODI_USRID = #modi_usrid#, 
+			</isNotNull>
+			<isNotNull property="modi_ofc_cd">
+				 MODI_OFC_CD = #modi_ofc_cd#, 
+			</isNotNull>
+			<isNotNull property="delt_flg">
+				 DELT_FLG = #delt_flg#, 
+			</isNotNull>
+			<isNotNull property="sell_buy_tp_cd">
+				 SELL_BUY_TP_CD = #sell_buy_tp_cd#, 
+			</isNotNull>
+			<isNotNull property="trdp_tp_cd">
+				 TRDP_TP_CD = #trdp_tp_cd#, 
+			</isNotNull>
+
+				 MODI_TMS = GETUTCDATE()
+		  WHERE  1=1
+  			AND  TRF_CTRT_NO = #trf_ctrt_no#
+    </update>
+    
+        <!-- Tariff Detail delete   -->
+    <delete id="deleteTariff" parameterClass="FrtTrfVO">
+		<!-- 
+		DELETE  FROM TB_FRT_TRF
+		 WHERE	TRF_CTRT_NO = #trf_ctrt_no#
+		    -->
+		UPDATE  TB_FRT_TRF
+		   SET  DELT_FLG = 'Y'
+		 WHERE  TRF_CTRT_NO = #trf_ctrt_no#
+    </delete>
+	
+	<!-- Tariff Detail Insert   -->
+    <insert id="insertTariffDtl" parameterClass="FrtTrfDtlVO">
+		<!-- 
+		INSERT INTO TB_FRT_TRF_DTL(
+			trf_ctrt_no,	trf_dtl_seq,	frt_cd,		frt_nm,
+			aply_ut_cd,		cntr_tpsz_cd,	cntr_sl_flg,
+			pck_wgt,		trf_amt,		rmk,
+			rgst_usrid,		rgst_ofc_cd,	rgst_tms,		
+			modi_usrid,		modi_ofc_cd,	modi_tms,	delt_flg
+		)VALUES(
+			#trf_ctrt_no#,	#trf_dtl_seq#,	#frt_cd#,	#frt_nm#,
+			#aply_ut_cd#,	#cntr_tpsz_cd#,	#cntr_sl_flg#,
+			#pck_wgt#,		#trf_amt#,		#dtl_rmk#,
+			#rgst_usrid#,	#rgst_ofc_cd#,	getDate(),
+			#modi_usrid#,	#modi_ofc_cd#,	getDate(),		'N'
+		)
+		   -->
+		 INSERT INTO TB_FRT_TRF_DTL(
+TRF_CTRT_NO, 
+TRF_DTL_SEQ, 
+FRT_CD, 
+FRT_NM, 
+APLY_UT_CD, 
+CNTR_TPSZ_CD, 
+CNTR_SL_FLG, 
+PCK_WGT, 
+TRF_AMT, 
+RMK, 
+RGST_USRID, 
+RGST_OFC_CD, 
+RGST_TMS, 
+MODI_USRID, 
+MODI_OFC_CD, 
+MODI_TMS, 
+DELT_FLG, 
+TRF_CURR_CD, 
+MIN_AMT, 
+MAX_AMT, 
+FROM_SEC, 
+TO_SEC, 
+RT_CLSS_CD, 
+IATA_FLG
+)VALUES(
+#trf_ctrt_no#, 
+#trf_dtl_seq#, 
+#frt_cd#, 
+#frt_nm#, 
+#aply_ut_cd#, 
+#cntr_tpsz_cd#, 
+#cntr_sl_flg#, 
+#pck_wgt#, 
+#trf_amt#, 
+#rmk#, 
+#rgst_usrid#, 
+#rgst_ofc_cd#, 
+GETDATE(), 
+#modi_usrid#, 
+#modi_ofc_cd#, 
+GETUTCDATE(), 
+'N', 
+#trf_curr_cd#, 
+#min_amt#, 
+#max_amt#, 
+#from_sec#, 
+#to_sec#, 
+#rt_clss_cd#, 
+#iata_flg#
+)
+		 
+    </insert>
+	
+    <!-- Tariff Detail Update   -->
+    <update id="updateTariffDtl" parameterClass="FrtTrfDtlVO">
+		<!-- 
+		UPDATE	TB_FRT_TRF_DTL
+		   SET	frt_cd= #frt_cd#,			cntr_tpsz_cd= #cntr_tpsz_cd#,
+		   		frt_nm= #frt_nm#,			aply_ut_cd= #aply_ut_cd#,
+		   		pck_wgt= #pck_wgt#,			cntr_sl_flg= #cntr_sl_flg#, 
+		   		trf_amt= #trf_amt#,			rmk= #dtl_rmk#, 
+				modi_usrid= #modi_usrid#,	modi_ofc_cd= #modi_ofc_cd#,    
+				modi_tms= getDate(),		delt_flg = #delt_flg#
+		 WHERE	trf_ctrt_no	= #trf_ctrt_no#
+		   AND	trf_dtl_seq = #trf_dtl_seq#
+		      -->
+		 UPDATE  TB_FRT_TRF_DTL
+			SET
+			<isNotNull property="trf_ctrt_no">
+				 TRF_CTRT_NO =#trf_ctrt_no#,
+			</isNotNull>
+			<isNotNull property="trf_dtl_seq">
+				 TRF_DTL_SEQ =#trf_dtl_seq#,
+			</isNotNull>
+			<isNotNull property="frt_cd">
+				 FRT_CD =#frt_cd#,
+			</isNotNull>
+			<isNotNull property="frt_nm">
+				 FRT_NM =#frt_nm#,
+			</isNotNull>
+			<isNotNull property="aply_ut_cd">
+				 APLY_UT_CD =#aply_ut_cd#,
+			</isNotNull>
+			<isNotNull property="cntr_tpsz_cd">
+				 CNTR_TPSZ_CD =#cntr_tpsz_cd#,
+			</isNotNull>
+			<isNotNull property="cntr_sl_flg">
+				 CNTR_SL_FLG =#cntr_sl_flg#,
+			</isNotNull>
+			<isNotNull property="pck_wgt">
+				 PCK_WGT =#pck_wgt#,
+			</isNotNull>
+			<isNotNull property="trf_amt">
+				 TRF_AMT =#trf_amt#,
+			</isNotNull>
+			<isNotNull property="rmk">
+				 RMK =#rmk#,
+			</isNotNull>
+			<isNotNull property="modi_usrid">
+				 MODI_USRID =#modi_usrid#,
+			</isNotNull>
+			<isNotNull property="modi_ofc_cd">
+				 MODI_OFC_CD =#modi_ofc_cd#,
+			</isNotNull>
+			<isNotNull property="delt_flg">
+				 DELT_FLG =#delt_flg#,
+			</isNotNull>
+			<isNotNull property="trf_curr_cd">
+				 TRF_CURR_CD =#trf_curr_cd#,
+			</isNotNull>
+			<isNotNull property="min_amt">
+				 MIN_AMT =#min_amt#,
+			</isNotNull>
+			<isNotNull property="max_amt">
+				 MAX_AMT =#max_amt#,
+			</isNotNull>
+			<isNotNull property="from_sec">
+				 FROM_SEC =#from_sec#,
+			</isNotNull>
+			<isNotNull property="to_sec">
+				 TO_SEC =#to_sec#,
+			</isNotNull>
+			<isNotNull property="rt_clss_cd">
+				 RT_CLSS_CD =#rt_clss_cd#,
+			</isNotNull>
+			<isNotNull property="iata_flg">
+				 IATA_FLG =#iata_flg#,
+			</isNotNull>
+				 MODI_TMS =GETUTCDATE()
+		  WHERE  1=1
+			AND  TRF_CTRT_NO = #trf_ctrt_no#
+			AND  TRF_DTL_SEQ = #trf_dtl_seq#
+    </update>
+    
+    <select id="checkTariffDtl" parameterClass="String" resultClass="Integer">
+    	SELECT  COUNT(*)
+		  FROM  TB_FRT_TRF_DTL
+		 WHERE  TRF_CTRT_NO = #trf_ctrt_no#
+		   AND  DELT_FLG = 'N'
+    </select>
+    
+    <!-- Tariff Detail delete   -->
+    <delete id="deleteTariffDtl" parameterClass="FrtTrfDtlVO">
+    	<!-- 
+    	DELETE  FROM TB_FRT_TRF_DTL
+    	 WHERE	TRF_CTRT_NO = #trf_ctrt_no#
+    	<isNotNull property="trf_dtl_seq">
+    	   AND	TRF_DTL_SEQ = #trf_dtl_seq#
+    	</isNotNull>
+    	   -->
+		UPDATE  TB_FRT_TRF_DTL
+		   SET  DELT_FLG = 'Y'
+		 WHERE  TRF_CTRT_NO = #trf_ctrt_no#
+		<isNotNull property="trf_dtl_seq">
+		   AND  TRF_DTL_SEQ = #trf_dtl_seq#
+		</isNotNull>
+    </delete>
+
+	<!-- Tariff Search List조회   -->
+    <select id="selectTariffSearchList" parameterClass="java.util.HashMap" resultClass="FrtTrfVO">
+		SELECT	a.TRDP_CD,	a.TRF_TP_CD, a.TRF_CTRT_NO,
+				a.SELL_BUY_TP_CD,	a.POL_CD,	a.POD_CD, a.dest_del_cd,
+				a.TRF_TERM_FM_DT,	a.TRF_TERM_TO_DT,	b.ENG_NM trdp_nm,
+				<isEqual property="trf_tp_cd" compareValue="S">
+                c.LOC_NM pol_nm,    d.LOC_NM pod_nm,    e.LOC_NM dest_del_nm
+                </isEqual>
+                <isEqual property="trf_tp_cd" compareValue="A">
+                c.NOD_ENG_NM pol_nm,    d.NOD_ENG_NM pod_nm,    e.NOD_ENG_NM dest_del_nm
+                </isEqual>
+		  FROM	TB_FRT_TRF a
+				LEFT OUTER JOIN tb_trdp B ON a.trdp_cd = b.trdp_cd
+				<isEqual property="trf_tp_cd" compareValue="S">
+                LEFT OUTER JOIN TB_LOC c ON a.pol_cd = c.LOC_CD
+                LEFT OUTER JOIN TB_LOC d ON a.pod_cd = d.LOC_CD
+                LEFT OUTER JOIN TB_LOC e ON a.dest_del_cd = e.LOC_CD
+        </isEqual>
+        <isEqual property="trf_tp_cd" compareValue="A">
+                LEFT OUTER JOIN TB_nod c ON a.pol_cd = c.nod_CD
+                LEFT OUTER JOIN TB_nod d ON a.pod_cd = d.nod_CD
+                LEFT OUTER JOIN TB_nod e ON a.dest_del_cd = e.nod_CD
+        </isEqual>
+		WHERE	a.trf_tp_cd = #trf_tp_cd# 
+		<isNotNull prepend="AND" property="sell_buy_tp_cd">
+			a.sell_buy_tp_cd = #sell_buy_tp_cd#
+		</isNotNull>
+		<isNotNull prepend="AND" property="pol_cd">
+			a.pol_cd = #pol_cd#
+		</isNotNull>
+		<isNotNull prepend="AND" property="pod_cd">
+			a.pod_cd = #pod_cd#
+		</isNotNull>
+		<isNotNull prepend="AND" property="dest_del_cd">
+			a.dest_del_cd = #dest_del_cd#
+		</isNotNull>
+		<isNotNull prepend="AND" property="trdp_cd">
+			a.trdp_cd = #trdp_cd#
+		</isNotNull>
+		<isNotEmpty property="trf_term_dt">
+           	<![CDATA[ AND	CONVERT(VARCHAR, a.trf_term_to_dt, 112) >= #trf_term_dt# ]]>
+		</isNotEmpty>            
+		<isNotEmpty property="trf_term_dt">
+			<![CDATA[ AND	CONVERT(VARCHAR, a.trf_term_fm_dt, 112) <= #trf_term_dt# ]]>
+		</isNotEmpty>
+		
+		ORDER BY  a.trf_ctrt_no
+    </select>
+        <!-- Tariff Search List조회   -->
+    <select id="selectTariffSearchListCnt" parameterClass="java.util.HashMap" resultClass="Integer">
+        SELECT  count(*)
+          FROM  TB_FRT_TRF a
+                LEFT OUTER JOIN tb_trdp B ON a.trdp_cd = b.trdp_cd
+                <isEqual property="trf_tp_cd" compareValue="S">
+                LEFT OUTER JOIN TB_LOC c ON a.pol_cd = c.LOC_CD
+                LEFT OUTER JOIN TB_LOC d ON a.pod_cd = d.LOC_CD
+                LEFT OUTER JOIN TB_LOC e ON a.dest_del_cd = e.LOC_CD
+        </isEqual>
+        <isEqual property="trf_tp_cd" compareValue="A">
+                LEFT OUTER JOIN TB_nod c ON a.pol_cd = c.nod_CD
+                LEFT OUTER JOIN TB_nod d ON a.pod_cd = d.nod_CD
+                LEFT OUTER JOIN TB_nod e ON a.dest_del_cd = e.nod_CD
+        </isEqual>
+        WHERE   a.trf_tp_cd = #trf_tp_cd# 
+        <isNotNull prepend="AND" property="sell_buy_tp_cd">
+            a.sell_buy_tp_cd = #sell_buy_tp_cd#
+        </isNotNull>
+        <isNotNull prepend="AND" property="pol_cd">
+            a.pol_cd = #pol_cd#
+        </isNotNull>
+        <isNotNull prepend="AND" property="pod_cd">
+            a.pod_cd = #pod_cd#
+        </isNotNull>
+        <isNotNull prepend="AND" property="dest_del_cd">
+            a.dest_del_cd = #dest_del_cd#
+        </isNotNull>
+        <isNotNull prepend="AND" property="trdp_cd">
+            a.trdp_cd = #trdp_cd#
+        </isNotNull>
+        <isNotEmpty property="trf_term_dt">
+            <![CDATA[ AND   CONVERT(VARCHAR, a.trf_term_to_dt, 112) >= #trf_term_dt# ]]>
+        </isNotEmpty>            
+        <isNotEmpty property="trf_term_dt">
+            <![CDATA[ AND   CONVERT(VARCHAR, a.trf_term_fm_dt, 112) <= #trf_term_dt# ]]>
+        </isNotEmpty>
+    </select>
+	<!-- Tariff Seq 값 가져오기   -->
+    <select id="selectTariffMax" resultClass="String" parameterClass="String">
+		SELECT	MAX(maxInv) as maxInv
+		FROM   	(
+		   		SELECT	CASE	WHEN MAX(SUBSTRING(TRF_CTRT_NO,8,4)) = SUBSTRING(CONVERT(VARCHAR, getdate(),12),1,4)
+								THEN '$flg$'+SUBSTRING(CAST(SUBSTRING(TRF_CTRT_NO,8,8)+100000001 as VARCHAR), 2, 8)
+						ELSE	'$flg$'+ SUBSTRING(CONVERT(VARCHAR, getdate(),12),1,4)+'0001' END 
+						AS maxInv
+				FROM 	TB_FRT_TRF
+				WHERE	SUBSTRING(TRF_CTRT_NO, 1,7) = '$flg$'
+				GROUP BY TRF_CTRT_NO
+				union all
+				select '$flg$'+ SUBSTRING(CONVERT(VARCHAR, getdate(),12),1,4)+'0001' as maxInv
+				) a
+    </select>
+    
+    <select id="selectMaxDtlSeq" parameterClass="String" resultClass="String">
+		SELECT  ISNULL(MAX(TRF_DTL_SEQ), 0) + 1
+		  FROM  TB_FRT_TRF_DTL
+		 WHERE  TRF_CTRT_NO = #trf_ctrt_no#
+    </select>
+    
+    <select id="selectAutoIata" parameterClass="HashMap" resultClass="com.clt.apps.fis.sal.tfm.tariff.dto.FrtTrfDtlVO">
+    	SELECT  DTL.TRF_CTRT_NO, DTL.TRF_DTL_SEQ, DTL.APLY_UT_CD, DTL.RT_CLSS_CD, DTL.TRF_AMT,
+				DTL.FRT_CD, DTL.FRT_NM, DTL.RMK, DTL.TRF_CURR_CD, DTL.IATA_FLG
+		  FROM  TB_FRT_TRF_DTL DTL
+		 WHERE  1=1
+		   AND  DTL.IATA_FLG = #iata_flg#
+		   AND  DTL.TRF_CTRT_NO = (
+		   							SELECT  TOP 1
+											X.TRF_CTRT_NO 
+									  FROM  (
+												SELECT  TOP 1 
+														'1' AS RANK, TRF.TRF_CTRT_NO
+												  FROM  TB_FRT_TRF TRF
+												 WHERE  TRF.TRF_TP_CD = 'I'
+												   AND  TRF.DELT_FLG = 'N'
+												   AND  TRF.TRDP_CD = #trdp_cd#
+												   AND  TRF.POL_CD = #pol_cd#
+												   AND  TRF.POD_CD = #pod_cd#
+												   <![CDATA[
+												   AND  TRF.TRF_TERM_FM_DT <= #trf_term_dt#
+												   AND  TRF.TRF_TERM_TO_DT >= #trf_term_dt#
+													]]>
+													
+											 UNION ALL
+
+												SELECT  TOP 1 
+														'2' AS RANK, TRF.TRF_CTRT_NO
+												  FROM  TB_FRT_TRF TRF
+												 WHERE  TRF.TRF_TP_CD = 'I'
+												   AND  TRF.DELT_FLG = 'N'
+												   AND  TRF.TRDP_CD = #trdp_cd#
+												   AND  TRF.POL_CD = #pol_cd#
+												   AND  TRF.POD_CD = #pod_cd#
+												
+											 UNION ALL
+												
+												SELECT  TOP 1 
+														'2' AS RANK, TRF.TRF_CTRT_NO
+												  FROM  TB_FRT_TRF TRF
+												 WHERE  TRF.TRF_TP_CD = 'I'
+												   AND  TRF.DELT_FLG = 'N'
+												   AND  TRF.TRDP_CD = #trdp_cd#
+												   AND  TRF.POL_CD = #pol_cd#
+												   <![CDATA[
+												   AND  TRF.TRF_TERM_FM_DT <= #trf_term_dt#
+												   AND  TRF.TRF_TERM_TO_DT >= #trf_term_dt#
+												    ]]>
+												
+											 UNION ALL
+												
+												SELECT  TOP 1 
+														'2' AS RANK, TRF.TRF_CTRT_NO
+												  FROM  TB_FRT_TRF TRF
+												 WHERE  TRF.TRF_TP_CD = 'I'
+												   AND  TRF.DELT_FLG = 'N'
+												   AND  TRF.TRDP_CD = #trdp_cd#
+												   AND  TRF.POD_CD = #pod_cd#
+												   <![CDATA[
+												   AND  TRF.TRF_TERM_FM_DT <= #trf_term_dt#
+												   AND  TRF.TRF_TERM_TO_DT >= #trf_term_dt#
+												    ]]>
+												
+											 UNION ALL
+												
+												SELECT  TOP 1 
+														'2' AS RANK, TRF.TRF_CTRT_NO
+												  FROM  TB_FRT_TRF TRF
+												 WHERE  TRF.TRF_TP_CD = 'I'
+												   AND  TRF.DELT_FLG = 'N'
+												   AND  TRF.POL_CD = #pol_cd#
+												   AND  TRF.POD_CD = #pod_cd#
+												   <![CDATA[
+												   AND  TRF.TRF_TERM_FM_DT <= #trf_term_dt#
+												   AND  TRF.TRF_TERM_TO_DT >= #trf_term_dt#
+												    ]]>
+												
+											 UNION ALL
+												
+												SELECT  TOP 1 
+														'3' AS RANK, TRF.TRF_CTRT_NO
+												  FROM  TB_FRT_TRF TRF
+												 WHERE  TRF.TRF_TP_CD = 'I'
+												   AND  TRF.DELT_FLG = 'N'
+												   AND  TRF.TRDP_CD = #trdp_cd#
+												   AND  TRF.POL_CD = #pol_cd#
+												
+											 UNION ALL
+												
+												SELECT  TOP 1 
+														'3' AS RANK, TRF.TRF_CTRT_NO
+												  FROM  TB_FRT_TRF TRF
+												 WHERE  TRF.TRF_TP_CD = 'I'
+												   AND  TRF.DELT_FLG = 'N'
+												   AND  TRF.TRDP_CD = #trdp_cd#
+												   AND  TRF.POD_CD = #pod_cd#
+												
+											 UNION ALL
+												
+												SELECT  TOP 1 
+														'3' AS RANK, TRF.TRF_CTRT_NO
+												  FROM  TB_FRT_TRF TRF
+												 WHERE  TRF.TRF_TP_CD = 'I'
+												   AND  TRF.DELT_FLG = 'N'
+												   AND  TRF.TRDP_CD = #trdp_cd#
+												   <![CDATA[
+												   AND  TRF.TRF_TERM_FM_DT <= #trf_term_dt#
+												   AND  TRF.TRF_TERM_TO_DT >= #trf_term_dt#
+												    ]]>
+												
+											 UNION ALL
+												
+												SELECT  TOP 1 
+														'3' AS RANK, TRF.TRF_CTRT_NO
+												  FROM  TB_FRT_TRF TRF
+												 WHERE  TRF.TRF_TP_CD = 'I'
+												   AND  TRF.DELT_FLG = 'N'
+												   AND  TRF.POL_CD = #pol_cd#
+												   AND  TRF.POD_CD = #pod_cd#
+												
+											 UNION ALL
+												
+												SELECT  TOP 1 
+														'3' AS RANK, TRF.TRF_CTRT_NO
+												  FROM  TB_FRT_TRF TRF
+												 WHERE  TRF.TRF_TP_CD = 'I'
+												   AND  TRF.DELT_FLG = 'N'
+												   AND  TRF.POL_CD = #pol_cd#
+												   <![CDATA[
+												   AND  TRF.TRF_TERM_FM_DT <= #trf_term_dt#
+												   AND  TRF.TRF_TERM_TO_DT >= #trf_term_dt#
+												    ]]>
+												
+											 UNION ALL
+												
+												SELECT  TOP 1 
+														'3' AS RANK, TRF.TRF_CTRT_NO
+												  FROM  TB_FRT_TRF TRF
+												 WHERE  TRF.TRF_TP_CD = 'I'
+												   AND  TRF.DELT_FLG = 'N'
+												   AND  TRF.POD_CD = #pod_cd#
+												   <![CDATA[
+												   AND  TRF.TRF_TERM_FM_DT <= #trf_term_dt#
+												   AND  TRF.TRF_TERM_TO_DT >= #trf_term_dt#
+												    ]]>
+												
+											 UNION ALL
+												
+												SELECT  TOP 1 
+														'4' AS RANK, TRF.TRF_CTRT_NO
+												  FROM  TB_FRT_TRF TRF
+												 WHERE  TRF.TRF_TP_CD = 'I'
+												   AND  TRF.DELT_FLG = 'N'
+												   AND  TRF.TRDP_CD = #trdp_cd#
+												
+											 UNION ALL
+												
+												SELECT  TOP 1 
+														'4' AS RANK, TRF.TRF_CTRT_NO
+												  FROM  TB_FRT_TRF TRF
+												 WHERE  TRF.TRF_TP_CD = 'I'
+												   AND  TRF.DELT_FLG = 'N'
+												   AND  TRF.POL_CD = #pol_cd#
+												
+											 UNION ALL
+												
+												SELECT  TOP 1 
+														'4' AS RANK, TRF.TRF_CTRT_NO
+												  FROM  TB_FRT_TRF TRF
+												 WHERE  TRF.TRF_TP_CD = 'I'
+												   AND  TRF.DELT_FLG = 'N'
+												   AND  TRF.POD_CD = #pod_cd#
+												
+											 UNION ALL
+												
+												SELECT  TOP 1 
+														'4' AS RANK, TRF.TRF_CTRT_NO
+												  FROM  TB_FRT_TRF TRF
+												 WHERE  TRF.TRF_TP_CD = 'I'
+												   AND  TRF.DELT_FLG = 'N'
+												   <![CDATA[
+												   AND  TRF.TRF_TERM_FM_DT <= #trf_term_dt#
+												   AND  TRF.TRF_TERM_TO_DT >= #trf_term_dt#
+												    ]]>
+												
+											 UNION ALL
+												
+												SELECT  TOP 1 
+														'5' AS RANK, TRF.TRF_CTRT_NO
+												  FROM  TB_FRT_TRF TRF
+												 WHERE  TRF.TRF_TP_CD = 'I'
+												   AND  TRF.DELT_FLG = 'N'
+												   AND  TRF.TRDP_CD = ''
+												   AND  TRF.POL_CD = ''
+												   AND  TRF.POD_CD = ''
+												   <![CDATA[
+												   AND  TRF.TRF_TERM_FM_DT <= ''
+												   AND  TRF.TRF_TERM_TO_DT >= ''
+												    ]]>
+											) X
+								  ORDER BY  X.RANK ASC
+		   						  )
+    </select>
+    
+    <select id="selectSeaDefault" parameterClass="HashMap" resultClass="com.clt.apps.fis.sal.tfm.tariff.dto.FrtTrfDtlVO">
+    	SELECT  DTL.TRF_CTRT_NO, DTL.TRF_DTL_SEQ, DTL.APLY_UT_CD, DTL.TRF_AMT,
+				DTL.FRT_CD, DTL.FRT_NM, DTL.RMK, DTL.TRF_CURR_CD, DTL.CNTR_TPSZ_CD, DTL.MIN_AMT, DTL.MAX_AMT
+		  FROM  TB_FRT_TRF_DTL DTL
+		 WHERE  1=1
+		   AND  DTL.TRF_CTRT_NO = #trf_ctrt_no#
+    </select>
+    
+    <select id="selectSeaTariff" parameterClass="HashMap" resultClass="String">
+    	SELECT  TOP 1 
+				TRF.TRF_CTRT_NO
+		  FROM  TB_FRT_TRF TRF
+		 WHERE  TRF.TRF_TP_CD = 'S'
+		   AND  TRF.DELT_FLG = 'N'
+		   <![CDATA[
+		   AND  TRF.TRF_TERM_FM_DT <= #trf_term_dt#
+		   AND  TRF.TRF_TERM_TO_DT >= #trf_term_dt#
+			]]>
+		<isNotNull property="trdp_cd">
+		   AND  TRF.TRDP_CD = #trdp_cd#
+		</isNotNull>
+		<isNotNull property="trdp_tp_cd">
+		   AND  TRF.TRDP_TP_CD = #trdp_tp_cd#
+		</isNotNull>
+		<isNotNull property="sell_buy_tp_cd">
+		   AND  TRF.SELL_BUY_TP_CD = #sell_buy_tp_cd#
+		</isNotNull>
+		<isNotNull property="bnd_clss_cd">
+		   AND  TRF.BND_CLSS_CD = #bnd_clss_cd#
+		</isNotNull>
+		<isNotNull property="pol_cd">
+		   AND  TRF.POL_CD = #pol_cd#
+		</isNotNull>
+		<isNotNull property="pod_cd">
+		   AND  TRF.POD_CD = #pod_cd#
+		</isNotNull>
+		<isNotNull property="dest_del_cd">
+		   AND  TRF.DEST_DEL_CD = #dest_del_cd#
+		</isNotNull>
+    </select>
+    
+    <select id="selectSeaTariff2" parameterClass="HashMap" resultClass="String">
+    	SELECT  TOP 1
+				X.TRF_CTRT_NO
+		  FROM (
+		  		SELECT  TOP 1 
+						'1' AS SEQ, '2' AS RANK, TRF.TRF_CTRT_NO
+				  FROM  TB_FRT_TRF TRF
+				 WHERE  TRF.TRF_TP_CD = 'S'
+				   AND  TRF.DELT_FLG = 'N'
+				   <![CDATA[
+				   AND  TRF.TRF_TERM_FM_DT <= #trf_term_dt#
+				   AND  TRF.TRF_TERM_TO_DT >= #trf_term_dt#
+					]]>
+				   AND  TRF.TRDP_CD = #trdp_cd#
+				   AND  TRF.TRDP_TP_CD = #trdp_tp_cd#
+				   AND  TRF.SELL_BUY_TP_CD = #sell_buy_tp_cd#
+				   AND  TRF.BND_CLSS_CD = #bnd_clss_cd#
+				   AND  TRF.POL_CD = #pol_cd#
+				   AND  TRF.POD_CD = #pod_cd#
+	 UNION ALL
+	 			SELECT  TOP 1 
+						'2' AS SEQ, '2' AS RANK, TRF.TRF_CTRT_NO
+				  FROM  TB_FRT_TRF TRF
+				 WHERE  TRF.TRF_TP_CD = 'S'
+				   AND  TRF.DELT_FLG = 'N'
+				   <![CDATA[
+				   AND  TRF.TRF_TERM_FM_DT <= #trf_term_dt#
+				   AND  TRF.TRF_TERM_TO_DT >= #trf_term_dt#
+					]]>
+				   AND  TRF.TRDP_CD = #trdp_cd#
+				   AND  TRF.TRDP_TP_CD = #trdp_tp_cd#
+				   AND  TRF.SELL_BUY_TP_CD = #sell_buy_tp_cd#
+				   AND  TRF.BND_CLSS_CD = #bnd_clss_cd#
+				   AND  TRF.POL_CD = #pol_cd#
+				   AND  TRF.DEST_DEL_CD = #dest_del_cd#
+	 UNION ALL
+	 			SELECT  TOP 1 
+						'3' AS SEQ, '2' AS RANK, TRF.TRF_CTRT_NO
+				  FROM  TB_FRT_TRF TRF
+				 WHERE  TRF.TRF_TP_CD = 'S'
+				   AND  TRF.DELT_FLG = 'N'
+				   <![CDATA[
+				   AND  TRF.TRF_TERM_FM_DT <= #trf_term_dt#
+				   AND  TRF.TRF_TERM_TO_DT >= #trf_term_dt#
+					]]>
+				   AND  TRF.TRDP_CD = #trdp_cd#
+				   AND  TRF.TRDP_TP_CD = #trdp_tp_cd#
+				   AND  TRF.SELL_BUY_TP_CD = #sell_buy_tp_cd#
+				   AND  TRF.BND_CLSS_CD = #bnd_clss_cd#
+				   AND  TRF.POD_CD = #pod_cd#
+				   AND  TRF.DEST_DEL_CD = #dest_del_cd#
+	 UNION ALL
+	 			SELECT  TOP 1 
+						'4' AS SEQ, '2' AS RANK, TRF.TRF_CTRT_NO
+				  FROM  TB_FRT_TRF TRF
+				 WHERE  TRF.TRF_TP_CD = 'S'
+				   AND  TRF.DELT_FLG = 'N'
+				   <![CDATA[
+				   AND  TRF.TRF_TERM_FM_DT <= #trf_term_dt#
+				   AND  TRF.TRF_TERM_TO_DT >= #trf_term_dt#
+					]]>
+				   AND  TRF.TRDP_CD = #trdp_cd#
+				   AND  TRF.TRDP_TP_CD = #trdp_tp_cd#
+				   AND  TRF.SELL_BUY_TP_CD = #sell_buy_tp_cd#
+				   AND  TRF.POL_CD = #pol_cd#
+				   AND  TRF.POD_CD = #pod_cd#
+				   AND  TRF.DEST_DEL_CD = #dest_del_cd#
+	 UNION ALL
+	 			SELECT  TOP 1 
+						'5' AS SEQ, '2' AS RANK, TRF.TRF_CTRT_NO
+				  FROM  TB_FRT_TRF TRF
+				 WHERE  TRF.TRF_TP_CD = 'S'
+				   AND  TRF.DELT_FLG = 'N'
+				   <![CDATA[
+				   AND  TRF.TRF_TERM_FM_DT <= #trf_term_dt#
+				   AND  TRF.TRF_TERM_TO_DT >= #trf_term_dt#
+					]]>
+				   AND  TRF.TRDP_CD = #trdp_cd#
+				   AND  TRF.TRDP_TP_CD = #trdp_tp_cd#
+				   AND  TRF.BND_CLSS_CD = #bnd_clss_cd#
+				   AND  TRF.POL_CD = #pol_cd#
+				   AND  TRF.POD_CD = #pod_cd#
+				   AND  TRF.DEST_DEL_CD = #dest_del_cd#
+	 UNION ALL
+	 			SELECT  TOP 1 
+						'6' AS SEQ, '2' AS RANK, TRF.TRF_CTRT_NO
+				  FROM  TB_FRT_TRF TRF
+				 WHERE  TRF.TRF_TP_CD = 'S'
+				   AND  TRF.DELT_FLG = 'N'
+				   <![CDATA[
+				   AND  TRF.TRF_TERM_FM_DT <= #trf_term_dt#
+				   AND  TRF.TRF_TERM_TO_DT >= #trf_term_dt#
+					]]>
+				   AND  TRF.TRDP_CD = #trdp_cd#
+				   AND  TRF.SELL_BUY_TP_CD = #sell_buy_tp_cd#
+				   AND  TRF.BND_CLSS_CD = #bnd_clss_cd#
+				   AND  TRF.POL_CD = #pol_cd#
+				   AND  TRF.POD_CD = #pod_cd#
+				   AND  TRF.DEST_DEL_CD = #dest_del_cd#
+	 UNION ALL
+	 			SELECT  TOP 1 
+						'7' AS SEQ, '2' AS RANK, TRF.TRF_CTRT_NO
+				  FROM  TB_FRT_TRF TRF
+				 WHERE  TRF.TRF_TP_CD = 'S'
+				   AND  TRF.DELT_FLG = 'N'
+				   <![CDATA[
+				   AND  TRF.TRF_TERM_FM_DT <= #trf_term_dt#
+				   AND  TRF.TRF_TERM_TO_DT >= #trf_term_dt#
+					]]>
+				   AND  TRF.TRDP_TP_CD = #trdp_tp_cd#
+				   AND  TRF.SELL_BUY_TP_CD = #sell_buy_tp_cd#
+				   AND  TRF.BND_CLSS_CD = #bnd_clss_cd#
+				   AND  TRF.POL_CD = #pol_cd#
+				   AND  TRF.POD_CD = #pod_cd#
+				   AND  TRF.DEST_DEL_CD = #dest_del_cd#
+				) X
+    </select>
+    
+    <select id="selectSeaTariff3" parameterClass="HashMap" resultClass="String">
+    	SELECT  TOP 1
+				X.TRF_CTRT_NO
+		  FROM (
+	 			SELECT  TOP 1 
+						'1' AS SEQ, '3' AS RANK, TRF.TRF_CTRT_NO
+				  FROM  TB_FRT_TRF TRF
+				 WHERE  TRF.TRF_TP_CD = 'S'
+				   AND  TRF.DELT_FLG = 'N'
+				   <![CDATA[
+				   AND  TRF.TRF_TERM_FM_DT <= #trf_term_dt#
+				   AND  TRF.TRF_TERM_TO_DT >= #trf_term_dt#
+					]]>
+				   AND  TRF.TRDP_CD = #trdp_cd#
+				   AND  TRF.TRDP_TP_CD = #trdp_tp_cd#
+				   AND  TRF.SELL_BUY_TP_CD = #sell_buy_tp_cd#
+				   AND  TRF.BND_CLSS_CD = #bnd_clss_cd#
+				   AND  TRF.POL_CD = #pol_cd#
+	 UNION ALL
+	 			SELECT  TOP 1 
+						'2' AS SEQ, '3' AS RANK, TRF.TRF_CTRT_NO
+				  FROM  TB_FRT_TRF TRF
+				 WHERE  TRF.TRF_TP_CD = 'S'
+				   AND  TRF.DELT_FLG = 'N'
+				   <![CDATA[
+				   AND  TRF.TRF_TERM_FM_DT <= #trf_term_dt#
+				   AND  TRF.TRF_TERM_TO_DT >= #trf_term_dt#
+					]]>
+				   AND  TRF.TRDP_CD = #trdp_cd#
+				   AND  TRF.TRDP_TP_CD = #trdp_tp_cd#
+				   AND  TRF.SELL_BUY_TP_CD = #sell_buy_tp_cd#
+				   AND  TRF.BND_CLSS_CD = #bnd_clss_cd#
+				   AND  TRF.POD_CD = #pod_cd#
+	 UNION ALL
+	 			SELECT  TOP 1 
+						'3' AS SEQ, '3' AS RANK, TRF.TRF_CTRT_NO
+				  FROM  TB_FRT_TRF TRF
+				 WHERE  TRF.TRF_TP_CD = 'S'
+				   AND  TRF.DELT_FLG = 'N'
+				   <![CDATA[
+				   AND  TRF.TRF_TERM_FM_DT <= #trf_term_dt#
+				   AND  TRF.TRF_TERM_TO_DT >= #trf_term_dt#
+					]]>
+				   AND  TRF.TRDP_CD = #trdp_cd#
+				   AND  TRF.TRDP_TP_CD = #trdp_tp_cd#
+				   AND  TRF.SELL_BUY_TP_CD = #sell_buy_tp_cd#
+				   AND  TRF.POL_CD = #pol_cd#
+				   AND  TRF.POD_CD = #pod_cd#
+	 UNION ALL
+	 			SELECT  TOP 1 
+						'4' AS SEQ, '3' AS RANK, TRF.TRF_CTRT_NO
+				  FROM  TB_FRT_TRF TRF
+				 WHERE  TRF.TRF_TP_CD = 'S'
+				   AND  TRF.DELT_FLG = 'N'
+				   <![CDATA[
+				   AND  TRF.TRF_TERM_FM_DT <= #trf_term_dt#
+				   AND  TRF.TRF_TERM_TO_DT >= #trf_term_dt#
+					]]>
+				   AND  TRF.TRDP_CD = #trdp_cd#
+				   AND  TRF.TRDP_TP_CD = #trdp_tp_cd#
+				   AND  TRF.BND_CLSS_CD = #bnd_clss_cd#
+				   AND  TRF.POL_CD = #pol_cd#
+				   AND  TRF.POD_CD = #pod_cd#
+	 UNION ALL
+	 			SELECT  TOP 1 
+						'5' AS SEQ, '3' AS RANK, TRF.TRF_CTRT_NO
+				  FROM  TB_FRT_TRF TRF
+				 WHERE  TRF.TRF_TP_CD = 'S'
+				   AND  TRF.DELT_FLG = 'N'
+				   <![CDATA[
+				   AND  TRF.TRF_TERM_FM_DT <= #trf_term_dt#
+				   AND  TRF.TRF_TERM_TO_DT >= #trf_term_dt#
+					]]>
+				   AND  TRF.TRDP_CD = #trdp_cd#
+				   AND  TRF.SELL_BUY_TP_CD = #sell_buy_tp_cd#
+				   AND  TRF.BND_CLSS_CD = #bnd_clss_cd#
+				   AND  TRF.POL_CD = #pol_cd#
+				   AND  TRF.POD_CD = #pod_cd#
+	 UNION ALL
+	 			SELECT  TOP 1 
+						'6' AS SEQ, '3' AS RANK, TRF.TRF_CTRT_NO
+				  FROM  TB_FRT_TRF TRF
+				 WHERE  TRF.TRF_TP_CD = 'S'
+				   AND  TRF.DELT_FLG = 'N'
+				   <![CDATA[
+				   AND  TRF.TRF_TERM_FM_DT <= #trf_term_dt#
+				   AND  TRF.TRF_TERM_TO_DT >= #trf_term_dt#
+					]]>
+				   AND  TRF.TRDP_TP_CD = #trdp_tp_cd#
+				   AND  TRF.SELL_BUY_TP_CD = #sell_buy_tp_cd#
+				   AND  TRF.BND_CLSS_CD = #bnd_clss_cd#
+				   AND  TRF.POL_CD = #pol_cd#
+				   AND  TRF.POD_CD = #pod_cd#
+	 UNION ALL
+	 			SELECT  TOP 1 
+						'7' AS SEQ, '3' AS RANK, TRF.TRF_CTRT_NO
+				  FROM  TB_FRT_TRF TRF
+				 WHERE  TRF.TRF_TP_CD = 'S'
+				   AND  TRF.DELT_FLG = 'N'
+				   <![CDATA[
+				   AND  TRF.TRF_TERM_FM_DT <= #trf_term_dt#
+				   AND  TRF.TRF_TERM_TO_DT >= #trf_term_dt#
+					]]>
+				   AND  TRF.TRDP_CD = #trdp_cd#
+				   AND  TRF.TRDP_TP_CD = #trdp_tp_cd#
+				   AND  TRF.SELL_BUY_TP_CD = #sell_buy_tp_cd#
+				   AND  TRF.BND_CLSS_CD = #bnd_clss_cd#
+				   AND  TRF.DEST_DEL_CD = #dest_del_cd#
+	 UNION ALL
+	 			SELECT  TOP 1 
+						'8' AS SEQ, '3' AS RANK, TRF.TRF_CTRT_NO
+				  FROM  TB_FRT_TRF TRF
+				 WHERE  TRF.TRF_TP_CD = 'S'
+				   AND  TRF.DELT_FLG = 'N'
+				   <![CDATA[
+				   AND  TRF.TRF_TERM_FM_DT <= #trf_term_dt#
+				   AND  TRF.TRF_TERM_TO_DT >= #trf_term_dt#
+					]]>
+				   AND  TRF.TRDP_CD = #trdp_cd#
+				   AND  TRF.TRDP_TP_CD = #trdp_tp_cd#
+				   AND  TRF.SELL_BUY_TP_CD = #sell_buy_tp_cd#
+				   AND  TRF.POL_CD = #pol_cd#
+				   AND  TRF.DEST_DEL_CD = #dest_del_cd#
+	 UNION ALL
+	 			SELECT  TOP 1 
+						'9' AS SEQ, '3' AS RANK, TRF.TRF_CTRT_NO
+				  FROM  TB_FRT_TRF TRF
+				 WHERE  TRF.TRF_TP_CD = 'S'
+				   AND  TRF.DELT_FLG = 'N'
+				   <![CDATA[
+				   AND  TRF.TRF_TERM_FM_DT <= #trf_term_dt#
+				   AND  TRF.TRF_TERM_TO_DT >= #trf_term_dt#
+					]]>
+				   AND  TRF.TRDP_CD = #trdp_cd#
+				   AND  TRF.TRDP_TP_CD = #trdp_tp_cd#
+				   AND  TRF.BND_CLSS_CD = #bnd_clss_cd#
+				   AND  TRF.POL_CD = #pol_cd#
+				   AND  TRF.DEST_DEL_CD = #dest_del_cd#
+	 UNION ALL
+	 			SELECT  TOP 1 
+						'10' AS SEQ, '3' AS RANK, TRF.TRF_CTRT_NO
+				  FROM  TB_FRT_TRF TRF
+				 WHERE  TRF.TRF_TP_CD = 'S'
+				   AND  TRF.DELT_FLG = 'N'
+				   <![CDATA[
+				   AND  TRF.TRF_TERM_FM_DT <= #trf_term_dt#
+				   AND  TRF.TRF_TERM_TO_DT >= #trf_term_dt#
+					]]>
+				   AND  TRF.TRDP_CD = #trdp_cd#
+				   AND  TRF.SELL_BUY_TP_CD = #sell_buy_tp_cd#
+				   AND  TRF.BND_CLSS_CD = #bnd_clss_cd#
+				   AND  TRF.POL_CD = #pol_cd#
+				   AND  TRF.DEST_DEL_CD = #dest_del_cd#
+	 UNION ALL
+	 			SELECT  TOP 1 
+						'11' AS SEQ, '3' AS RANK, TRF.TRF_CTRT_NO
+				  FROM  TB_FRT_TRF TRF
+				 WHERE  TRF.TRF_TP_CD = 'S'
+				   AND  TRF.DELT_FLG = 'N'
+				   <![CDATA[
+				   AND  TRF.TRF_TERM_FM_DT <= #trf_term_dt#
+				   AND  TRF.TRF_TERM_TO_DT >= #trf_term_dt#
+					]]>
+				   AND  TRF.TRDP_TP_CD = #trdp_tp_cd#
+				   AND  TRF.SELL_BUY_TP_CD = #sell_buy_tp_cd#
+				   AND  TRF.BND_CLSS_CD = #bnd_clss_cd#
+				   AND  TRF.POL_CD = #pol_cd#
+				   AND  TRF.DEST_DEL_CD = #dest_del_cd#
+	 UNION ALL
+	 			SELECT  TOP 1 
+						'12' AS SEQ, '3' AS RANK, TRF.TRF_CTRT_NO
+				  FROM  TB_FRT_TRF TRF
+				 WHERE  TRF.TRF_TP_CD = 'S'
+				   AND  TRF.DELT_FLG = 'N'
+				   <![CDATA[
+				   AND  TRF.TRF_TERM_FM_DT <= #trf_term_dt#
+				   AND  TRF.TRF_TERM_TO_DT >= #trf_term_dt#
+					]]>
+				   AND  TRF.TRDP_CD = #trdp_cd#
+				   AND  TRF.TRDP_TP_CD = #trdp_tp_cd#
+				   AND  TRF.SELL_BUY_TP_CD = #sell_buy_tp_cd#
+				   AND  TRF.POD_CD = #pod_cd#
+				   AND  TRF.DEST_DEL_CD = #dest_del_cd#
+	 UNION ALL
+	 			SELECT  TOP 1 
+						'13' AS SEQ, '3' AS RANK, TRF.TRF_CTRT_NO
+				  FROM  TB_FRT_TRF TRF
+				 WHERE  TRF.TRF_TP_CD = 'S'
+				   AND  TRF.DELT_FLG = 'N'
+				   <![CDATA[
+				   AND  TRF.TRF_TERM_FM_DT <= #trf_term_dt#
+				   AND  TRF.TRF_TERM_TO_DT >= #trf_term_dt#
+					]]>
+				   AND  TRF.TRDP_CD = #trdp_cd#
+				   AND  TRF.TRDP_TP_CD = #trdp_tp_cd#
+				   AND  TRF.BND_CLSS_CD = #bnd_clss_cd#
+				   AND  TRF.POD_CD = #pod_cd#
+				   AND  TRF.DEST_DEL_CD = #dest_del_cd#
+	 UNION ALL
+	 			SELECT  TOP 1 
+						'14' AS SEQ, '3' AS RANK, TRF.TRF_CTRT_NO
+				  FROM  TB_FRT_TRF TRF
+				 WHERE  TRF.TRF_TP_CD = 'S'
+				   AND  TRF.DELT_FLG = 'N'
+				   <![CDATA[
+				   AND  TRF.TRF_TERM_FM_DT <= #trf_term_dt#
+				   AND  TRF.TRF_TERM_TO_DT >= #trf_term_dt#
+					]]>
+				   AND  TRF.TRDP_CD = #trdp_cd#
+				   AND  TRF.SELL_BUY_TP_CD = #sell_buy_tp_cd#
+				   AND  TRF.BND_CLSS_CD = #bnd_clss_cd#
+				   AND  TRF.POD_CD = #pod_cd#
+				   AND  TRF.DEST_DEL_CD = #dest_del_cd#
+	 UNION ALL
+	 			SELECT  TOP 1 
+						'15' AS SEQ, '3' AS RANK, TRF.TRF_CTRT_NO
+				  FROM  TB_FRT_TRF TRF
+				 WHERE  TRF.TRF_TP_CD = 'S'
+				   AND  TRF.DELT_FLG = 'N'
+				   <![CDATA[
+				   AND  TRF.TRF_TERM_FM_DT <= #trf_term_dt#
+				   AND  TRF.TRF_TERM_TO_DT >= #trf_term_dt#
+					]]>
+				   AND  TRF.TRDP_TP_CD = #trdp_tp_cd#
+				   AND  TRF.SELL_BUY_TP_CD = #sell_buy_tp_cd#
+				   AND  TRF.BND_CLSS_CD = #bnd_clss_cd#
+				   AND  TRF.POD_CD = #pod_cd#
+				   AND  TRF.DEST_DEL_CD = #dest_del_cd#
+	 UNION ALL
+	 			SELECT  TOP 1 
+						'16' AS SEQ, '3' AS RANK, TRF.TRF_CTRT_NO
+				  FROM  TB_FRT_TRF TRF
+				 WHERE  TRF.TRF_TP_CD = 'S'
+				   AND  TRF.DELT_FLG = 'N'
+				   <![CDATA[
+				   AND  TRF.TRF_TERM_FM_DT <= #trf_term_dt#
+				   AND  TRF.TRF_TERM_TO_DT >= #trf_term_dt#
+					]]>
+				   AND  TRF.TRDP_CD = #trdp_cd#
+				   AND  TRF.TRDP_TP_CD = #trdp_tp_cd#
+				   AND  TRF.POL_CD = #pol_cd#
+				   AND  TRF.POD_CD = #pod_cd#
+				   AND  TRF.DEST_DEL_CD = #dest_del_cd#
+	 UNION ALL
+	 			SELECT  TOP 1 
+						'17' AS SEQ, '3' AS RANK, TRF.TRF_CTRT_NO
+				  FROM  TB_FRT_TRF TRF
+				 WHERE  TRF.TRF_TP_CD = 'S'
+				   AND  TRF.DELT_FLG = 'N'
+				   <![CDATA[
+				   AND  TRF.TRF_TERM_FM_DT <= #trf_term_dt#
+				   AND  TRF.TRF_TERM_TO_DT >= #trf_term_dt#
+					]]>
+				   AND  TRF.TRDP_CD = #trdp_cd#
+				   AND  TRF.SELL_BUY_TP_CD = #sell_buy_tp_cd#
+				   AND  TRF.POL_CD = #pol_cd#
+				   AND  TRF.POD_CD = #pod_cd#
+				   AND  TRF.DEST_DEL_CD = #dest_del_cd#
+	 UNION ALL
+	 			SELECT  TOP 1 
+						'18' AS SEQ, '3' AS RANK, TRF.TRF_CTRT_NO
+				  FROM  TB_FRT_TRF TRF
+				 WHERE  TRF.TRF_TP_CD = 'S'
+				   AND  TRF.DELT_FLG = 'N'
+				   <![CDATA[
+				   AND  TRF.TRF_TERM_FM_DT <= #trf_term_dt#
+				   AND  TRF.TRF_TERM_TO_DT >= #trf_term_dt#
+					]]>
+				   AND  TRF.TRDP_TP_CD = #trdp_tp_cd#
+				   AND  TRF.SELL_BUY_TP_CD = #sell_buy_tp_cd#
+				   AND  TRF.POL_CD = #pol_cd#
+				   AND  TRF.POD_CD = #pod_cd#
+				   AND  TRF.DEST_DEL_CD = #dest_del_cd#
+	 UNION ALL
+	 			SELECT  TOP 1 
+						'19' AS SEQ, '3' AS RANK, TRF.TRF_CTRT_NO
+				  FROM  TB_FRT_TRF TRF
+				 WHERE  TRF.TRF_TP_CD = 'S'
+				   AND  TRF.DELT_FLG = 'N'
+				   <![CDATA[
+				   AND  TRF.TRF_TERM_FM_DT <= #trf_term_dt#
+				   AND  TRF.TRF_TERM_TO_DT >= #trf_term_dt#
+					]]>
+				   AND  TRF.TRDP_CD = #trdp_cd#
+				   AND  TRF.BND_CLSS_CD = #bnd_clss_cd#
+				   AND  TRF.POL_CD = #pol_cd#
+				   AND  TRF.POD_CD = #pod_cd#
+				   AND  TRF.DEST_DEL_CD = #dest_del_cd#
+	 UNION ALL
+	 			SELECT  TOP 1 
+						'20' AS SEQ, '3' AS RANK, TRF.TRF_CTRT_NO
+				  FROM  TB_FRT_TRF TRF
+				 WHERE  TRF.TRF_TP_CD = 'S'
+				   AND  TRF.DELT_FLG = 'N'
+				   <![CDATA[
+				   AND  TRF.TRF_TERM_FM_DT <= #trf_term_dt#
+				   AND  TRF.TRF_TERM_TO_DT >= #trf_term_dt#
+					]]>
+				   AND  TRF.TRDP_TP_CD = #trdp_tp_cd#
+				   AND  TRF.BND_CLSS_CD = #bnd_clss_cd#
+				   AND  TRF.POL_CD = #pol_cd#
+				   AND  TRF.POD_CD = #pod_cd#
+				   AND  TRF.DEST_DEL_CD = #dest_del_cd#
+	 UNION ALL
+	 			SELECT  TOP 1 
+						'21' AS SEQ, '3' AS RANK, TRF.TRF_CTRT_NO
+				  FROM  TB_FRT_TRF TRF
+				 WHERE  TRF.TRF_TP_CD = 'S'
+				   AND  TRF.DELT_FLG = 'N'
+				   <![CDATA[
+				   AND  TRF.TRF_TERM_FM_DT <= #trf_term_dt#
+				   AND  TRF.TRF_TERM_TO_DT >= #trf_term_dt#
+					]]>
+				   AND  TRF.SELL_BUY_TP_CD = #sell_buy_tp_cd#
+				   AND  TRF.BND_CLSS_CD = #bnd_clss_cd#
+				   AND  TRF.POL_CD = #pol_cd#
+				   AND  TRF.POD_CD = #pod_cd#
+				   AND  TRF.DEST_DEL_CD = #dest_del_cd#
+				) X
+    </select>
+    
+    <select id="selectSeaTariff4" parameterClass="HashMap" resultClass="String">
+		SELECT  TOP 1
+				X.TRF_CTRT_NO
+		  FROM (
+    			SELECT  TOP 1 
+						'1' AS SEQ, '4' AS RANK, TRF.TRF_CTRT_NO
+				  FROM  TB_FRT_TRF TRF
+				 WHERE  TRF.TRF_TP_CD = 'S'
+				   AND  TRF.DELT_FLG = 'N'
+				   <![CDATA[
+				   AND  TRF.TRF_TERM_FM_DT <= #trf_term_dt#
+				   AND  TRF.TRF_TERM_TO_DT >= #trf_term_dt#
+					]]>
+				   AND  TRF.TRDP_CD = #trdp_cd#
+				   AND  TRF.TRDP_TP_CD = #trdp_tp_cd#
+				   AND  TRF.SELL_BUY_TP_CD = #sell_buy_tp_cd#
+				   AND  TRF.BND_CLSS_CD = #bnd_clss_cd#
+	 UNION ALL
+	 			SELECT  TOP 1 
+						'2' AS SEQ, '4' AS RANK, TRF.TRF_CTRT_NO
+				  FROM  TB_FRT_TRF TRF
+				 WHERE  TRF.TRF_TP_CD = 'S'
+				   AND  TRF.DELT_FLG = 'N'
+				   <![CDATA[
+				   AND  TRF.TRF_TERM_FM_DT <= #trf_term_dt#
+				   AND  TRF.TRF_TERM_TO_DT >= #trf_term_dt#
+					]]>
+				   AND  TRF.TRDP_CD = #trdp_cd#
+				   AND  TRF.TRDP_TP_CD = #trdp_tp_cd#
+				   AND  TRF.SELL_BUY_TP_CD = #sell_buy_tp_cd#
+				   AND  TRF.POL_CD = #pol_cd#
+	 UNION ALL
+	 			SELECT  TOP 1 
+						'3' AS SEQ, '4' AS RANK, TRF.TRF_CTRT_NO
+				  FROM  TB_FRT_TRF TRF
+				 WHERE  TRF.TRF_TP_CD = 'S'
+				   AND  TRF.DELT_FLG = 'N'
+				   <![CDATA[
+				   AND  TRF.TRF_TERM_FM_DT <= #trf_term_dt#
+				   AND  TRF.TRF_TERM_TO_DT >= #trf_term_dt#
+					]]>
+				   AND  TRF.TRDP_CD = #trdp_cd#
+				   AND  TRF.TRDP_TP_CD = #trdp_tp_cd#
+				   AND  TRF.BND_CLSS_CD = #bnd_clss_cd#
+				   AND  TRF.POL_CD = #pol_cd#
+	 UNION ALL
+	 			SELECT  TOP 1 
+						'4' AS SEQ, '4' AS RANK, TRF.TRF_CTRT_NO
+				  FROM  TB_FRT_TRF TRF
+				 WHERE  TRF.TRF_TP_CD = 'S'
+				   AND  TRF.DELT_FLG = 'N'
+				   <![CDATA[
+				   AND  TRF.TRF_TERM_FM_DT <= #trf_term_dt#
+				   AND  TRF.TRF_TERM_TO_DT >= #trf_term_dt#
+					]]>
+				   AND  TRF.TRDP_CD = #trdp_cd#
+				   AND  TRF.SELL_BUY_TP_CD = #sell_buy_tp_cd#
+				   AND  TRF.BND_CLSS_CD = #bnd_clss_cd#
+				   AND  TRF.POL_CD = #pol_cd#
+	 UNION ALL
+	 			SELECT  TOP 1 
+						'5' AS SEQ, '4' AS RANK, TRF.TRF_CTRT_NO
+				  FROM  TB_FRT_TRF TRF
+				 WHERE  TRF.TRF_TP_CD = 'S'
+				   AND  TRF.DELT_FLG = 'N'
+				   <![CDATA[
+				   AND  TRF.TRF_TERM_FM_DT <= #trf_term_dt#
+				   AND  TRF.TRF_TERM_TO_DT >= #trf_term_dt#
+					]]>
+				   AND  TRF.TRDP_TP_CD = #trdp_tp_cd#
+				   AND  TRF.SELL_BUY_TP_CD = #sell_buy_tp_cd#
+				   AND  TRF.BND_CLSS_CD = #bnd_clss_cd#
+				   AND  TRF.POL_CD = #pol_cd#
+	 UNION ALL
+	 			SELECT  TOP 1 
+						'6' AS SEQ, '4' AS RANK, TRF.TRF_CTRT_NO
+				  FROM  TB_FRT_TRF TRF
+				 WHERE  TRF.TRF_TP_CD = 'S'
+				   AND  TRF.DELT_FLG = 'N'
+				   <![CDATA[
+				   AND  TRF.TRF_TERM_FM_DT <= #trf_term_dt#
+				   AND  TRF.TRF_TERM_TO_DT >= #trf_term_dt#
+					]]>
+				   AND  TRF.TRDP_CD = #trdp_cd#
+				   AND  TRF.TRDP_TP_CD = #trdp_tp_cd#
+				   AND  TRF.SELL_BUY_TP_CD = #sell_buy_tp_cd#
+				   AND  TRF.POD_CD = #pod_cd#
+	 UNION ALL
+	 			SELECT  TOP 1 
+						'7' AS SEQ, '4' AS RANK, TRF.TRF_CTRT_NO
+				  FROM  TB_FRT_TRF TRF
+				 WHERE  TRF.TRF_TP_CD = 'S'
+				   AND  TRF.DELT_FLG = 'N'
+				   <![CDATA[
+				   AND  TRF.TRF_TERM_FM_DT <= #trf_term_dt#
+				   AND  TRF.TRF_TERM_TO_DT >= #trf_term_dt#
+					]]>
+				   AND  TRF.TRDP_CD = #trdp_cd#
+				   AND  TRF.TRDP_TP_CD = #trdp_tp_cd#
+				   AND  TRF.BND_CLSS_CD = #bnd_clss_cd#
+				   AND  TRF.POD_CD = #pod_cd#
+	 UNION ALL
+	 			SELECT  TOP 1 
+						'8' AS SEQ, '4' AS RANK, TRF.TRF_CTRT_NO
+				  FROM  TB_FRT_TRF TRF
+				 WHERE  TRF.TRF_TP_CD = 'S'
+				   AND  TRF.DELT_FLG = 'N'
+				   <![CDATA[
+				   AND  TRF.TRF_TERM_FM_DT <= #trf_term_dt#
+				   AND  TRF.TRF_TERM_TO_DT >= #trf_term_dt#
+					]]>
+				   AND  TRF.TRDP_CD = #trdp_cd#
+				   AND  TRF.SELL_BUY_TP_CD = #sell_buy_tp_cd#
+				   AND  TRF.BND_CLSS_CD = #bnd_clss_cd#
+				   AND  TRF.POD_CD = #pod_cd#
+	 UNION ALL
+	 			SELECT  TOP 1 
+						'9' AS SEQ, '4' AS RANK, TRF.TRF_CTRT_NO
+				  FROM  TB_FRT_TRF TRF
+				 WHERE  TRF.TRF_TP_CD = 'S'
+				   AND  TRF.DELT_FLG = 'N'
+				   <![CDATA[
+				   AND  TRF.TRF_TERM_FM_DT <= #trf_term_dt#
+				   AND  TRF.TRF_TERM_TO_DT >= #trf_term_dt#
+					]]>
+				   AND  TRF.TRDP_TP_CD = #trdp_tp_cd#
+				   AND  TRF.SELL_BUY_TP_CD = #sell_buy_tp_cd#
+				   AND  TRF.BND_CLSS_CD = #bnd_clss_cd#
+				   AND  TRF.POD_CD = #pod_cd#
+	 UNION ALL
+	 			SELECT  TOP 1 
+						'10' AS SEQ, '4' AS RANK, TRF.TRF_CTRT_NO
+				  FROM  TB_FRT_TRF TRF
+				 WHERE  TRF.TRF_TP_CD = 'S'
+				   AND  TRF.DELT_FLG = 'N'
+				   <![CDATA[
+				   AND  TRF.TRF_TERM_FM_DT <= #trf_term_dt#
+				   AND  TRF.TRF_TERM_TO_DT >= #trf_term_dt#
+					]]>
+				   AND  TRF.TRDP_CD = #trdp_cd#
+				   AND  TRF.TRDP_TP_CD = #trdp_tp_cd#
+				   AND  TRF.POL_CD = #pol_cd#
+				   AND  TRF.POD_CD = #pod_cd#
+	 UNION ALL
+	 			SELECT  TOP 1 
+						'11' AS SEQ, '4' AS RANK, TRF.TRF_CTRT_NO
+				  FROM  TB_FRT_TRF TRF
+				 WHERE  TRF.TRF_TP_CD = 'S'
+				   AND  TRF.DELT_FLG = 'N'
+				   <![CDATA[
+				   AND  TRF.TRF_TERM_FM_DT <= #trf_term_dt#
+				   AND  TRF.TRF_TERM_TO_DT >= #trf_term_dt#
+					]]>
+				   AND  TRF.TRDP_CD = #trdp_cd#
+				   AND  TRF.SELL_BUY_TP_CD = #sell_buy_tp_cd#
+				   AND  TRF.POL_CD = #pol_cd#
+				   AND  TRF.POD_CD = #pod_cd#
+	 UNION ALL
+	 			SELECT  TOP 1 
+						'12' AS SEQ, '4' AS RANK, TRF.TRF_CTRT_NO
+				  FROM  TB_FRT_TRF TRF
+				 WHERE  TRF.TRF_TP_CD = 'S'
+				   AND  TRF.DELT_FLG = 'N'
+				   <![CDATA[
+				   AND  TRF.TRF_TERM_FM_DT <= #trf_term_dt#
+				   AND  TRF.TRF_TERM_TO_DT >= #trf_term_dt#
+					]]>
+				   AND  TRF.TRDP_TP_CD = #trdp_tp_cd#
+				   AND  TRF.SELL_BUY_TP_CD = #sell_buy_tp_cd#
+				   AND  TRF.POL_CD = #pol_cd#
+				   AND  TRF.POD_CD = #pod_cd#
+	 UNION ALL
+	 			SELECT  TOP 1 
+						'13' AS SEQ, '4' AS RANK, TRF.TRF_CTRT_NO
+				  FROM  TB_FRT_TRF TRF
+				 WHERE  TRF.TRF_TP_CD = 'S'
+				   AND  TRF.DELT_FLG = 'N'
+				   <![CDATA[
+				   AND  TRF.TRF_TERM_FM_DT <= #trf_term_dt#
+				   AND  TRF.TRF_TERM_TO_DT >= #trf_term_dt#
+					]]>
+				   AND  TRF.TRDP_CD = #trdp_cd#
+				   AND  TRF.BND_CLSS_CD = #bnd_clss_cd#
+				   AND  TRF.POL_CD = #pol_cd#
+				   AND  TRF.POD_CD = #pod_cd#
+	 UNION ALL
+	 			SELECT  TOP 1 
+						'14' AS SEQ, '4' AS RANK, TRF.TRF_CTRT_NO
+				  FROM  TB_FRT_TRF TRF
+				 WHERE  TRF.TRF_TP_CD = 'S'
+				   AND  TRF.DELT_FLG = 'N'
+				   <![CDATA[
+				   AND  TRF.TRF_TERM_FM_DT <= #trf_term_dt#
+				   AND  TRF.TRF_TERM_TO_DT >= #trf_term_dt#
+					]]>
+				   AND  TRF.TRDP_TP_CD = #trdp_tp_cd#
+				   AND  TRF.BND_CLSS_CD = #bnd_clss_cd#
+				   AND  TRF.POL_CD = #pol_cd#
+				   AND  TRF.POD_CD = #pod_cd#
+	 UNION ALL
+	 			SELECT  TOP 1 
+						'15' AS SEQ, '4' AS RANK, TRF.TRF_CTRT_NO
+				  FROM  TB_FRT_TRF TRF
+				 WHERE  TRF.TRF_TP_CD = 'S'
+				   AND  TRF.DELT_FLG = 'N'
+				   <![CDATA[
+				   AND  TRF.TRF_TERM_FM_DT <= #trf_term_dt#
+				   AND  TRF.TRF_TERM_TO_DT >= #trf_term_dt#
+					]]>
+				   AND  TRF.SELL_BUY_TP_CD = #sell_buy_tp_cd#
+				   AND  TRF.BND_CLSS_CD = #bnd_clss_cd#
+				   AND  TRF.POL_CD = #pol_cd#
+				   AND  TRF.POD_CD = #pod_cd#
+	 UNION ALL
+	 			SELECT  TOP 1 
+						'16' AS SEQ, '4' AS RANK, TRF.TRF_CTRT_NO
+				  FROM  TB_FRT_TRF TRF
+				 WHERE  TRF.TRF_TP_CD = 'S'
+				   AND  TRF.DELT_FLG = 'N'
+				   <![CDATA[
+				   AND  TRF.TRF_TERM_FM_DT <= #trf_term_dt#
+				   AND  TRF.TRF_TERM_TO_DT >= #trf_term_dt#
+					]]>
+				   AND  TRF.TRDP_CD = #trdp_cd#
+				   AND  TRF.TRDP_TP_CD = #trdp_tp_cd#
+				   AND  TRF.SELL_BUY_TP_CD = #sell_buy_tp_cd#
+				   AND  TRF.DEST_DEL_CD = #dest_del_cd#
+	 UNION ALL
+	 			SELECT  TOP 1 
+						'17' AS SEQ, '4' AS RANK, TRF.TRF_CTRT_NO
+				  FROM  TB_FRT_TRF TRF
+				 WHERE  TRF.TRF_TP_CD = 'S'
+				   AND  TRF.DELT_FLG = 'N'
+				   <![CDATA[
+				   AND  TRF.TRF_TERM_FM_DT <= #trf_term_dt#
+				   AND  TRF.TRF_TERM_TO_DT >= #trf_term_dt#
+					]]>
+				   AND  TRF.TRDP_CD = #trdp_cd#
+				   AND  TRF.TRDP_TP_CD = #trdp_tp_cd#
+				   AND  TRF.BND_CLSS_CD = #bnd_clss_cd#
+				   AND  TRF.DEST_DEL_CD = #dest_del_cd#
+	 UNION ALL
+	 			SELECT  TOP 1 
+						'18' AS SEQ, '4' AS RANK, TRF.TRF_CTRT_NO
+				  FROM  TB_FRT_TRF TRF
+				 WHERE  TRF.TRF_TP_CD = 'S'
+				   AND  TRF.DELT_FLG = 'N'
+				   <![CDATA[
+				   AND  TRF.TRF_TERM_FM_DT <= #trf_term_dt#
+				   AND  TRF.TRF_TERM_TO_DT >= #trf_term_dt#
+					]]>
+				   AND  TRF.TRDP_CD = #trdp_cd#
+				   AND  TRF.SELL_BUY_TP_CD = #sell_buy_tp_cd#
+				   AND  TRF.BND_CLSS_CD = #bnd_clss_cd#
+				   AND  TRF.DEST_DEL_CD = #dest_del_cd#
+	 UNION ALL
+	 			SELECT  TOP 1 
+						'19' AS SEQ, '4' AS RANK, TRF.TRF_CTRT_NO
+				  FROM  TB_FRT_TRF TRF
+				 WHERE  TRF.TRF_TP_CD = 'S'
+				   AND  TRF.DELT_FLG = 'N'
+				   <![CDATA[
+				   AND  TRF.TRF_TERM_FM_DT <= #trf_term_dt#
+				   AND  TRF.TRF_TERM_TO_DT >= #trf_term_dt#
+					]]>
+				   AND  TRF.TRDP_TP_CD = #trdp_tp_cd#
+				   AND  TRF.SELL_BUY_TP_CD = #sell_buy_tp_cd#
+				   AND  TRF.BND_CLSS_CD = #bnd_clss_cd#
+				   AND  TRF.DEST_DEL_CD = #dest_del_cd#
+	 UNION ALL
+	 			SELECT  TOP 1 
+						'20' AS SEQ, '4' AS RANK, TRF.TRF_CTRT_NO
+				  FROM  TB_FRT_TRF TRF
+				 WHERE  TRF.TRF_TP_CD = 'S'
+				   AND  TRF.DELT_FLG = 'N'
+				   <![CDATA[
+				   AND  TRF.TRF_TERM_FM_DT <= #trf_term_dt#
+				   AND  TRF.TRF_TERM_TO_DT >= #trf_term_dt#
+					]]>
+				   AND  TRF.TRDP_CD = #trdp_cd#
+				   AND  TRF.TRDP_TP_CD = #trdp_tp_cd#
+				   AND  TRF.POL_CD = #pol_cd#
+				   AND  TRF.DEST_DEL_CD = #dest_del_cd#
+	 UNION ALL
+	 			SELECT  TOP 1 
+						'21' AS SEQ, '4' AS RANK, TRF.TRF_CTRT_NO
+				  FROM  TB_FRT_TRF TRF
+				 WHERE  TRF.TRF_TP_CD = 'S'
+				   AND  TRF.DELT_FLG = 'N'
+				   <![CDATA[
+				   AND  TRF.TRF_TERM_FM_DT <= #trf_term_dt#
+				   AND  TRF.TRF_TERM_TO_DT >= #trf_term_dt#
+					]]>
+				   AND  TRF.TRDP_CD = #trdp_cd#
+				   AND  TRF.SELL_BUY_TP_CD = #sell_buy_tp_cd#
+				   AND  TRF.POL_CD = #pol_cd#
+				   AND  TRF.DEST_DEL_CD = #dest_del_cd#
+	 UNION ALL
+	 			SELECT  TOP 1 
+						'22' AS SEQ, '4' AS RANK, TRF.TRF_CTRT_NO
+				  FROM  TB_FRT_TRF TRF
+				 WHERE  TRF.TRF_TP_CD = 'S'
+				   AND  TRF.DELT_FLG = 'N'
+				   <![CDATA[
+				   AND  TRF.TRF_TERM_FM_DT <= #trf_term_dt#
+				   AND  TRF.TRF_TERM_TO_DT >= #trf_term_dt#
+					]]>
+				   AND  TRF.TRDP_TP_CD = #trdp_tp_cd#
+				   AND  TRF.SELL_BUY_TP_CD = #sell_buy_tp_cd#
+				   AND  TRF.POL_CD = #pol_cd#
+				   AND  TRF.DEST_DEL_CD = #dest_del_cd#
+	 UNION ALL
+	 			SELECT  TOP 1 
+						'23' AS SEQ, '4' AS RANK, TRF.TRF_CTRT_NO
+				  FROM  TB_FRT_TRF TRF
+				 WHERE  TRF.TRF_TP_CD = 'S'
+				   AND  TRF.DELT_FLG = 'N'
+				   <![CDATA[
+				   AND  TRF.TRF_TERM_FM_DT <= #trf_term_dt#
+				   AND  TRF.TRF_TERM_TO_DT >= #trf_term_dt#
+					]]>
+				   AND  TRF.TRDP_CD = #trdp_cd#
+				   AND  TRF.BND_CLSS_CD = #bnd_clss_cd#
+				   AND  TRF.POL_CD = #pol_cd#
+				   AND  TRF.DEST_DEL_CD = #dest_del_cd#
+	 UNION ALL
+	 			SELECT  TOP 1 
+						'24' AS SEQ, '4' AS RANK, TRF.TRF_CTRT_NO
+				  FROM  TB_FRT_TRF TRF
+				 WHERE  TRF.TRF_TP_CD = 'S'
+				   AND  TRF.DELT_FLG = 'N'
+				   <![CDATA[
+				   AND  TRF.TRF_TERM_FM_DT <= #trf_term_dt#
+				   AND  TRF.TRF_TERM_TO_DT >= #trf_term_dt#
+					]]>
+				   AND  TRF.TRDP_TP_CD = #trdp_tp_cd#
+				   AND  TRF.BND_CLSS_CD = #bnd_clss_cd#
+				   AND  TRF.POL_CD = #pol_cd#
+				   AND  TRF.DEST_DEL_CD = #dest_del_cd#
+	 UNION ALL
+	 			SELECT  TOP 1 
+						'25' AS SEQ, '4' AS RANK, TRF.TRF_CTRT_NO
+				  FROM  TB_FRT_TRF TRF
+				 WHERE  TRF.TRF_TP_CD = 'S'
+				   AND  TRF.DELT_FLG = 'N'
+				   <![CDATA[
+				   AND  TRF.TRF_TERM_FM_DT <= #trf_term_dt#
+				   AND  TRF.TRF_TERM_TO_DT >= #trf_term_dt#
+					]]>
+				   AND  TRF.SELL_BUY_TP_CD = #sell_buy_tp_cd#
+				   AND  TRF.BND_CLSS_CD = #bnd_clss_cd#
+				   AND  TRF.POL_CD = #pol_cd#
+				   AND  TRF.DEST_DEL_CD = #dest_del_cd#
+	 UNION ALL
+	 			SELECT  TOP 1 
+						'26' AS SEQ, '4' AS RANK, TRF.TRF_CTRT_NO
+				  FROM  TB_FRT_TRF TRF
+				 WHERE  TRF.TRF_TP_CD = 'S'
+				   AND  TRF.DELT_FLG = 'N'
+				   <![CDATA[
+				   AND  TRF.TRF_TERM_FM_DT <= #trf_term_dt#
+				   AND  TRF.TRF_TERM_TO_DT >= #trf_term_dt#
+					]]>
+				   AND  TRF.TRDP_CD = #trdp_cd#
+				   AND  TRF.TRDP_TP_CD = #trdp_tp_cd#
+				   AND  TRF.POD_CD = #pod_cd#
+				   AND  TRF.DEST_DEL_CD = #dest_del_cd#
+	 UNION ALL
+	 			SELECT  TOP 1 
+						'27' AS SEQ, '4' AS RANK, TRF.TRF_CTRT_NO
+				  FROM  TB_FRT_TRF TRF
+				 WHERE  TRF.TRF_TP_CD = 'S'
+				   AND  TRF.DELT_FLG = 'N'
+				   <![CDATA[
+				   AND  TRF.TRF_TERM_FM_DT <= #trf_term_dt#
+				   AND  TRF.TRF_TERM_TO_DT >= #trf_term_dt#
+					]]>
+				   AND  TRF.TRDP_CD = #trdp_cd#
+				   AND  TRF.SELL_BUY_TP_CD = #sell_buy_tp_cd#
+				   AND  TRF.POD_CD = #pod_cd#
+				   AND  TRF.DEST_DEL_CD = #dest_del_cd#
+	 UNION ALL
+	 			SELECT  TOP 1 
+						'28' AS SEQ, '4' AS RANK, TRF.TRF_CTRT_NO
+				  FROM  TB_FRT_TRF TRF
+				 WHERE  TRF.TRF_TP_CD = 'S'
+				   AND  TRF.DELT_FLG = 'N'
+				   <![CDATA[
+				   AND  TRF.TRF_TERM_FM_DT <= #trf_term_dt#
+				   AND  TRF.TRF_TERM_TO_DT >= #trf_term_dt#
+					]]>
+				   AND  TRF.TRDP_TP_CD = #trdp_tp_cd#
+				   AND  TRF.SELL_BUY_TP_CD = #sell_buy_tp_cd#
+				   AND  TRF.POD_CD = #pod_cd#
+				   AND  TRF.DEST_DEL_CD = #dest_del_cd#
+	 UNION ALL
+	 			SELECT  TOP 1 
+						'29' AS SEQ, '4' AS RANK, TRF.TRF_CTRT_NO
+				  FROM  TB_FRT_TRF TRF
+				 WHERE  TRF.TRF_TP_CD = 'S'
+				   AND  TRF.DELT_FLG = 'N'
+				   <![CDATA[
+				   AND  TRF.TRF_TERM_FM_DT <= #trf_term_dt#
+				   AND  TRF.TRF_TERM_TO_DT >= #trf_term_dt#
+					]]>
+				   AND  TRF.TRDP_CD = #trdp_cd#
+				   AND  TRF.BND_CLSS_CD = #bnd_clss_cd#
+				   AND  TRF.POD_CD = #pod_cd#
+				   AND  TRF.DEST_DEL_CD = #dest_del_cd#
+	 UNION ALL
+	 			SELECT  TOP 1 
+						'30' AS SEQ, '4' AS RANK, TRF.TRF_CTRT_NO
+				  FROM  TB_FRT_TRF TRF
+				 WHERE  TRF.TRF_TP_CD = 'S'
+				   AND  TRF.DELT_FLG = 'N'
+				   <![CDATA[
+				   AND  TRF.TRF_TERM_FM_DT <= #trf_term_dt#
+				   AND  TRF.TRF_TERM_TO_DT >= #trf_term_dt#
+					]]>
+				   AND  TRF.TRDP_TP_CD = #trdp_tp_cd#
+				   AND  TRF.BND_CLSS_CD = #bnd_clss_cd#
+				   AND  TRF.POD_CD = #pod_cd#
+				   AND  TRF.DEST_DEL_CD = #dest_del_cd#
+	 UNION ALL
+	 			SELECT  TOP 1 
+						'31' AS SEQ, '4' AS RANK, TRF.TRF_CTRT_NO
+				  FROM  TB_FRT_TRF TRF
+				 WHERE  TRF.TRF_TP_CD = 'S'
+				   AND  TRF.DELT_FLG = 'N'
+				   <![CDATA[
+				   AND  TRF.TRF_TERM_FM_DT <= #trf_term_dt#
+				   AND  TRF.TRF_TERM_TO_DT >= #trf_term_dt#
+					]]>
+				   AND  TRF.SELL_BUY_TP_CD = #sell_buy_tp_cd#
+				   AND  TRF.BND_CLSS_CD = #bnd_clss_cd#
+				   AND  TRF.POD_CD = #pod_cd#
+				   AND  TRF.DEST_DEL_CD = #dest_del_cd#
+	 UNION ALL
+	 			SELECT  TOP 1 
+						'32' AS SEQ, '4' AS RANK, TRF.TRF_CTRT_NO
+				  FROM  TB_FRT_TRF TRF
+				 WHERE  TRF.TRF_TP_CD = 'S'
+				   AND  TRF.DELT_FLG = 'N'
+				   <![CDATA[
+				   AND  TRF.TRF_TERM_FM_DT <= #trf_term_dt#
+				   AND  TRF.TRF_TERM_TO_DT >= #trf_term_dt#
+					]]>
+				   AND  TRF.TRDP_CD = #trdp_cd#
+				   AND  TRF.POL_CD = #pol_cd#
+				   AND  TRF.POD_CD = #pod_cd#
+				   AND  TRF.DEST_DEL_CD = #dest_del_cd#
+	 UNION ALL
+	 			SELECT  TOP 1 
+						'33' AS SEQ, '4' AS RANK, TRF.TRF_CTRT_NO
+				  FROM  TB_FRT_TRF TRF
+				 WHERE  TRF.TRF_TP_CD = 'S'
+				   AND  TRF.DELT_FLG = 'N'
+				   <![CDATA[
+				   AND  TRF.TRF_TERM_FM_DT <= #trf_term_dt#
+				   AND  TRF.TRF_TERM_TO_DT >= #trf_term_dt#
+					]]>
+				   AND  TRF.TRDP_TP_CD = #trdp_tp_cd#
+				   AND  TRF.POL_CD = #pol_cd#
+				   AND  TRF.POD_CD = #pod_cd#
+				   AND  TRF.DEST_DEL_CD = #dest_del_cd#
+	 UNION ALL
+	 			SELECT  TOP 1 
+						'34' AS SEQ, '4' AS RANK, TRF.TRF_CTRT_NO
+				  FROM  TB_FRT_TRF TRF
+				 WHERE  TRF.TRF_TP_CD = 'S'
+				   AND  TRF.DELT_FLG = 'N'
+				   <![CDATA[
+				   AND  TRF.TRF_TERM_FM_DT <= #trf_term_dt#
+				   AND  TRF.TRF_TERM_TO_DT >= #trf_term_dt#
+					]]>
+				   AND  TRF.SELL_BUY_TP_CD = #sell_buy_tp_cd#
+				   AND  TRF.POL_CD = #pol_cd#
+				   AND  TRF.POD_CD = #pod_cd#
+				   AND  TRF.DEST_DEL_CD = #dest_del_cd#
+	 UNION ALL
+	 			SELECT  TOP 1 
+						'35' AS SEQ, '4' AS RANK, TRF.TRF_CTRT_NO
+				  FROM  TB_FRT_TRF TRF
+				 WHERE  TRF.TRF_TP_CD = 'S'
+				   AND  TRF.DELT_FLG = 'N'
+				   <![CDATA[
+				   AND  TRF.TRF_TERM_FM_DT <= #trf_term_dt#
+				   AND  TRF.TRF_TERM_TO_DT >= #trf_term_dt#
+					]]>
+				   AND  TRF.BND_CLSS_CD = #bnd_clss_cd#
+				   AND  TRF.POL_CD = #pol_cd#
+				   AND  TRF.POD_CD = #pod_cd#
+				   AND  TRF.DEST_DEL_CD = #dest_del_cd#
+				) X
+    </select>
+    
+    <select id="selectSeaTariff5" parameterClass="HashMap" resultClass="String">
+    	SELECT  TOP 1
+				X.TRF_CTRT_NO
+		  FROM (
+	 			SELECT  TOP 1 
+						'1' AS SEQ, '5' AS RANK, TRF.TRF_CTRT_NO
+				  FROM  TB_FRT_TRF TRF
+				 WHERE  TRF.TRF_TP_CD = 'S'
+				   AND  TRF.DELT_FLG = 'N'
+				   <![CDATA[
+				   AND  TRF.TRF_TERM_FM_DT <= #trf_term_dt#
+				   AND  TRF.TRF_TERM_TO_DT >= #trf_term_dt#
+					]]>
+				   AND  TRF.TRDP_CD = #trdp_cd#
+				   AND  TRF.TRDP_TP_CD = #trdp_tp_cd#
+				   AND  TRF.SELL_BUY_TP_CD = #sell_buy_tp_cd#
+	 UNION ALL
+				SELECT  TOP 1 
+						'2' AS SEQ, '5' AS RANK, TRF.TRF_CTRT_NO
+				  FROM  TB_FRT_TRF TRF
+				 WHERE  TRF.TRF_TP_CD = 'S'
+				   AND  TRF.DELT_FLG = 'N'
+				   <![CDATA[
+				   AND  TRF.TRF_TERM_FM_DT <= #trf_term_dt#
+				   AND  TRF.TRF_TERM_TO_DT >= #trf_term_dt#
+					]]>
+				   AND  TRF.TRDP_CD = #trdp_cd#
+				   AND  TRF.TRDP_TP_CD = #trdp_tp_cd#
+				   AND  TRF.BND_CLSS_CD = #bnd_clss_cd#
+	 UNION ALL
+				SELECT  TOP 1 
+						'3' AS SEQ, '5' AS RANK, TRF.TRF_CTRT_NO
+				  FROM  TB_FRT_TRF TRF
+				 WHERE  TRF.TRF_TP_CD = 'S'
+				   AND  TRF.DELT_FLG = 'N'
+				   <![CDATA[
+				   AND  TRF.TRF_TERM_FM_DT <= #trf_term_dt#
+				   AND  TRF.TRF_TERM_TO_DT >= #trf_term_dt#
+					]]>
+				   AND  TRF.TRDP_CD = #trdp_cd#
+				   AND  TRF.SELL_BUY_TP_CD = #sell_buy_tp_cd#
+				   AND  TRF.BND_CLSS_CD = #bnd_clss_cd#
+	 UNION ALL
+				SELECT  TOP 1 
+						'4' AS SEQ, '5' AS RANK, TRF.TRF_CTRT_NO
+				  FROM  TB_FRT_TRF TRF
+				 WHERE  TRF.TRF_TP_CD = 'S'
+				   AND  TRF.DELT_FLG = 'N'
+				   <![CDATA[
+				   AND  TRF.TRF_TERM_FM_DT <= #trf_term_dt#
+				   AND  TRF.TRF_TERM_TO_DT >= #trf_term_dt#
+					]]>
+				   AND  TRF.TRDP_TP_CD = #trdp_tp_cd#
+				   AND  TRF.SELL_BUY_TP_CD = #sell_buy_tp_cd#
+				   AND  TRF.BND_CLSS_CD = #bnd_clss_cd#
+	 UNION ALL
+				SELECT  TOP 1 
+						'5' AS SEQ, '5' AS RANK, TRF.TRF_CTRT_NO
+				  FROM  TB_FRT_TRF TRF
+				 WHERE  TRF.TRF_TP_CD = 'S'
+				   AND  TRF.DELT_FLG = 'N'
+				   <![CDATA[
+				   AND  TRF.TRF_TERM_FM_DT <= #trf_term_dt#
+				   AND  TRF.TRF_TERM_TO_DT >= #trf_term_dt#
+					]]>
+				   AND  TRF.TRDP_CD = #trdp_cd#
+				   AND  TRF.TRDP_TP_CD = #trdp_tp_cd#
+				   AND  TRF.POL_CD = #pol_cd#
+	 UNION ALL
+				SELECT  TOP 1 
+						'6' AS SEQ, '5' AS RANK, TRF.TRF_CTRT_NO
+				  FROM  TB_FRT_TRF TRF
+				 WHERE  TRF.TRF_TP_CD = 'S'
+				   AND  TRF.DELT_FLG = 'N'
+				   <![CDATA[
+				   AND  TRF.TRF_TERM_FM_DT <= #trf_term_dt#
+				   AND  TRF.TRF_TERM_TO_DT >= #trf_term_dt#
+					]]>
+				   AND  TRF.TRDP_CD = #trdp_cd#
+				   AND  TRF.SELL_BUY_TP_CD = #sell_buy_tp_cd#
+				   AND  TRF.POL_CD = #pol_cd#
+	 UNION ALL
+				SELECT  TOP 1 
+						'7' AS SEQ, '5' AS RANK, TRF.TRF_CTRT_NO
+				  FROM  TB_FRT_TRF TRF
+				 WHERE  TRF.TRF_TP_CD = 'S'
+				   AND  TRF.DELT_FLG = 'N'
+				   <![CDATA[
+				   AND  TRF.TRF_TERM_FM_DT <= #trf_term_dt#
+				   AND  TRF.TRF_TERM_TO_DT >= #trf_term_dt#
+					]]>
+				   AND  TRF.TRDP_TP_CD = #trdp_tp_cd#
+				   AND  TRF.SELL_BUY_TP_CD = #sell_buy_tp_cd#
+				   AND  TRF.POL_CD = #pol_cd#
+	 UNION ALL
+				SELECT  TOP 1 
+						'8' AS SEQ, '5' AS RANK, TRF.TRF_CTRT_NO
+				  FROM  TB_FRT_TRF TRF
+				 WHERE  TRF.TRF_TP_CD = 'S'
+				   AND  TRF.DELT_FLG = 'N'
+				   <![CDATA[
+				   AND  TRF.TRF_TERM_FM_DT <= #trf_term_dt#
+				   AND  TRF.TRF_TERM_TO_DT >= #trf_term_dt#
+					]]>
+				   AND  TRF.TRDP_CD = #trdp_cd#
+				   AND  TRF.BND_CLSS_CD = #bnd_clss_cd#
+				   AND  TRF.POL_CD = #pol_cd#
+	 UNION ALL
+				SELECT  TOP 1 
+						'9' AS SEQ, '5' AS RANK, TRF.TRF_CTRT_NO
+				  FROM  TB_FRT_TRF TRF
+				 WHERE  TRF.TRF_TP_CD = 'S'
+				   AND  TRF.DELT_FLG = 'N'
+				   <![CDATA[
+				   AND  TRF.TRF_TERM_FM_DT <= #trf_term_dt#
+				   AND  TRF.TRF_TERM_TO_DT >= #trf_term_dt#
+					]]>
+				   AND  TRF.TRDP_TP_CD = #trdp_tp_cd#
+				   AND  TRF.BND_CLSS_CD = #bnd_clss_cd#
+				   AND  TRF.POL_CD = #pol_cd#
+	 UNION ALL
+				SELECT  TOP 1 
+						'10' AS SEQ, '5' AS RANK, TRF.TRF_CTRT_NO
+				  FROM  TB_FRT_TRF TRF
+				 WHERE  TRF.TRF_TP_CD = 'S'
+				   AND  TRF.DELT_FLG = 'N'
+				   <![CDATA[
+				   AND  TRF.TRF_TERM_FM_DT <= #trf_term_dt#
+				   AND  TRF.TRF_TERM_TO_DT >= #trf_term_dt#
+					]]>
+				   AND  TRF.SELL_BUY_TP_CD = #sell_buy_tp_cd#
+				   AND  TRF.BND_CLSS_CD = #bnd_clss_cd#
+				   AND  TRF.POL_CD = #pol_cd#
+	 UNION ALL
+				SELECT  TOP 1 
+						'11' AS SEQ, '5' AS RANK, TRF.TRF_CTRT_NO
+				  FROM  TB_FRT_TRF TRF
+				 WHERE  TRF.TRF_TP_CD = 'S'
+				   AND  TRF.DELT_FLG = 'N'
+				   <![CDATA[
+				   AND  TRF.TRF_TERM_FM_DT <= #trf_term_dt#
+				   AND  TRF.TRF_TERM_TO_DT >= #trf_term_dt#
+					]]>
+				   AND  TRF.TRDP_CD = #trdp_cd#
+				   AND  TRF.TRDP_TP_CD = #trdp_tp_cd#
+				   AND  TRF.POD_CD = #pod_cd#
+	 UNION ALL
+				SELECT  TOP 1 
+						'12' AS SEQ, '5' AS RANK, TRF.TRF_CTRT_NO
+				  FROM  TB_FRT_TRF TRF
+				 WHERE  TRF.TRF_TP_CD = 'S'
+				   AND  TRF.DELT_FLG = 'N'
+				   <![CDATA[
+				   AND  TRF.TRF_TERM_FM_DT <= #trf_term_dt#
+				   AND  TRF.TRF_TERM_TO_DT >= #trf_term_dt#
+					]]>
+				   AND  TRF.TRDP_CD = #trdp_cd#
+				   AND  TRF.SELL_BUY_TP_CD = #sell_buy_tp_cd#
+				   AND  TRF.POD_CD = #pod_cd#
+	 UNION ALL
+				SELECT  TOP 1 
+						'13' AS SEQ, '5' AS RANK, TRF.TRF_CTRT_NO
+				  FROM  TB_FRT_TRF TRF
+				 WHERE  TRF.TRF_TP_CD = 'S'
+				   AND  TRF.DELT_FLG = 'N'
+				   <![CDATA[
+				   AND  TRF.TRF_TERM_FM_DT <= #trf_term_dt#
+				   AND  TRF.TRF_TERM_TO_DT >= #trf_term_dt#
+					]]>
+				   AND  TRF.TRDP_TP_CD = #trdp_tp_cd#
+				   AND  TRF.SELL_BUY_TP_CD = #sell_buy_tp_cd#
+				   AND  TRF.POD_CD = #pod_cd#
+	 UNION ALL
+				SELECT  TOP 1 
+						'14' AS SEQ, '5' AS RANK, TRF.TRF_CTRT_NO
+				  FROM  TB_FRT_TRF TRF
+				 WHERE  TRF.TRF_TP_CD = 'S'
+				   AND  TRF.DELT_FLG = 'N'
+				   <![CDATA[
+				   AND  TRF.TRF_TERM_FM_DT <= #trf_term_dt#
+				   AND  TRF.TRF_TERM_TO_DT >= #trf_term_dt#
+					]]>
+				   AND  TRF.TRDP_CD = #trdp_cd#
+				   AND  TRF.BND_CLSS_CD = #bnd_clss_cd#
+				   AND  TRF.POD_CD = #pod_cd#
+	 UNION ALL
+				SELECT  TOP 1 
+						'15' AS SEQ, '5' AS RANK, TRF.TRF_CTRT_NO
+				  FROM  TB_FRT_TRF TRF
+				 WHERE  TRF.TRF_TP_CD = 'S'
+				   AND  TRF.DELT_FLG = 'N'
+				   <![CDATA[
+				   AND  TRF.TRF_TERM_FM_DT <= #trf_term_dt#
+				   AND  TRF.TRF_TERM_TO_DT >= #trf_term_dt#
+					]]>
+				   AND  TRF.TRDP_TP_CD = #trdp_tp_cd#
+				   AND  TRF.BND_CLSS_CD = #bnd_clss_cd#
+				   AND  TRF.POD_CD = #pod_cd#
+	 UNION ALL
+				SELECT  TOP 1 
+						'16' AS SEQ, '5' AS RANK, TRF.TRF_CTRT_NO
+				  FROM  TB_FRT_TRF TRF
+				 WHERE  TRF.TRF_TP_CD = 'S'
+				   AND  TRF.DELT_FLG = 'N'
+				   <![CDATA[
+				   AND  TRF.TRF_TERM_FM_DT <= #trf_term_dt#
+				   AND  TRF.TRF_TERM_TO_DT >= #trf_term_dt#
+					]]>
+				   AND  TRF.SELL_BUY_TP_CD = #sell_buy_tp_cd#
+				   AND  TRF.BND_CLSS_CD = #bnd_clss_cd#
+				   AND  TRF.POD_CD = #pod_cd#
+	 UNION ALL
+				SELECT  TOP 1 
+						'17' AS SEQ, '5' AS RANK, TRF.TRF_CTRT_NO
+				  FROM  TB_FRT_TRF TRF
+				 WHERE  TRF.TRF_TP_CD = 'S'
+				   AND  TRF.DELT_FLG = 'N'
+				   <![CDATA[
+				   AND  TRF.TRF_TERM_FM_DT <= #trf_term_dt#
+				   AND  TRF.TRF_TERM_TO_DT >= #trf_term_dt#
+					]]>
+				   AND  TRF.TRDP_CD = #trdp_cd#
+				   AND  TRF.POL_CD = #pol_cd#
+				   AND  TRF.POD_CD = #pod_cd#
+	 UNION ALL
+				SELECT  TOP 1 
+						'18' AS SEQ, '5' AS RANK, TRF.TRF_CTRT_NO
+				  FROM  TB_FRT_TRF TRF
+				 WHERE  TRF.TRF_TP_CD = 'S'
+				   AND  TRF.DELT_FLG = 'N'
+				   <![CDATA[
+				   AND  TRF.TRF_TERM_FM_DT <= #trf_term_dt#
+				   AND  TRF.TRF_TERM_TO_DT >= #trf_term_dt#
+					]]>
+				   AND  TRF.TRDP_TP_CD = #trdp_tp_cd#
+				   AND  TRF.POL_CD = #pol_cd#
+				   AND  TRF.POD_CD = #pod_cd#
+	 UNION ALL
+				SELECT  TOP 1 
+						'19' AS SEQ, '5' AS RANK, TRF.TRF_CTRT_NO
+				  FROM  TB_FRT_TRF TRF
+				 WHERE  TRF.TRF_TP_CD = 'S'
+				   AND  TRF.DELT_FLG = 'N'
+				   <![CDATA[
+				   AND  TRF.TRF_TERM_FM_DT <= #trf_term_dt#
+				   AND  TRF.TRF_TERM_TO_DT >= #trf_term_dt#
+					]]>
+				   AND  TRF.SELL_BUY_TP_CD = #sell_buy_tp_cd#
+				   AND  TRF.POL_CD = #pol_cd#
+				   AND  TRF.POD_CD = #pod_cd#
+	 UNION ALL
+				SELECT  TOP 1 
+						'20' AS SEQ, '5' AS RANK, TRF.TRF_CTRT_NO
+				  FROM  TB_FRT_TRF TRF
+				 WHERE  TRF.TRF_TP_CD = 'S'
+				   AND  TRF.DELT_FLG = 'N'
+				   <![CDATA[
+				   AND  TRF.TRF_TERM_FM_DT <= #trf_term_dt#
+				   AND  TRF.TRF_TERM_TO_DT >= #trf_term_dt#
+					]]>
+				   AND  TRF.BND_CLSS_CD = #bnd_clss_cd#
+				   AND  TRF.POL_CD = #pol_cd#
+				   AND  TRF.POD_CD = #pod_cd#
+	 UNION ALL
+				SELECT  TOP 1 
+						'21' AS SEQ, '5' AS RANK, TRF.TRF_CTRT_NO
+				  FROM  TB_FRT_TRF TRF
+				 WHERE  TRF.TRF_TP_CD = 'S'
+				   AND  TRF.DELT_FLG = 'N'
+				   <![CDATA[
+				   AND  TRF.TRF_TERM_FM_DT <= #trf_term_dt#
+				   AND  TRF.TRF_TERM_TO_DT >= #trf_term_dt#
+					]]>
+				   AND  TRF.TRDP_CD = #trdp_cd#
+				   AND  TRF.TRDP_TP_CD = #trdp_tp_cd#
+				   AND  TRF.DEST_DEL_CD = #dest_del_cd#
+	 UNION ALL
+				SELECT  TOP 1 
+						'22' AS SEQ, '5' AS RANK, TRF.TRF_CTRT_NO
+				  FROM  TB_FRT_TRF TRF
+				 WHERE  TRF.TRF_TP_CD = 'S'
+				   AND  TRF.DELT_FLG = 'N'
+				   <![CDATA[
+				   AND  TRF.TRF_TERM_FM_DT <= #trf_term_dt#
+				   AND  TRF.TRF_TERM_TO_DT >= #trf_term_dt#
+					]]>
+				   AND  TRF.TRDP_CD = #trdp_cd#
+				   AND  TRF.SELL_BUY_TP_CD = #sell_buy_tp_cd#
+				   AND  TRF.DEST_DEL_CD = #dest_del_cd#
+	 UNION ALL
+				SELECT  TOP 1 
+						'23' AS SEQ, '5' AS RANK, TRF.TRF_CTRT_NO
+				  FROM  TB_FRT_TRF TRF
+				 WHERE  TRF.TRF_TP_CD = 'S'
+				   AND  TRF.DELT_FLG = 'N'
+				   <![CDATA[
+				   AND  TRF.TRF_TERM_FM_DT <= #trf_term_dt#
+				   AND  TRF.TRF_TERM_TO_DT >= #trf_term_dt#
+					]]>
+				   AND  TRF.TRDP_TP_CD = #trdp_tp_cd#
+				   AND  TRF.SELL_BUY_TP_CD = #sell_buy_tp_cd#
+				   AND  TRF.DEST_DEL_CD = #dest_del_cd#
+	 UNION ALL
+				SELECT  TOP 1 
+						'24' AS SEQ, '5' AS RANK, TRF.TRF_CTRT_NO
+				  FROM  TB_FRT_TRF TRF
+				 WHERE  TRF.TRF_TP_CD = 'S'
+				   AND  TRF.DELT_FLG = 'N'
+				   <![CDATA[
+				   AND  TRF.TRF_TERM_FM_DT <= #trf_term_dt#
+				   AND  TRF.TRF_TERM_TO_DT >= #trf_term_dt#
+					]]>
+				   AND  TRF.TRDP_CD = #trdp_cd#
+				   AND  TRF.BND_CLSS_CD = #bnd_clss_cd#
+				   AND  TRF.DEST_DEL_CD = #dest_del_cd#
+	 UNION ALL
+				SELECT  TOP 1 
+						'25' AS SEQ, '5' AS RANK, TRF.TRF_CTRT_NO
+				  FROM  TB_FRT_TRF TRF
+				 WHERE  TRF.TRF_TP_CD = 'S'
+				   AND  TRF.DELT_FLG = 'N'
+				   <![CDATA[
+				   AND  TRF.TRF_TERM_FM_DT <= #trf_term_dt#
+				   AND  TRF.TRF_TERM_TO_DT >= #trf_term_dt#
+					]]>
+				   AND  TRF.TRDP_TP_CD = #trdp_tp_cd#
+				   AND  TRF.BND_CLSS_CD = #bnd_clss_cd#
+				   AND  TRF.DEST_DEL_CD = #dest_del_cd#
+	 UNION ALL
+				SELECT  TOP 1 
+						'26' AS SEQ, '5' AS RANK, TRF.TRF_CTRT_NO
+				  FROM  TB_FRT_TRF TRF
+				 WHERE  TRF.TRF_TP_CD = 'S'
+				   AND  TRF.DELT_FLG = 'N'
+				   <![CDATA[
+				   AND  TRF.TRF_TERM_FM_DT <= #trf_term_dt#
+				   AND  TRF.TRF_TERM_TO_DT >= #trf_term_dt#
+					]]>
+				   AND  TRF.SELL_BUY_TP_CD = #sell_buy_tp_cd#
+				   AND  TRF.BND_CLSS_CD = #bnd_clss_cd#
+				   AND  TRF.DEST_DEL_CD = #dest_del_cd#
+	 UNION ALL
+				SELECT  TOP 1 
+						'27' AS SEQ, '5' AS RANK, TRF.TRF_CTRT_NO
+				  FROM  TB_FRT_TRF TRF
+				 WHERE  TRF.TRF_TP_CD = 'S'
+				   AND  TRF.DELT_FLG = 'N'
+				   <![CDATA[
+				   AND  TRF.TRF_TERM_FM_DT <= #trf_term_dt#
+				   AND  TRF.TRF_TERM_TO_DT >= #trf_term_dt#
+					]]>
+				   AND  TRF.TRDP_CD = #trdp_cd#
+				   AND  TRF.POL_CD = #pol_cd#
+				   AND  TRF.DEST_DEL_CD = #dest_del_cd#
+	 UNION ALL
+				SELECT  TOP 1 
+						'28' AS SEQ, '5' AS RANK, TRF.TRF_CTRT_NO
+				  FROM  TB_FRT_TRF TRF
+				 WHERE  TRF.TRF_TP_CD = 'S'
+				   AND  TRF.DELT_FLG = 'N'
+				   <![CDATA[
+				   AND  TRF.TRF_TERM_FM_DT <= #trf_term_dt#
+				   AND  TRF.TRF_TERM_TO_DT >= #trf_term_dt#
+					]]>
+				   AND  TRF.TRDP_TP_CD = #trdp_tp_cd#
+				   AND  TRF.POL_CD = #pol_cd#
+				   AND  TRF.DEST_DEL_CD = #dest_del_cd#
+	 UNION ALL
+				SELECT  TOP 1 
+						'29' AS SEQ, '5' AS RANK, TRF.TRF_CTRT_NO
+				  FROM  TB_FRT_TRF TRF
+				 WHERE  TRF.TRF_TP_CD = 'S'
+				   AND  TRF.DELT_FLG = 'N'
+				   <![CDATA[
+				   AND  TRF.TRF_TERM_FM_DT <= #trf_term_dt#
+				   AND  TRF.TRF_TERM_TO_DT >= #trf_term_dt#
+					]]>
+				   AND  TRF.SELL_BUY_TP_CD = #sell_buy_tp_cd#
+				   AND  TRF.POL_CD = #pol_cd#
+				   AND  TRF.DEST_DEL_CD = #dest_del_cd#
+	 UNION ALL
+				SELECT  TOP 1 
+						'30' AS SEQ, '5' AS RANK, TRF.TRF_CTRT_NO
+				  FROM  TB_FRT_TRF TRF
+				 WHERE  TRF.TRF_TP_CD = 'S'
+				   AND  TRF.DELT_FLG = 'N'
+				   <![CDATA[
+				   AND  TRF.TRF_TERM_FM_DT <= #trf_term_dt#
+				   AND  TRF.TRF_TERM_TO_DT >= #trf_term_dt#
+					]]>
+				   AND  TRF.BND_CLSS_CD = #bnd_clss_cd#
+				   AND  TRF.POL_CD = #pol_cd#
+				   AND  TRF.DEST_DEL_CD = #dest_del_cd#
+	 UNION ALL
+				SELECT  TOP 1 
+						'31' AS SEQ, '5' AS RANK, TRF.TRF_CTRT_NO
+				  FROM  TB_FRT_TRF TRF
+				 WHERE  TRF.TRF_TP_CD = 'S'
+				   AND  TRF.DELT_FLG = 'N'
+				   <![CDATA[
+				   AND  TRF.TRF_TERM_FM_DT <= #trf_term_dt#
+				   AND  TRF.TRF_TERM_TO_DT >= #trf_term_dt#
+					]]>
+				   AND  TRF.TRDP_CD = #trdp_cd#
+				   AND  TRF.POD_CD = #pod_cd#
+				   AND  TRF.DEST_DEL_CD = #dest_del_cd#
+	 UNION ALL
+				SELECT  TOP 1 
+						'32' AS SEQ, '5' AS RANK, TRF.TRF_CTRT_NO
+				  FROM  TB_FRT_TRF TRF
+				 WHERE  TRF.TRF_TP_CD = 'S'
+				   AND  TRF.DELT_FLG = 'N'
+				   <![CDATA[
+				   AND  TRF.TRF_TERM_FM_DT <= #trf_term_dt#
+				   AND  TRF.TRF_TERM_TO_DT >= #trf_term_dt#
+					]]>
+				   AND  TRF.TRDP_TP_CD = #trdp_tp_cd#
+				   AND  TRF.POD_CD = #pod_cd#
+				   AND  TRF.DEST_DEL_CD = #dest_del_cd#
+	 UNION ALL
+				SELECT  TOP 1 
+						'33' AS SEQ, '5' AS RANK, TRF.TRF_CTRT_NO
+				  FROM  TB_FRT_TRF TRF
+				 WHERE  TRF.TRF_TP_CD = 'S'
+				   AND  TRF.DELT_FLG = 'N'
+				   <![CDATA[
+				   AND  TRF.TRF_TERM_FM_DT <= #trf_term_dt#
+				   AND  TRF.TRF_TERM_TO_DT >= #trf_term_dt#
+					]]>
+				   AND  TRF.SELL_BUY_TP_CD = #sell_buy_tp_cd#
+				   AND  TRF.POD_CD = #pod_cd#
+				   AND  TRF.DEST_DEL_CD = #dest_del_cd#
+	 UNION ALL
+				SELECT  TOP 1 
+						'34' AS SEQ, '5' AS RANK, TRF.TRF_CTRT_NO
+				  FROM  TB_FRT_TRF TRF
+				 WHERE  TRF.TRF_TP_CD = 'S'
+				   AND  TRF.DELT_FLG = 'N'
+				   <![CDATA[
+				   AND  TRF.TRF_TERM_FM_DT <= #trf_term_dt#
+				   AND  TRF.TRF_TERM_TO_DT >= #trf_term_dt#
+					]]>
+				   AND  TRF.BND_CLSS_CD = #bnd_clss_cd#
+				   AND  TRF.POD_CD = #pod_cd#
+				   AND  TRF.DEST_DEL_CD = #dest_del_cd#
+	 UNION ALL
+				SELECT  TOP 1 
+						'35' AS SEQ, '5' AS RANK, TRF.TRF_CTRT_NO
+				  FROM  TB_FRT_TRF TRF
+				 WHERE  TRF.TRF_TP_CD = 'S'
+				   AND  TRF.DELT_FLG = 'N'
+				   <![CDATA[
+				   AND  TRF.TRF_TERM_FM_DT <= #trf_term_dt#
+				   AND  TRF.TRF_TERM_TO_DT >= #trf_term_dt#
+					]]>
+				   AND  TRF.POL_CD = #pol_cd#
+				   AND  TRF.POD_CD = #pod_cd#
+				   AND  TRF.DEST_DEL_CD = #dest_del_cd#
+    			) X
+    </select>
+    
+    <select id="selectSeaTariff6" parameterClass="HashMap" resultClass="String">
+    	SELECT  TOP 1
+				X.TRF_CTRT_NO
+		  FROM (
+				SELECT  TOP 1 
+						'1' AS SEQ, '6' AS RANK, TRF.TRF_CTRT_NO
+				  FROM  TB_FRT_TRF TRF
+				 WHERE  TRF.TRF_TP_CD = 'S'
+				   AND  TRF.DELT_FLG = 'N'
+				   <![CDATA[
+				   AND  TRF.TRF_TERM_FM_DT <= #trf_term_dt#
+				   AND  TRF.TRF_TERM_TO_DT >= #trf_term_dt#
+					]]>
+				   AND  TRF.TRDP_CD = #trdp_cd#
+				   AND  TRF.TRDP_TP_CD = #trdp_tp_cd#
+	 UNION ALL
+			 	SELECT  TOP 1 
+						'2' AS SEQ, '6' AS RANK, TRF.TRF_CTRT_NO
+				  FROM  TB_FRT_TRF TRF
+				 WHERE  TRF.TRF_TP_CD = 'S'
+				   AND  TRF.DELT_FLG = 'N'
+				   <![CDATA[
+				   AND  TRF.TRF_TERM_FM_DT <= #trf_term_dt#
+				   AND  TRF.TRF_TERM_TO_DT >= #trf_term_dt#
+					]]>
+				   AND  TRF.TRDP_CD = #trdp_cd#
+				   AND  TRF.SELL_BUY_TP_CD = #sell_buy_tp_cd#
+	 UNION ALL
+			 	SELECT  TOP 1 
+						'3' AS SEQ, '6' AS RANK, TRF.TRF_CTRT_NO
+				  FROM  TB_FRT_TRF TRF
+				 WHERE  TRF.TRF_TP_CD = 'S'
+				   AND  TRF.DELT_FLG = 'N'
+				   <![CDATA[
+				   AND  TRF.TRF_TERM_FM_DT <= #trf_term_dt#
+				   AND  TRF.TRF_TERM_TO_DT >= #trf_term_dt#
+					]]>
+				   AND  TRF.TRDP_TP_CD = #trdp_tp_cd#
+				   AND  TRF.SELL_BUY_TP_CD = #sell_buy_tp_cd#
+	 UNION ALL
+			 	SELECT  TOP 1 
+						'4' AS SEQ, '6' AS RANK, TRF.TRF_CTRT_NO
+				  FROM  TB_FRT_TRF TRF
+				 WHERE  TRF.TRF_TP_CD = 'S'
+				   AND  TRF.DELT_FLG = 'N'
+				   <![CDATA[
+				   AND  TRF.TRF_TERM_FM_DT <= #trf_term_dt#
+				   AND  TRF.TRF_TERM_TO_DT >= #trf_term_dt#
+					]]>
+				   AND  TRF.TRDP_CD = #trdp_cd#
+				   AND  TRF.BND_CLSS_CD = #bnd_clss_cd#
+	 UNION ALL
+			 	SELECT  TOP 1 
+						'5' AS SEQ, '6' AS RANK, TRF.TRF_CTRT_NO
+				  FROM  TB_FRT_TRF TRF
+				 WHERE  TRF.TRF_TP_CD = 'S'
+				   AND  TRF.DELT_FLG = 'N'
+				   <![CDATA[
+				   AND  TRF.TRF_TERM_FM_DT <= #trf_term_dt#
+				   AND  TRF.TRF_TERM_TO_DT >= #trf_term_dt#
+					]]>
+				   AND  TRF.TRDP_TP_CD = #trdp_tp_cd#
+				   AND  TRF.BND_CLSS_CD = #bnd_clss_cd#
+	 UNION ALL
+			 	SELECT  TOP 1 
+						'6' AS SEQ, '6' AS RANK, TRF.TRF_CTRT_NO
+				  FROM  TB_FRT_TRF TRF
+				 WHERE  TRF.TRF_TP_CD = 'S'
+				   AND  TRF.DELT_FLG = 'N'
+				   <![CDATA[
+				   AND  TRF.TRF_TERM_FM_DT <= #trf_term_dt#
+				   AND  TRF.TRF_TERM_TO_DT >= #trf_term_dt#
+					]]>
+				   AND  TRF.SELL_BUY_TP_CD = #sell_buy_tp_cd#
+				   AND  TRF.BND_CLSS_CD = #bnd_clss_cd#
+	 UNION ALL
+			 	SELECT  TOP 1 
+						'7' AS SEQ, '6' AS RANK, TRF.TRF_CTRT_NO
+				  FROM  TB_FRT_TRF TRF
+				 WHERE  TRF.TRF_TP_CD = 'S'
+				   AND  TRF.DELT_FLG = 'N'
+				   <![CDATA[
+				   AND  TRF.TRF_TERM_FM_DT <= #trf_term_dt#
+				   AND  TRF.TRF_TERM_TO_DT >= #trf_term_dt#
+					]]>
+				   AND  TRF.TRDP_CD = #trdp_cd#
+				   AND  TRF.POL_CD = #pol_cd#
+	 UNION ALL
+			 	SELECT  TOP 1 
+						'8' AS SEQ, '6' AS RANK, TRF.TRF_CTRT_NO
+				  FROM  TB_FRT_TRF TRF
+				 WHERE  TRF.TRF_TP_CD = 'S'
+				   AND  TRF.DELT_FLG = 'N'
+				   <![CDATA[
+				   AND  TRF.TRF_TERM_FM_DT <= #trf_term_dt#
+				   AND  TRF.TRF_TERM_TO_DT >= #trf_term_dt#
+					]]>
+				   AND  TRF.TRDP_TP_CD = #trdp_tp_cd#
+				   AND  TRF.POL_CD = #pol_cd#
+	 UNION ALL
+			 	SELECT  TOP 1 
+						'9' AS SEQ, '6' AS RANK, TRF.TRF_CTRT_NO
+				  FROM  TB_FRT_TRF TRF
+				 WHERE  TRF.TRF_TP_CD = 'S'
+				   AND  TRF.DELT_FLG = 'N'
+				   <![CDATA[
+				   AND  TRF.TRF_TERM_FM_DT <= #trf_term_dt#
+				   AND  TRF.TRF_TERM_TO_DT >= #trf_term_dt#
+					]]>
+				   AND  TRF.SELL_BUY_TP_CD = #sell_buy_tp_cd#
+				   AND  TRF.POL_CD = #pol_cd#
+	 UNION ALL
+			 	SELECT  TOP 1 
+						'10' AS SEQ, '6' AS RANK, TRF.TRF_CTRT_NO
+				  FROM  TB_FRT_TRF TRF
+				 WHERE  TRF.TRF_TP_CD = 'S'
+				   AND  TRF.DELT_FLG = 'N'
+				   <![CDATA[
+				   AND  TRF.TRF_TERM_FM_DT <= #trf_term_dt#
+				   AND  TRF.TRF_TERM_TO_DT >= #trf_term_dt#
+					]]>
+				   AND  TRF.BND_CLSS_CD = #bnd_clss_cd#
+				   AND  TRF.POL_CD = #pol_cd#
+	 UNION ALL
+			 	SELECT  TOP 1 
+						'11' AS SEQ, '6' AS RANK, TRF.TRF_CTRT_NO
+				  FROM  TB_FRT_TRF TRF
+				 WHERE  TRF.TRF_TP_CD = 'S'
+				   AND  TRF.DELT_FLG = 'N'
+				   <![CDATA[
+				   AND  TRF.TRF_TERM_FM_DT <= #trf_term_dt#
+				   AND  TRF.TRF_TERM_TO_DT >= #trf_term_dt#
+					]]>
+				   AND  TRF.TRDP_CD = #trdp_cd#
+				   AND  TRF.POD_CD = #pod_cd#
+	 UNION ALL
+			 	SELECT  TOP 1 
+						'12' AS SEQ, '6' AS RANK, TRF.TRF_CTRT_NO
+				  FROM  TB_FRT_TRF TRF
+				 WHERE  TRF.TRF_TP_CD = 'S'
+				   AND  TRF.DELT_FLG = 'N'
+				   <![CDATA[
+				   AND  TRF.TRF_TERM_FM_DT <= #trf_term_dt#
+				   AND  TRF.TRF_TERM_TO_DT >= #trf_term_dt#
+					]]>
+				   AND  TRF.TRDP_TP_CD = #trdp_tp_cd#
+				   AND  TRF.POD_CD = #pod_cd#
+	 UNION ALL
+			 	SELECT  TOP 1 
+						'13' AS SEQ, '6' AS RANK, TRF.TRF_CTRT_NO
+				  FROM  TB_FRT_TRF TRF
+				 WHERE  TRF.TRF_TP_CD = 'S'
+				   AND  TRF.DELT_FLG = 'N'
+				   <![CDATA[
+				   AND  TRF.TRF_TERM_FM_DT <= #trf_term_dt#
+				   AND  TRF.TRF_TERM_TO_DT >= #trf_term_dt#
+					]]>
+				   AND  TRF.SELL_BUY_TP_CD = #sell_buy_tp_cd#
+				   AND  TRF.POD_CD = #pod_cd#
+	 UNION ALL
+			 	SELECT  TOP 1 
+						'14' AS SEQ, '6' AS RANK, TRF.TRF_CTRT_NO
+				  FROM  TB_FRT_TRF TRF
+				 WHERE  TRF.TRF_TP_CD = 'S'
+				   AND  TRF.DELT_FLG = 'N'
+				   <![CDATA[
+				   AND  TRF.TRF_TERM_FM_DT <= #trf_term_dt#
+				   AND  TRF.TRF_TERM_TO_DT >= #trf_term_dt#
+					]]>
+				   AND  TRF.BND_CLSS_CD = #bnd_clss_cd#
+				   AND  TRF.POD_CD = #pod_cd#
+	 UNION ALL
+			 	SELECT  TOP 1 
+						'15' AS SEQ, '6' AS RANK, TRF.TRF_CTRT_NO
+				  FROM  TB_FRT_TRF TRF
+				 WHERE  TRF.TRF_TP_CD = 'S'
+				   AND  TRF.DELT_FLG = 'N'
+				   <![CDATA[
+				   AND  TRF.TRF_TERM_FM_DT <= #trf_term_dt#
+				   AND  TRF.TRF_TERM_TO_DT >= #trf_term_dt#
+					]]>
+				   AND  TRF.POL_CD = #pol_cd#
+				   AND  TRF.POD_CD = #pod_cd#
+	 UNION ALL
+			 	SELECT  TOP 1 
+						'16' AS SEQ, '6' AS RANK, TRF.TRF_CTRT_NO
+				  FROM  TB_FRT_TRF TRF
+				 WHERE  TRF.TRF_TP_CD = 'S'
+				   AND  TRF.DELT_FLG = 'N'
+				   <![CDATA[
+				   AND  TRF.TRF_TERM_FM_DT <= #trf_term_dt#
+				   AND  TRF.TRF_TERM_TO_DT >= #trf_term_dt#
+					]]>
+				   AND  TRF.TRDP_CD = #trdp_cd#
+				   AND  TRF.DEST_DEL_CD = #dest_del_cd#
+	 UNION ALL
+			 	SELECT  TOP 1 
+						'17' AS SEQ, '6' AS RANK, TRF.TRF_CTRT_NO
+				  FROM  TB_FRT_TRF TRF
+				 WHERE  TRF.TRF_TP_CD = 'S'
+				   AND  TRF.DELT_FLG = 'N'
+				   <![CDATA[
+				   AND  TRF.TRF_TERM_FM_DT <= #trf_term_dt#
+				   AND  TRF.TRF_TERM_TO_DT >= #trf_term_dt#
+					]]>
+				   AND  TRF.TRDP_TP_CD = #trdp_tp_cd#
+				   AND  TRF.DEST_DEL_CD = #dest_del_cd#
+	 UNION ALL
+			 	SELECT  TOP 1 
+						'18' AS SEQ, '6' AS RANK, TRF.TRF_CTRT_NO
+				  FROM  TB_FRT_TRF TRF
+				 WHERE  TRF.TRF_TP_CD = 'S'
+				   AND  TRF.DELT_FLG = 'N'
+				   <![CDATA[
+				   AND  TRF.TRF_TERM_FM_DT <= #trf_term_dt#
+				   AND  TRF.TRF_TERM_TO_DT >= #trf_term_dt#
+					]]>
+				   AND  TRF.SELL_BUY_TP_CD = #sell_buy_tp_cd#
+				   AND  TRF.DEST_DEL_CD = #dest_del_cd#
+	 UNION ALL
+			 	SELECT  TOP 1 
+						'19' AS SEQ, '6' AS RANK, TRF.TRF_CTRT_NO
+				  FROM  TB_FRT_TRF TRF
+				 WHERE  TRF.TRF_TP_CD = 'S'
+				   AND  TRF.DELT_FLG = 'N'
+				   <![CDATA[
+				   AND  TRF.TRF_TERM_FM_DT <= #trf_term_dt#
+				   AND  TRF.TRF_TERM_TO_DT >= #trf_term_dt#
+					]]>
+				   AND  TRF.BND_CLSS_CD = #bnd_clss_cd#
+				   AND  TRF.DEST_DEL_CD = #dest_del_cd#
+	 UNION ALL
+			 	SELECT  TOP 1 
+						'20' AS SEQ, '6' AS RANK, TRF.TRF_CTRT_NO
+				  FROM  TB_FRT_TRF TRF
+				 WHERE  TRF.TRF_TP_CD = 'S'
+				   AND  TRF.DELT_FLG = 'N'
+				   <![CDATA[
+				   AND  TRF.TRF_TERM_FM_DT <= #trf_term_dt#
+				   AND  TRF.TRF_TERM_TO_DT >= #trf_term_dt#
+					]]>
+				   AND  TRF.POL_CD = #pol_cd#
+				   AND  TRF.DEST_DEL_CD = #dest_del_cd#
+	 UNION ALL
+			 	SELECT  TOP 1 
+						'21' AS SEQ, '6' AS RANK, TRF.TRF_CTRT_NO
+				  FROM  TB_FRT_TRF TRF
+				 WHERE  TRF.TRF_TP_CD = 'S'
+				   AND  TRF.DELT_FLG = 'N'
+				   <![CDATA[
+				   AND  TRF.TRF_TERM_FM_DT <= #trf_term_dt#
+				   AND  TRF.TRF_TERM_TO_DT >= #trf_term_dt#
+					]]>
+				   AND  TRF.POD_CD = #pod_cd#
+				   AND  TRF.DEST_DEL_CD = #dest_del_cd#
+				) X
+    </select>
+    
+    <select id="selectSeaTariff7" parameterClass="HashMap" resultClass="String">
+    	SELECT  TOP 1
+				X.TRF_CTRT_NO
+		  FROM (
+				SELECT  TOP 1 
+						'1' AS SEQ, '7' AS RANK, TRF.TRF_CTRT_NO
+				  FROM  TB_FRT_TRF TRF
+				 WHERE  TRF.TRF_TP_CD = 'S'
+				   AND  TRF.DELT_FLG = 'N'
+				   <![CDATA[
+				   AND  TRF.TRF_TERM_FM_DT <= #trf_term_dt#
+				   AND  TRF.TRF_TERM_TO_DT >= #trf_term_dt#
+					]]>
+				   AND  TRF.TRDP_CD = #trdp_cd#
+	 UNION ALL
+			 	SELECT  TOP 1 
+						'2' AS SEQ, '7' AS RANK, TRF.TRF_CTRT_NO
+				  FROM  TB_FRT_TRF TRF
+				 WHERE  TRF.TRF_TP_CD = 'S'
+				   AND  TRF.DELT_FLG = 'N'
+				   <![CDATA[
+				   AND  TRF.TRF_TERM_FM_DT <= #trf_term_dt#
+				   AND  TRF.TRF_TERM_TO_DT >= #trf_term_dt#
+					]]>
+				   AND  TRF.TRDP_TP_CD = #trdp_tp_cd#
+	 UNION ALL
+			 	SELECT  TOP 1 
+						'3' AS SEQ, '7' AS RANK, TRF.TRF_CTRT_NO
+				  FROM  TB_FRT_TRF TRF
+				 WHERE  TRF.TRF_TP_CD = 'S'
+				   AND  TRF.DELT_FLG = 'N'
+				   <![CDATA[
+				   AND  TRF.TRF_TERM_FM_DT <= #trf_term_dt#
+				   AND  TRF.TRF_TERM_TO_DT >= #trf_term_dt#
+					]]>
+				   AND  TRF.SELL_BUY_TP_CD = #sell_buy_tp_cd#
+	 UNION ALL
+			 	SELECT  TOP 1 
+						'4' AS SEQ, '7' AS RANK, TRF.TRF_CTRT_NO
+				  FROM  TB_FRT_TRF TRF
+				 WHERE  TRF.TRF_TP_CD = 'S'
+				   AND  TRF.DELT_FLG = 'N'
+				   <![CDATA[
+				   AND  TRF.TRF_TERM_FM_DT <= #trf_term_dt#
+				   AND  TRF.TRF_TERM_TO_DT >= #trf_term_dt#
+					]]>
+				   AND  TRF.BND_CLSS_CD = #bnd_clss_cd#
+	 UNION ALL
+			 	SELECT  TOP 1 
+						'5' AS SEQ, '7' AS RANK, TRF.TRF_CTRT_NO
+				  FROM  TB_FRT_TRF TRF
+				 WHERE  TRF.TRF_TP_CD = 'S'
+				   AND  TRF.DELT_FLG = 'N'
+				   <![CDATA[
+				   AND  TRF.TRF_TERM_FM_DT <= #trf_term_dt#
+				   AND  TRF.TRF_TERM_TO_DT >= #trf_term_dt#
+					]]>
+				   AND  TRF.POL_CD = #pol_cd#
+	 UNION ALL
+			 	SELECT  TOP 1 
+						'6' AS SEQ, '7' AS RANK, TRF.TRF_CTRT_NO
+				  FROM  TB_FRT_TRF TRF
+				 WHERE  TRF.TRF_TP_CD = 'S'
+				   AND  TRF.DELT_FLG = 'N'
+				   <![CDATA[
+				   AND  TRF.TRF_TERM_FM_DT <= #trf_term_dt#
+				   AND  TRF.TRF_TERM_TO_DT >= #trf_term_dt#
+					]]>
+				   AND  TRF.POD_CD = #pod_cd#
+	 UNION ALL
+			 	SELECT  TOP 1 
+						'7' AS SEQ, '7' AS RANK, TRF.TRF_CTRT_NO
+				  FROM  TB_FRT_TRF TRF
+				 WHERE  TRF.TRF_TP_CD = 'S'
+				   AND  TRF.DELT_FLG = 'N'
+				   <![CDATA[
+				   AND  TRF.TRF_TERM_FM_DT <= #trf_term_dt#
+				   AND  TRF.TRF_TERM_TO_DT >= #trf_term_dt#
+					]]>
+				   AND  TRF.DEST_DEL_CD = #dest_del_cd#
+				) X
+    </select>
+    
+    <select id="selectSeaTariff8" parameterClass="HashMap" resultClass="String">
+    	SELECT  TOP 1
+				X.TRF_CTRT_NO
+		  FROM (
+				SELECT  TOP 1 
+						'1' AS SEQ, '8' AS RANK, TRF.TRF_CTRT_NO
+				  FROM  TB_FRT_TRF TRF
+				 WHERE  TRF.TRF_TP_CD = 'S'
+				   AND  TRF.DELT_FLG = 'N'
+				   <![CDATA[
+				   AND  TRF.TRF_TERM_FM_DT <= ''
+				   AND  TRF.TRF_TERM_TO_DT >= ''
+					]]>
+				   AND  TRF.TRDP_CD = ''
+				   AND  TRF.TRDP_TP_CD = ''
+				   AND  TRF.SELL_BUY_TP_CD = ''
+				   AND  TRF.BND_CLSS_CD = ''
+				   AND  TRF.POL_CD = ''
+				   AND  TRF.POD_CD = ''
+				   AND  TRF.DEST_DEL_CD = ''
+				) X
+    </select>
+    
+    <select id="selectAirDefault" parameterClass="HashMap" resultClass="com.clt.apps.fis.sal.tfm.tariff.dto.FrtTrfDtlVO">
+    	SELECT  DTL.TRF_CTRT_NO, DTL.TRF_DTL_SEQ, DTL.APLY_UT_CD, DTL.TRF_AMT,
+				DTL.FRT_CD, DTL.FRT_NM, DTL.RMK, DTL.TRF_CURR_CD, DTL.MIN_AMT, DTL.MAX_AMT, DTL.FROM_SEC, DTL.TO_SEC
+		  FROM  TB_FRT_TRF_DTL DTL
+		 WHERE  1=1
+		   AND  DTL.TRF_CTRT_NO = #trf_ctrt_no#
+    </select>
+    
+    <select id="selectAirTariff" parameterClass="HashMap" resultClass="String">
+    	SELECT  TOP 1 
+				TRF.TRF_CTRT_NO
+		  FROM  TB_FRT_TRF TRF
+		 WHERE  TRF.TRF_TP_CD = 'A'
+		   AND  TRF.DELT_FLG = 'N'
+		   <![CDATA[
+		   AND  TRF.TRF_TERM_FM_DT <= #trf_term_dt#
+		   AND  TRF.TRF_TERM_TO_DT >= #trf_term_dt#
+			]]>
+		<isNotNull property="trdp_cd">
+		   AND  TRF.TRDP_CD = #trdp_cd#
+		</isNotNull>
+		<isNotNull property="trdp_tp_cd">
+		   AND  TRF.TRDP_TP_CD = #trdp_tp_cd#
+		</isNotNull>
+		<isNotNull property="sell_buy_tp_cd">
+		   AND  TRF.SELL_BUY_TP_CD = #sell_buy_tp_cd#
+		</isNotNull>
+		<isNotNull property="bnd_clss_cd">
+		   AND  TRF.BND_CLSS_CD = #bnd_clss_cd#
+		</isNotNull>
+		<isNotNull property="pol_cd">
+		   AND  TRF.POL_CD = #pol_cd#
+		</isNotNull>
+		<isNotNull property="pod_cd">
+		   AND  TRF.POD_CD = #pod_cd#
+		</isNotNull>
+    </select>
+    
+    <select id="selectAirTariff2" parameterClass="HashMap" resultClass="String">
+    	SELECT  TOP 1
+				X.TRF_CTRT_NO
+		  FROM (
+		  		SELECT  TOP 1 
+						'1' AS SEQ, '2' AS RANK, TRF.TRF_CTRT_NO
+				  FROM  TB_FRT_TRF TRF
+				 WHERE  TRF.TRF_TP_CD = 'A'
+				   AND  TRF.DELT_FLG = 'N'
+				   <![CDATA[
+				   AND  TRF.TRF_TERM_FM_DT <= #trf_term_dt#
+				   AND  TRF.TRF_TERM_TO_DT >= #trf_term_dt#
+					]]>
+				   AND  TRF.TRDP_CD = #trdp_cd#
+				   AND  TRF.TRDP_TP_CD = #trdp_tp_cd#
+				   AND  TRF.SELL_BUY_TP_CD = #sell_buy_tp_cd#
+				   AND  TRF.BND_CLSS_CD = #bnd_clss_cd#
+				   AND  TRF.POL_CD = #pol_cd#
+	 UNION ALL
+	 			SELECT  TOP 1 
+						'2' AS SEQ, '2' AS RANK, TRF.TRF_CTRT_NO
+				  FROM  TB_FRT_TRF TRF
+				 WHERE  TRF.TRF_TP_CD = 'A'
+				   AND  TRF.DELT_FLG = 'N'
+				   <![CDATA[
+				   AND  TRF.TRF_TERM_FM_DT <= #trf_term_dt#
+				   AND  TRF.TRF_TERM_TO_DT >= #trf_term_dt#
+					]]>
+				   AND  TRF.TRDP_CD = #trdp_cd#
+				   AND  TRF.TRDP_TP_CD = #trdp_tp_cd#
+				   AND  TRF.SELL_BUY_TP_CD = #sell_buy_tp_cd#
+				   AND  TRF.BND_CLSS_CD = #bnd_clss_cd#
+				   AND  TRF.POD_CD = #pod_cd#
+	 UNION ALL
+	 			SELECT  TOP 1 
+						'3' AS SEQ, '2' AS RANK, TRF.TRF_CTRT_NO
+				  FROM  TB_FRT_TRF TRF
+				 WHERE  TRF.TRF_TP_CD = 'A'
+				   AND  TRF.DELT_FLG = 'N'
+				   <![CDATA[
+				   AND  TRF.TRF_TERM_FM_DT <= #trf_term_dt#
+				   AND  TRF.TRF_TERM_TO_DT >= #trf_term_dt#
+					]]>
+				   AND  TRF.TRDP_CD = #trdp_cd#
+				   AND  TRF.TRDP_TP_CD = #trdp_tp_cd#
+				   AND  TRF.SELL_BUY_TP_CD = #sell_buy_tp_cd#
+				   AND  TRF.POL_CD = #pol_cd#
+				   AND  TRF.POD_CD = #pod_cd#
+	 UNION ALL
+	 			SELECT  TOP 1 
+						'4' AS SEQ, '2' AS RANK, TRF.TRF_CTRT_NO
+				  FROM  TB_FRT_TRF TRF
+				 WHERE  TRF.TRF_TP_CD = 'A'
+				   AND  TRF.DELT_FLG = 'N'
+				   <![CDATA[
+				   AND  TRF.TRF_TERM_FM_DT <= #trf_term_dt#
+				   AND  TRF.TRF_TERM_TO_DT >= #trf_term_dt#
+					]]>
+				   AND  TRF.TRDP_CD = #trdp_cd#
+				   AND  TRF.TRDP_TP_CD = #trdp_tp_cd#
+				   AND  TRF.BND_CLSS_CD = #bnd_clss_cd#
+				   AND  TRF.POL_CD = #pol_cd#
+				   AND  TRF.POD_CD = #pod_cd#
+	 UNION ALL
+	 			SELECT  TOP 1 
+						'5' AS SEQ, '2' AS RANK, TRF.TRF_CTRT_NO
+				  FROM  TB_FRT_TRF TRF
+				 WHERE  TRF.TRF_TP_CD = 'A'
+				   AND  TRF.DELT_FLG = 'N'
+				   <![CDATA[
+				   AND  TRF.TRF_TERM_FM_DT <= #trf_term_dt#
+				   AND  TRF.TRF_TERM_TO_DT >= #trf_term_dt#
+					]]>
+				   AND  TRF.TRDP_CD = #trdp_cd#
+				   AND  TRF.SELL_BUY_TP_CD = #sell_buy_tp_cd#
+				   AND  TRF.BND_CLSS_CD = #bnd_clss_cd#
+				   AND  TRF.POL_CD = #pol_cd#
+				   AND  TRF.POD_CD = #pod_cd#
+	 UNION ALL
+	 			SELECT  TOP 1 
+						'6' AS SEQ, '2' AS RANK, TRF.TRF_CTRT_NO
+				  FROM  TB_FRT_TRF TRF
+				 WHERE  TRF.TRF_TP_CD = 'A'
+				   AND  TRF.DELT_FLG = 'N'
+				   <![CDATA[
+				   AND  TRF.TRF_TERM_FM_DT <= #trf_term_dt#
+				   AND  TRF.TRF_TERM_TO_DT >= #trf_term_dt#
+					]]>
+				   AND  TRF.TRDP_TP_CD = #trdp_tp_cd#
+				   AND  TRF.SELL_BUY_TP_CD = #sell_buy_tp_cd#
+				   AND  TRF.BND_CLSS_CD = #bnd_clss_cd#
+				   AND  TRF.POL_CD = #pol_cd#
+				   AND  TRF.POD_CD = #pod_cd#
+				) X
+	</select>
+	
+    <select id="selectAirTariff3" parameterClass="HashMap" resultClass="String">
+    	SELECT  TOP 1
+				X.TRF_CTRT_NO
+		  FROM (
+		  		SELECT  TOP 1 
+						'1' AS SEQ, '3' AS RANK, TRF.TRF_CTRT_NO
+				  FROM  TB_FRT_TRF TRF
+				 WHERE  TRF.TRF_TP_CD = 'A'
+				   AND  TRF.DELT_FLG = 'N'
+				   <![CDATA[
+				   AND  TRF.TRF_TERM_FM_DT <= #trf_term_dt#
+				   AND  TRF.TRF_TERM_TO_DT >= #trf_term_dt#
+					]]>
+				   AND  TRF.TRDP_CD = #trdp_cd#
+				   AND  TRF.TRDP_TP_CD = #trdp_tp_cd#
+				   AND  TRF.SELL_BUY_TP_CD = #sell_buy_tp_cd#
+				   AND  TRF.BND_CLSS_CD = #bnd_clss_cd#
+	 UNION ALL
+	 			SELECT  TOP 1 
+						'2' AS SEQ, '3' AS RANK, TRF.TRF_CTRT_NO
+				  FROM  TB_FRT_TRF TRF
+				 WHERE  TRF.TRF_TP_CD = 'A'
+				   AND  TRF.DELT_FLG = 'N'
+				   <![CDATA[
+				   AND  TRF.TRF_TERM_FM_DT <= #trf_term_dt#
+				   AND  TRF.TRF_TERM_TO_DT >= #trf_term_dt#
+					]]>
+				   AND  TRF.TRDP_CD = #trdp_cd#
+				   AND  TRF.TRDP_TP_CD = #trdp_tp_cd#
+				   AND  TRF.SELL_BUY_TP_CD = #sell_buy_tp_cd#
+				   AND  TRF.POL_CD = #pol_cd#
+	 UNION ALL
+	 			SELECT  TOP 1 
+						'3' AS SEQ, '3' AS RANK, TRF.TRF_CTRT_NO
+				  FROM  TB_FRT_TRF TRF
+				 WHERE  TRF.TRF_TP_CD = 'A'
+				   AND  TRF.DELT_FLG = 'N'
+				   <![CDATA[
+				   AND  TRF.TRF_TERM_FM_DT <= #trf_term_dt#
+				   AND  TRF.TRF_TERM_TO_DT >= #trf_term_dt#
+					]]>
+				   AND  TRF.TRDP_CD = #trdp_cd#
+				   AND  TRF.TRDP_TP_CD = #trdp_tp_cd#
+				   AND  TRF.BND_CLSS_CD = #bnd_clss_cd#
+				   AND  TRF.POL_CD = #pol_cd#
+	 UNION ALL
+	 			SELECT  TOP 1 
+						'4' AS SEQ, '3' AS RANK, TRF.TRF_CTRT_NO
+				  FROM  TB_FRT_TRF TRF
+				 WHERE  TRF.TRF_TP_CD = 'A'
+				   AND  TRF.DELT_FLG = 'N'
+				   <![CDATA[
+				   AND  TRF.TRF_TERM_FM_DT <= #trf_term_dt#
+				   AND  TRF.TRF_TERM_TO_DT >= #trf_term_dt#
+					]]>
+				   AND  TRF.TRDP_CD = #trdp_cd#
+				   AND  TRF.SELL_BUY_TP_CD = #sell_buy_tp_cd#
+				   AND  TRF.BND_CLSS_CD = #bnd_clss_cd#
+				   AND  TRF.POL_CD = #pol_cd#
+	 UNION ALL
+	 			SELECT  TOP 1 
+						'5' AS SEQ, '3' AS RANK, TRF.TRF_CTRT_NO
+				  FROM  TB_FRT_TRF TRF
+				 WHERE  TRF.TRF_TP_CD = 'A'
+				   AND  TRF.DELT_FLG = 'N'
+				   <![CDATA[
+				   AND  TRF.TRF_TERM_FM_DT <= #trf_term_dt#
+				   AND  TRF.TRF_TERM_TO_DT >= #trf_term_dt#
+					]]>
+				   AND  TRF.TRDP_TP_CD = #trdp_tp_cd#
+				   AND  TRF.SELL_BUY_TP_CD = #sell_buy_tp_cd#
+				   AND  TRF.BND_CLSS_CD = #bnd_clss_cd#
+				   AND  TRF.POL_CD = #pol_cd#
+	 UNION ALL
+	 			SELECT  TOP 1 
+						'6' AS SEQ, '3' AS RANK, TRF.TRF_CTRT_NO
+				  FROM  TB_FRT_TRF TRF
+				 WHERE  TRF.TRF_TP_CD = 'A'
+				   AND  TRF.DELT_FLG = 'N'
+				   <![CDATA[
+				   AND  TRF.TRF_TERM_FM_DT <= #trf_term_dt#
+				   AND  TRF.TRF_TERM_TO_DT >= #trf_term_dt#
+					]]>
+				   AND  TRF.TRDP_CD = #trdp_cd#
+				   AND  TRF.TRDP_TP_CD = #trdp_tp_cd#
+				   AND  TRF.SELL_BUY_TP_CD = #sell_buy_tp_cd#
+				   AND  TRF.POD_CD = #pod_cd#
+	 UNION ALL
+	 			SELECT  TOP 1 
+						'7' AS SEQ, '3' AS RANK, TRF.TRF_CTRT_NO
+				  FROM  TB_FRT_TRF TRF
+				 WHERE  TRF.TRF_TP_CD = 'A'
+				   AND  TRF.DELT_FLG = 'N'
+				   <![CDATA[
+				   AND  TRF.TRF_TERM_FM_DT <= #trf_term_dt#
+				   AND  TRF.TRF_TERM_TO_DT >= #trf_term_dt#
+					]]>
+				   AND  TRF.TRDP_CD = #trdp_cd#
+				   AND  TRF.TRDP_TP_CD = #trdp_tp_cd#
+				   AND  TRF.BND_CLSS_CD = #bnd_clss_cd#
+				   AND  TRF.POD_CD = #pod_cd#
+	 UNION ALL
+	 			SELECT  TOP 1 
+						'8' AS SEQ, '3' AS RANK, TRF.TRF_CTRT_NO
+				  FROM  TB_FRT_TRF TRF
+				 WHERE  TRF.TRF_TP_CD = 'A'
+				   AND  TRF.DELT_FLG = 'N'
+				   <![CDATA[
+				   AND  TRF.TRF_TERM_FM_DT <= #trf_term_dt#
+				   AND  TRF.TRF_TERM_TO_DT >= #trf_term_dt#
+					]]>
+				   AND  TRF.TRDP_CD = #trdp_cd#
+				   AND  TRF.SELL_BUY_TP_CD = #sell_buy_tp_cd#
+				   AND  TRF.BND_CLSS_CD = #bnd_clss_cd#
+				   AND  TRF.POD_CD = #pod_cd#
+	 UNION ALL
+	 			SELECT  TOP 1 
+						'9' AS SEQ, '3' AS RANK, TRF.TRF_CTRT_NO
+				  FROM  TB_FRT_TRF TRF
+				 WHERE  TRF.TRF_TP_CD = 'A'
+				   AND  TRF.DELT_FLG = 'N'
+				   <![CDATA[
+				   AND  TRF.TRF_TERM_FM_DT <= #trf_term_dt#
+				   AND  TRF.TRF_TERM_TO_DT >= #trf_term_dt#
+					]]>
+				   AND  TRF.TRDP_TP_CD = #trdp_tp_cd#
+				   AND  TRF.SELL_BUY_TP_CD = #sell_buy_tp_cd#
+				   AND  TRF.BND_CLSS_CD = #bnd_clss_cd#
+				   AND  TRF.POD_CD = #pod_cd#
+	 UNION ALL
+	 			SELECT  TOP 1 
+						'10' AS SEQ, '3' AS RANK, TRF.TRF_CTRT_NO
+				  FROM  TB_FRT_TRF TRF
+				 WHERE  TRF.TRF_TP_CD = 'A'
+				   AND  TRF.DELT_FLG = 'N'
+				   <![CDATA[
+				   AND  TRF.TRF_TERM_FM_DT <= #trf_term_dt#
+				   AND  TRF.TRF_TERM_TO_DT >= #trf_term_dt#
+					]]>
+				   AND  TRF.TRDP_CD = #trdp_cd#
+				   AND  TRF.TRDP_TP_CD = #trdp_tp_cd#
+				   AND  TRF.POL_CD = #pol_cd#
+				   AND  TRF.POD_CD = #pod_cd#
+	 UNION ALL
+	 			SELECT  TOP 1 
+						'11' AS SEQ, '3' AS RANK, TRF.TRF_CTRT_NO
+				  FROM  TB_FRT_TRF TRF
+				 WHERE  TRF.TRF_TP_CD = 'A'
+				   AND  TRF.DELT_FLG = 'N'
+				   <![CDATA[
+				   AND  TRF.TRF_TERM_FM_DT <= #trf_term_dt#
+				   AND  TRF.TRF_TERM_TO_DT >= #trf_term_dt#
+					]]>
+				   AND  TRF.TRDP_CD = #trdp_cd#
+				   AND  TRF.SELL_BUY_TP_CD = #sell_buy_tp_cd#
+				   AND  TRF.POL_CD = #pol_cd#
+				   AND  TRF.POD_CD = #pod_cd#
+	 UNION ALL
+	 			SELECT  TOP 1 
+						'12' AS SEQ, '3' AS RANK, TRF.TRF_CTRT_NO
+				  FROM  TB_FRT_TRF TRF
+				 WHERE  TRF.TRF_TP_CD = 'A'
+				   AND  TRF.DELT_FLG = 'N'
+				   <![CDATA[
+				   AND  TRF.TRF_TERM_FM_DT <= #trf_term_dt#
+				   AND  TRF.TRF_TERM_TO_DT >= #trf_term_dt#
+					]]>
+				   AND  TRF.TRDP_TP_CD = #trdp_tp_cd#
+				   AND  TRF.SELL_BUY_TP_CD = #sell_buy_tp_cd#
+				   AND  TRF.POL_CD = #pol_cd#
+				   AND  TRF.POD_CD = #pod_cd#
+	 UNION ALL
+	 			SELECT  TOP 1 
+						'13' AS SEQ, '3' AS RANK, TRF.TRF_CTRT_NO
+				  FROM  TB_FRT_TRF TRF
+				 WHERE  TRF.TRF_TP_CD = 'A'
+				   AND  TRF.DELT_FLG = 'N'
+				   <![CDATA[
+				   AND  TRF.TRF_TERM_FM_DT <= #trf_term_dt#
+				   AND  TRF.TRF_TERM_TO_DT >= #trf_term_dt#
+					]]>
+				   AND  TRF.TRDP_CD = #trdp_cd#
+				   AND  TRF.BND_CLSS_CD = #bnd_clss_cd#
+				   AND  TRF.POL_CD = #pol_cd#
+				   AND  TRF.POD_CD = #pod_cd#
+	 UNION ALL
+	 			SELECT  TOP 1 
+						'14' AS SEQ, '3' AS RANK, TRF.TRF_CTRT_NO
+				  FROM  TB_FRT_TRF TRF
+				 WHERE  TRF.TRF_TP_CD = 'A'
+				   AND  TRF.DELT_FLG = 'N'
+				   <![CDATA[
+				   AND  TRF.TRF_TERM_FM_DT <= #trf_term_dt#
+				   AND  TRF.TRF_TERM_TO_DT >= #trf_term_dt#
+					]]>
+				   AND  TRF.TRDP_TP_CD = #trdp_tp_cd#
+				   AND  TRF.BND_CLSS_CD = #bnd_clss_cd#
+				   AND  TRF.POL_CD = #pol_cd#
+				   AND  TRF.POD_CD = #pod_cd#
+	 UNION ALL
+	 			SELECT  TOP 1 
+						'15' AS SEQ, '3' AS RANK, TRF.TRF_CTRT_NO
+				  FROM  TB_FRT_TRF TRF
+				 WHERE  TRF.TRF_TP_CD = 'A'
+				   AND  TRF.DELT_FLG = 'N'
+				   <![CDATA[
+				   AND  TRF.TRF_TERM_FM_DT <= #trf_term_dt#
+				   AND  TRF.TRF_TERM_TO_DT >= #trf_term_dt#
+					]]>
+				   AND  TRF.SELL_BUY_TP_CD = #sell_buy_tp_cd#
+				   AND  TRF.BND_CLSS_CD = #bnd_clss_cd#
+				   AND  TRF.POL_CD = #pol_cd#
+				   AND  TRF.POD_CD = #pod_cd#
+				) X
+	</select>
+	
+	<select id="selectAirTariff4" parameterClass="HashMap" resultClass="String">
+    	SELECT  TOP 1
+				X.TRF_CTRT_NO
+		  FROM (
+		  		SELECT  TOP 1 
+						'1' AS SEQ, '4' AS RANK, TRF.TRF_CTRT_NO
+				  FROM  TB_FRT_TRF TRF
+				 WHERE  TRF.TRF_TP_CD = 'A'
+				   AND  TRF.DELT_FLG = 'N'
+				   <![CDATA[
+				   AND  TRF.TRF_TERM_FM_DT <= #trf_term_dt#
+				   AND  TRF.TRF_TERM_TO_DT >= #trf_term_dt#
+					]]>
+				   AND  TRF.TRDP_CD = #trdp_cd#
+				   AND  TRF.TRDP_TP_CD = #trdp_tp_cd#
+				   AND  TRF.SELL_BUY_TP_CD = #sell_buy_tp_cd#
+	 UNION ALL
+	 			SELECT  TOP 1 
+						'2' AS SEQ, '4' AS RANK, TRF.TRF_CTRT_NO
+				  FROM  TB_FRT_TRF TRF
+				 WHERE  TRF.TRF_TP_CD = 'A'
+				   AND  TRF.DELT_FLG = 'N'
+				   <![CDATA[
+				   AND  TRF.TRF_TERM_FM_DT <= #trf_term_dt#
+				   AND  TRF.TRF_TERM_TO_DT >= #trf_term_dt#
+					]]>
+				   AND  TRF.TRDP_CD = #trdp_cd#
+				   AND  TRF.TRDP_TP_CD = #trdp_tp_cd#
+				   AND  TRF.BND_CLSS_CD = #bnd_clss_cd#
+	 UNION ALL
+	 			SELECT  TOP 1 
+						'3' AS SEQ, '4' AS RANK, TRF.TRF_CTRT_NO
+				  FROM  TB_FRT_TRF TRF
+				 WHERE  TRF.TRF_TP_CD = 'A'
+				   AND  TRF.DELT_FLG = 'N'
+				   <![CDATA[
+				   AND  TRF.TRF_TERM_FM_DT <= #trf_term_dt#
+				   AND  TRF.TRF_TERM_TO_DT >= #trf_term_dt#
+					]]>
+				   AND  TRF.TRDP_CD = #trdp_cd#
+				   AND  TRF.SELL_BUY_TP_CD = #sell_buy_tp_cd#
+				   AND  TRF.BND_CLSS_CD = #bnd_clss_cd#
+	 UNION ALL
+	 			SELECT  TOP 1 
+						'4' AS SEQ, '4' AS RANK, TRF.TRF_CTRT_NO
+				  FROM  TB_FRT_TRF TRF
+				 WHERE  TRF.TRF_TP_CD = 'A'
+				   AND  TRF.DELT_FLG = 'N'
+				   <![CDATA[
+				   AND  TRF.TRF_TERM_FM_DT <= #trf_term_dt#
+				   AND  TRF.TRF_TERM_TO_DT >= #trf_term_dt#
+					]]>
+				   AND  TRF.TRDP_TP_CD = #trdp_tp_cd#
+				   AND  TRF.SELL_BUY_TP_CD = #sell_buy_tp_cd#
+				   AND  TRF.BND_CLSS_CD = #bnd_clss_cd#
+	 UNION ALL
+	 			SELECT  TOP 1 
+						'5' AS SEQ, '4' AS RANK, TRF.TRF_CTRT_NO
+				  FROM  TB_FRT_TRF TRF
+				 WHERE  TRF.TRF_TP_CD = 'A'
+				   AND  TRF.DELT_FLG = 'N'
+				   <![CDATA[
+				   AND  TRF.TRF_TERM_FM_DT <= #trf_term_dt#
+				   AND  TRF.TRF_TERM_TO_DT >= #trf_term_dt#
+					]]>
+				   AND  TRF.TRDP_CD = #trdp_cd#
+				   AND  TRF.TRDP_TP_CD = #trdp_tp_cd#
+				   AND  TRF.POL_CD = #pol_cd#
+	 UNION ALL
+	 			SELECT  TOP 1 
+						'6' AS SEQ, '4' AS RANK, TRF.TRF_CTRT_NO
+				  FROM  TB_FRT_TRF TRF
+				 WHERE  TRF.TRF_TP_CD = 'A'
+				   AND  TRF.DELT_FLG = 'N'
+				   <![CDATA[
+				   AND  TRF.TRF_TERM_FM_DT <= #trf_term_dt#
+				   AND  TRF.TRF_TERM_TO_DT >= #trf_term_dt#
+					]]>
+				   AND  TRF.TRDP_CD = #trdp_cd#
+				   AND  TRF.SELL_BUY_TP_CD = #sell_buy_tp_cd#
+				   AND  TRF.POL_CD = #pol_cd#
+	 UNION ALL
+	 			SELECT  TOP 1 
+						'7' AS SEQ, '4' AS RANK, TRF.TRF_CTRT_NO
+				  FROM  TB_FRT_TRF TRF
+				 WHERE  TRF.TRF_TP_CD = 'A'
+				   AND  TRF.DELT_FLG = 'N'
+				   <![CDATA[
+				   AND  TRF.TRF_TERM_FM_DT <= #trf_term_dt#
+				   AND  TRF.TRF_TERM_TO_DT >= #trf_term_dt#
+					]]>
+				   AND  TRF.TRDP_TP_CD = #trdp_tp_cd#
+				   AND  TRF.SELL_BUY_TP_CD = #sell_buy_tp_cd#
+				   AND  TRF.POL_CD = #pol_cd#
+	 UNION ALL
+	 			SELECT  TOP 1 
+						'8' AS SEQ, '4' AS RANK, TRF.TRF_CTRT_NO
+				  FROM  TB_FRT_TRF TRF
+				 WHERE  TRF.TRF_TP_CD = 'A'
+				   AND  TRF.DELT_FLG = 'N'
+				   <![CDATA[
+				   AND  TRF.TRF_TERM_FM_DT <= #trf_term_dt#
+				   AND  TRF.TRF_TERM_TO_DT >= #trf_term_dt#
+					]]>
+				   AND  TRF.TRDP_CD = #trdp_cd#
+				   AND  TRF.BND_CLSS_CD = #bnd_clss_cd#
+				   AND  TRF.POL_CD = #pol_cd#
+	 UNION ALL
+	 			SELECT  TOP 1 
+						'9' AS SEQ, '4' AS RANK, TRF.TRF_CTRT_NO
+				  FROM  TB_FRT_TRF TRF
+				 WHERE  TRF.TRF_TP_CD = 'A'
+				   AND  TRF.DELT_FLG = 'N'
+				   <![CDATA[
+				   AND  TRF.TRF_TERM_FM_DT <= #trf_term_dt#
+				   AND  TRF.TRF_TERM_TO_DT >= #trf_term_dt#
+					]]>
+				   AND  TRF.TRDP_TP_CD = #trdp_tp_cd#
+				   AND  TRF.BND_CLSS_CD = #bnd_clss_cd#
+				   AND  TRF.POL_CD = #pol_cd#
+	 UNION ALL
+	 			SELECT  TOP 1 
+						'10' AS SEQ, '4' AS RANK, TRF.TRF_CTRT_NO
+				  FROM  TB_FRT_TRF TRF
+				 WHERE  TRF.TRF_TP_CD = 'A'
+				   AND  TRF.DELT_FLG = 'N'
+				   <![CDATA[
+				   AND  TRF.TRF_TERM_FM_DT <= #trf_term_dt#
+				   AND  TRF.TRF_TERM_TO_DT >= #trf_term_dt#
+					]]>
+				   AND  TRF.SELL_BUY_TP_CD = #sell_buy_tp_cd#
+				   AND  TRF.BND_CLSS_CD = #bnd_clss_cd#
+				   AND  TRF.POL_CD = #pol_cd#
+	 UNION ALL
+	 			SELECT  TOP 1 
+						'11' AS SEQ, '4' AS RANK, TRF.TRF_CTRT_NO
+				  FROM  TB_FRT_TRF TRF
+				 WHERE  TRF.TRF_TP_CD = 'A'
+				   AND  TRF.DELT_FLG = 'N'
+				   <![CDATA[
+				   AND  TRF.TRF_TERM_FM_DT <= #trf_term_dt#
+				   AND  TRF.TRF_TERM_TO_DT >= #trf_term_dt#
+					]]>
+				   AND  TRF.TRDP_CD = #trdp_cd#
+				   AND  TRF.TRDP_TP_CD = #trdp_tp_cd#
+				   AND  TRF.POD_CD = #pod_cd#
+	 UNION ALL
+	 			SELECT  TOP 1 
+						'12' AS SEQ, '4' AS RANK, TRF.TRF_CTRT_NO
+				  FROM  TB_FRT_TRF TRF
+				 WHERE  TRF.TRF_TP_CD = 'A'
+				   AND  TRF.DELT_FLG = 'N'
+				   <![CDATA[
+				   AND  TRF.TRF_TERM_FM_DT <= #trf_term_dt#
+				   AND  TRF.TRF_TERM_TO_DT >= #trf_term_dt#
+					]]>
+				   AND  TRF.TRDP_CD = #trdp_cd#
+				   AND  TRF.SELL_BUY_TP_CD = #sell_buy_tp_cd#
+				   AND  TRF.POD_CD = #pod_cd#
+	 UNION ALL
+	 			SELECT  TOP 1 
+						'13' AS SEQ, '4' AS RANK, TRF.TRF_CTRT_NO
+				  FROM  TB_FRT_TRF TRF
+				 WHERE  TRF.TRF_TP_CD = 'A'
+				   AND  TRF.DELT_FLG = 'N'
+				   <![CDATA[
+				   AND  TRF.TRF_TERM_FM_DT <= #trf_term_dt#
+				   AND  TRF.TRF_TERM_TO_DT >= #trf_term_dt#
+					]]>
+				   AND  TRF.TRDP_TP_CD = #trdp_tp_cd#
+				   AND  TRF.SELL_BUY_TP_CD = #sell_buy_tp_cd#
+				   AND  TRF.POD_CD = #pod_cd#
+	 UNION ALL
+	 			SELECT  TOP 1 
+						'14' AS SEQ, '4' AS RANK, TRF.TRF_CTRT_NO
+				  FROM  TB_FRT_TRF TRF
+				 WHERE  TRF.TRF_TP_CD = 'A'
+				   AND  TRF.DELT_FLG = 'N'
+				   <![CDATA[
+				   AND  TRF.TRF_TERM_FM_DT <= #trf_term_dt#
+				   AND  TRF.TRF_TERM_TO_DT >= #trf_term_dt#
+					]]>
+				   AND  TRF.TRDP_CD = #trdp_cd#
+				   AND  TRF.BND_CLSS_CD = #bnd_clss_cd#
+				   AND  TRF.POD_CD = #pod_cd#
+	 UNION ALL
+	 			SELECT  TOP 1 
+						'15' AS SEQ, '4' AS RANK, TRF.TRF_CTRT_NO
+				  FROM  TB_FRT_TRF TRF
+				 WHERE  TRF.TRF_TP_CD = 'A'
+				   AND  TRF.DELT_FLG = 'N'
+				   <![CDATA[
+				   AND  TRF.TRF_TERM_FM_DT <= #trf_term_dt#
+				   AND  TRF.TRF_TERM_TO_DT >= #trf_term_dt#
+					]]>
+				   AND  TRF.TRDP_TP_CD = #trdp_tp_cd#
+				   AND  TRF.BND_CLSS_CD = #bnd_clss_cd#
+				   AND  TRF.POD_CD = #pod_cd#
+	 UNION ALL
+	 			SELECT  TOP 1 
+						'16' AS SEQ, '4' AS RANK, TRF.TRF_CTRT_NO
+				  FROM  TB_FRT_TRF TRF
+				 WHERE  TRF.TRF_TP_CD = 'A'
+				   AND  TRF.DELT_FLG = 'N'
+				   <![CDATA[
+				   AND  TRF.TRF_TERM_FM_DT <= #trf_term_dt#
+				   AND  TRF.TRF_TERM_TO_DT >= #trf_term_dt#
+					]]>
+				   AND  TRF.SELL_BUY_TP_CD = #sell_buy_tp_cd#
+				   AND  TRF.BND_CLSS_CD = #bnd_clss_cd#
+				   AND  TRF.POD_CD = #pod_cd#
+	 UNION ALL
+	 			SELECT  TOP 1 
+						'17' AS SEQ, '4' AS RANK, TRF.TRF_CTRT_NO
+				  FROM  TB_FRT_TRF TRF
+				 WHERE  TRF.TRF_TP_CD = 'A'
+				   AND  TRF.DELT_FLG = 'N'
+				   <![CDATA[
+				   AND  TRF.TRF_TERM_FM_DT <= #trf_term_dt#
+				   AND  TRF.TRF_TERM_TO_DT >= #trf_term_dt#
+					]]>
+				   AND  TRF.TRDP_CD = #trdp_cd#
+				   AND  TRF.POL_CD = #pol_cd#
+				   AND  TRF.POD_CD = #pod_cd#
+	 UNION ALL
+	 			SELECT  TOP 1 
+						'18' AS SEQ, '4' AS RANK, TRF.TRF_CTRT_NO
+				  FROM  TB_FRT_TRF TRF
+				 WHERE  TRF.TRF_TP_CD = 'A'
+				   AND  TRF.DELT_FLG = 'N'
+				   <![CDATA[
+				   AND  TRF.TRF_TERM_FM_DT <= #trf_term_dt#
+				   AND  TRF.TRF_TERM_TO_DT >= #trf_term_dt#
+					]]>
+				   AND  TRF.TRDP_TP_CD = #trdp_tp_cd#
+				   AND  TRF.POL_CD = #pol_cd#
+				   AND  TRF.POD_CD = #pod_cd#
+	 UNION ALL
+	 			SELECT  TOP 1 
+						'19' AS SEQ, '4' AS RANK, TRF.TRF_CTRT_NO
+				  FROM  TB_FRT_TRF TRF
+				 WHERE  TRF.TRF_TP_CD = 'A'
+				   AND  TRF.DELT_FLG = 'N'
+				   <![CDATA[
+				   AND  TRF.TRF_TERM_FM_DT <= #trf_term_dt#
+				   AND  TRF.TRF_TERM_TO_DT >= #trf_term_dt#
+					]]>
+				   AND  TRF.SELL_BUY_TP_CD = #sell_buy_tp_cd#
+				   AND  TRF.POL_CD = #pol_cd#
+				   AND  TRF.POD_CD = #pod_cd#
+	 UNION ALL
+	 			SELECT  TOP 1 
+						'20' AS SEQ, '4' AS RANK, TRF.TRF_CTRT_NO
+				  FROM  TB_FRT_TRF TRF
+				 WHERE  TRF.TRF_TP_CD = 'A'
+				   AND  TRF.DELT_FLG = 'N'
+				   <![CDATA[
+				   AND  TRF.TRF_TERM_FM_DT <= #trf_term_dt#
+				   AND  TRF.TRF_TERM_TO_DT >= #trf_term_dt#
+					]]>
+				   AND  TRF.BND_CLSS_CD = #bnd_clss_cd#
+				   AND  TRF.POL_CD = #pol_cd#
+				   AND  TRF.POD_CD = #pod_cd#
+				) X
+	</select>
+	<select id="selectAirTariff5" parameterClass="HashMap" resultClass="String">
+    	SELECT  TOP 1
+				X.TRF_CTRT_NO
+		  FROM (
+		  		SELECT  TOP 1 
+						'1' AS SEQ, '5' AS RANK, TRF.TRF_CTRT_NO
+				  FROM  TB_FRT_TRF TRF
+				 WHERE  TRF.TRF_TP_CD = 'A'
+				   AND  TRF.DELT_FLG = 'N'
+				   <![CDATA[
+				   AND  TRF.TRF_TERM_FM_DT <= #trf_term_dt#
+				   AND  TRF.TRF_TERM_TO_DT >= #trf_term_dt#
+					]]>
+				   AND  TRF.TRDP_CD = #trdp_cd#
+				   AND  TRF.TRDP_TP_CD = #trdp_tp_cd#
+	 UNION ALL
+	 			SELECT  TOP 1 
+						'2' AS SEQ, '5' AS RANK, TRF.TRF_CTRT_NO
+				  FROM  TB_FRT_TRF TRF
+				 WHERE  TRF.TRF_TP_CD = 'A'
+				   AND  TRF.DELT_FLG = 'N'
+				   <![CDATA[
+				   AND  TRF.TRF_TERM_FM_DT <= #trf_term_dt#
+				   AND  TRF.TRF_TERM_TO_DT >= #trf_term_dt#
+					]]>
+				   AND  TRF.TRDP_CD = #trdp_cd#
+				   AND  TRF.SELL_BUY_TP_CD = #sell_buy_tp_cd#
+	 UNION ALL
+	 			SELECT  TOP 1 
+						'3' AS SEQ, '5' AS RANK, TRF.TRF_CTRT_NO
+				  FROM  TB_FRT_TRF TRF
+				 WHERE  TRF.TRF_TP_CD = 'A'
+				   AND  TRF.DELT_FLG = 'N'
+				   <![CDATA[
+				   AND  TRF.TRF_TERM_FM_DT <= #trf_term_dt#
+				   AND  TRF.TRF_TERM_TO_DT >= #trf_term_dt#
+					]]>
+				   AND  TRF.TRDP_TP_CD = #trdp_tp_cd#
+				   AND  TRF.SELL_BUY_TP_CD = #sell_buy_tp_cd#
+	 UNION ALL
+	 			SELECT  TOP 1 
+						'4' AS SEQ, '5' AS RANK, TRF.TRF_CTRT_NO
+				  FROM  TB_FRT_TRF TRF
+				 WHERE  TRF.TRF_TP_CD = 'A'
+				   AND  TRF.DELT_FLG = 'N'
+				   <![CDATA[
+				   AND  TRF.TRF_TERM_FM_DT <= #trf_term_dt#
+				   AND  TRF.TRF_TERM_TO_DT >= #trf_term_dt#
+					]]>
+				   AND  TRF.TRDP_CD = #trdp_cd#
+				   AND  TRF.BND_CLSS_CD = #bnd_clss_cd#
+	 UNION ALL
+	 			SELECT  TOP 1 
+						'5' AS SEQ, '5' AS RANK, TRF.TRF_CTRT_NO
+				  FROM  TB_FRT_TRF TRF
+				 WHERE  TRF.TRF_TP_CD = 'A'
+				   AND  TRF.DELT_FLG = 'N'
+				   <![CDATA[
+				   AND  TRF.TRF_TERM_FM_DT <= #trf_term_dt#
+				   AND  TRF.TRF_TERM_TO_DT >= #trf_term_dt#
+					]]>
+				   AND  TRF.TRDP_TP_CD = #trdp_tp_cd#
+				   AND  TRF.BND_CLSS_CD = #bnd_clss_cd#
+	 UNION ALL
+	 			SELECT  TOP 1 
+						'6' AS SEQ, '5' AS RANK, TRF.TRF_CTRT_NO
+				  FROM  TB_FRT_TRF TRF
+				 WHERE  TRF.TRF_TP_CD = 'A'
+				   AND  TRF.DELT_FLG = 'N'
+				   <![CDATA[
+				   AND  TRF.TRF_TERM_FM_DT <= #trf_term_dt#
+				   AND  TRF.TRF_TERM_TO_DT >= #trf_term_dt#
+					]]>
+				   AND  TRF.SELL_BUY_TP_CD = #sell_buy_tp_cd#
+				   AND  TRF.BND_CLSS_CD = #bnd_clss_cd#
+	 UNION ALL
+	 			SELECT  TOP 1 
+						'7' AS SEQ, '5' AS RANK, TRF.TRF_CTRT_NO
+				  FROM  TB_FRT_TRF TRF
+				 WHERE  TRF.TRF_TP_CD = 'A'
+				   AND  TRF.DELT_FLG = 'N'
+				   <![CDATA[
+				   AND  TRF.TRF_TERM_FM_DT <= #trf_term_dt#
+				   AND  TRF.TRF_TERM_TO_DT >= #trf_term_dt#
+					]]>
+				   AND  TRF.TRDP_CD = #trdp_cd#
+				   AND  TRF.POL_CD = #pol_cd#
+	 UNION ALL
+	 			SELECT  TOP 1 
+						'8' AS SEQ, '5' AS RANK, TRF.TRF_CTRT_NO
+				  FROM  TB_FRT_TRF TRF
+				 WHERE  TRF.TRF_TP_CD = 'A'
+				   AND  TRF.DELT_FLG = 'N'
+				   <![CDATA[
+				   AND  TRF.TRF_TERM_FM_DT <= #trf_term_dt#
+				   AND  TRF.TRF_TERM_TO_DT >= #trf_term_dt#
+					]]>
+				   AND  TRF.TRDP_TP_CD = #trdp_tp_cd#
+				   AND  TRF.POL_CD = #pol_cd#
+	 UNION ALL
+	 			SELECT  TOP 1 
+						'9' AS SEQ, '5' AS RANK, TRF.TRF_CTRT_NO
+				  FROM  TB_FRT_TRF TRF
+				 WHERE  TRF.TRF_TP_CD = 'A'
+				   AND  TRF.DELT_FLG = 'N'
+				   <![CDATA[
+				   AND  TRF.TRF_TERM_FM_DT <= #trf_term_dt#
+				   AND  TRF.TRF_TERM_TO_DT >= #trf_term_dt#
+					]]>
+				   AND  TRF.SELL_BUY_TP_CD = #sell_buy_tp_cd#
+				   AND  TRF.POL_CD = #pol_cd#
+	 UNION ALL
+	 			SELECT  TOP 1 
+						'10' AS SEQ, '5' AS RANK, TRF.TRF_CTRT_NO
+				  FROM  TB_FRT_TRF TRF
+				 WHERE  TRF.TRF_TP_CD = 'A'
+				   AND  TRF.DELT_FLG = 'N'
+				   <![CDATA[
+				   AND  TRF.TRF_TERM_FM_DT <= #trf_term_dt#
+				   AND  TRF.TRF_TERM_TO_DT >= #trf_term_dt#
+					]]>
+				   AND  TRF.BND_CLSS_CD = #bnd_clss_cd#
+				   AND  TRF.POL_CD = #pol_cd#
+	 UNION ALL
+	 			SELECT  TOP 1 
+						'11' AS SEQ, '5' AS RANK, TRF.TRF_CTRT_NO
+				  FROM  TB_FRT_TRF TRF
+				 WHERE  TRF.TRF_TP_CD = 'A'
+				   AND  TRF.DELT_FLG = 'N'
+				   <![CDATA[
+				   AND  TRF.TRF_TERM_FM_DT <= #trf_term_dt#
+				   AND  TRF.TRF_TERM_TO_DT >= #trf_term_dt#
+					]]>
+				   AND  TRF.TRDP_CD = #trdp_cd#
+				   AND  TRF.POD_CD = #pod_cd#
+	 UNION ALL
+	 			SELECT  TOP 1 
+						'12' AS SEQ, '5' AS RANK, TRF.TRF_CTRT_NO
+				  FROM  TB_FRT_TRF TRF
+				 WHERE  TRF.TRF_TP_CD = 'A'
+				   AND  TRF.DELT_FLG = 'N'
+				   <![CDATA[
+				   AND  TRF.TRF_TERM_FM_DT <= #trf_term_dt#
+				   AND  TRF.TRF_TERM_TO_DT >= #trf_term_dt#
+					]]>
+				   AND  TRF.TRDP_TP_CD = #trdp_tp_cd#
+				   AND  TRF.POD_CD = #pod_cd#
+	 UNION ALL
+	 			SELECT  TOP 1 
+						'13' AS SEQ, '5' AS RANK, TRF.TRF_CTRT_NO
+				  FROM  TB_FRT_TRF TRF
+				 WHERE  TRF.TRF_TP_CD = 'A'
+				   AND  TRF.DELT_FLG = 'N'
+				   <![CDATA[
+				   AND  TRF.TRF_TERM_FM_DT <= #trf_term_dt#
+				   AND  TRF.TRF_TERM_TO_DT >= #trf_term_dt#
+					]]>
+				   AND  TRF.SELL_BUY_TP_CD = #sell_buy_tp_cd#
+				   AND  TRF.POD_CD = #pod_cd#
+	 UNION ALL
+	 			SELECT  TOP 1 
+						'14' AS SEQ, '5' AS RANK, TRF.TRF_CTRT_NO
+				  FROM  TB_FRT_TRF TRF
+				 WHERE  TRF.TRF_TP_CD = 'A'
+				   AND  TRF.DELT_FLG = 'N'
+				   <![CDATA[
+				   AND  TRF.TRF_TERM_FM_DT <= #trf_term_dt#
+				   AND  TRF.TRF_TERM_TO_DT >= #trf_term_dt#
+					]]>
+				   AND  TRF.BND_CLSS_CD = #bnd_clss_cd#
+				   AND  TRF.POD_CD = #pod_cd#
+	 UNION ALL
+	 			SELECT  TOP 1 
+						'15' AS SEQ, '5' AS RANK, TRF.TRF_CTRT_NO
+				  FROM  TB_FRT_TRF TRF
+				 WHERE  TRF.TRF_TP_CD = 'A'
+				   AND  TRF.DELT_FLG = 'N'
+				   <![CDATA[
+				   AND  TRF.TRF_TERM_FM_DT <= #trf_term_dt#
+				   AND  TRF.TRF_TERM_TO_DT >= #trf_term_dt#
+					]]>
+				   AND  TRF.POL_CD = #pol_cd#
+				   AND  TRF.POD_CD = #pod_cd#
+				) X
+	</select>
+	
+	<select id="selectAirTariff6" parameterClass="HashMap" resultClass="String">
+    	SELECT  TOP 1
+				X.TRF_CTRT_NO
+		  FROM (
+		  		SELECT  TOP 1 
+						'1' AS SEQ, '6' AS RANK, TRF.TRF_CTRT_NO
+				  FROM  TB_FRT_TRF TRF
+				 WHERE  TRF.TRF_TP_CD = 'A'
+				   AND  TRF.DELT_FLG = 'N'
+				   <![CDATA[
+				   AND  TRF.TRF_TERM_FM_DT <= #trf_term_dt#
+				   AND  TRF.TRF_TERM_TO_DT >= #trf_term_dt#
+					]]>
+				   AND  TRF.TRDP_CD = #trdp_cd#
+	 UNION ALL
+	 			SELECT  TOP 1 
+						'2' AS SEQ, '6' AS RANK, TRF.TRF_CTRT_NO
+				  FROM  TB_FRT_TRF TRF
+				 WHERE  TRF.TRF_TP_CD = 'A'
+				   AND  TRF.DELT_FLG = 'N'
+				   <![CDATA[
+				   AND  TRF.TRF_TERM_FM_DT <= #trf_term_dt#
+				   AND  TRF.TRF_TERM_TO_DT >= #trf_term_dt#
+					]]>
+				   AND  TRF.TRDP_TP_CD = #trdp_tp_cd#
+	 UNION ALL
+	 			SELECT  TOP 1 
+						'3' AS SEQ, '6' AS RANK, TRF.TRF_CTRT_NO
+				  FROM  TB_FRT_TRF TRF
+				 WHERE  TRF.TRF_TP_CD = 'A'
+				   AND  TRF.DELT_FLG = 'N'
+				   <![CDATA[
+				   AND  TRF.TRF_TERM_FM_DT <= #trf_term_dt#
+				   AND  TRF.TRF_TERM_TO_DT >= #trf_term_dt#
+					]]>
+				   AND  TRF.SELL_BUY_TP_CD = #sell_buy_tp_cd#
+	 UNION ALL
+	 			SELECT  TOP 1 
+						'4' AS SEQ, '6' AS RANK, TRF.TRF_CTRT_NO
+				  FROM  TB_FRT_TRF TRF
+				 WHERE  TRF.TRF_TP_CD = 'A'
+				   AND  TRF.DELT_FLG = 'N'
+				   <![CDATA[
+				   AND  TRF.TRF_TERM_FM_DT <= #trf_term_dt#
+				   AND  TRF.TRF_TERM_TO_DT >= #trf_term_dt#
+					]]>
+				   AND  TRF.BND_CLSS_CD = #bnd_clss_cd#
+	 UNION ALL
+	 			SELECT  TOP 1 
+						'5' AS SEQ, '6' AS RANK, TRF.TRF_CTRT_NO
+				  FROM  TB_FRT_TRF TRF
+				 WHERE  TRF.TRF_TP_CD = 'A'
+				   AND  TRF.DELT_FLG = 'N'
+				   <![CDATA[
+				   AND  TRF.TRF_TERM_FM_DT <= #trf_term_dt#
+				   AND  TRF.TRF_TERM_TO_DT >= #trf_term_dt#
+					]]>
+				   AND  TRF.POL_CD = #pol_cd#
+	 UNION ALL
+	 			SELECT  TOP 1 
+						'6' AS SEQ, '6' AS RANK, TRF.TRF_CTRT_NO
+				  FROM  TB_FRT_TRF TRF
+				 WHERE  TRF.TRF_TP_CD = 'A'
+				   AND  TRF.DELT_FLG = 'N'
+				   <![CDATA[
+				   AND  TRF.TRF_TERM_FM_DT <= #trf_term_dt#
+				   AND  TRF.TRF_TERM_TO_DT >= #trf_term_dt#
+					]]>
+				   AND  TRF.POD_CD = #pod_cd#
+				) X
+	</select>
+	
+	<select id="selectAirTariff7" parameterClass="HashMap" resultClass="String">
+    	SELECT  TOP 1
+				X.TRF_CTRT_NO
+		  FROM (
+		  		SELECT  TOP 1 
+						'1' AS SEQ, '7' AS RANK, TRF.TRF_CTRT_NO
+				  FROM  TB_FRT_TRF TRF
+				 WHERE  TRF.TRF_TP_CD = 'A'
+				   AND  TRF.DELT_FLG = 'N'
+				   <![CDATA[
+				   AND  TRF.TRF_TERM_FM_DT <= #trf_term_dt#
+				   AND  TRF.TRF_TERM_TO_DT >= #trf_term_dt#
+					]]>
+				   AND  TRF.TRDP_CD = ''
+				   AND  TRF.TRDP_TP_CD = ''
+				   AND  TRF.SELL_BUY_TP_CD = ''
+				   AND  TRF.BND_CLSS_CD = ''
+				   AND  TRF.POL_CD = ''
+				   AND  TRF.POD_CD = ''
+				) X
+	</select>
+	
+	<select id="selectInlandDefault" parameterClass="HashMap" resultClass="com.clt.apps.fis.sal.tfm.tariff.dto.FrtTrfDtlVO">
+    	SELECT  DTL.TRF_CTRT_NO, DTL.TRF_DTL_SEQ, DTL.APLY_UT_CD, DTL.TRF_AMT,
+				DTL.FRT_CD, DTL.FRT_NM, DTL.RMK, DTL.TRF_CURR_CD, DTL.CNTR_TPSZ_CD, DTL.MIN_AMT, DTL.MAX_AMT
+		  FROM  TB_FRT_TRF_DTL DTL
+		 WHERE  1=1
+		   AND  DTL.TRF_CTRT_NO = #trf_ctrt_no#
+    </select>
+    
+    <select id="selectInlandTariff" parameterClass="HashMap" resultClass="String">
+    	SELECT  TOP 1 
+				TRF.TRF_CTRT_NO
+		  FROM  TB_FRT_TRF TRF
+		 WHERE  TRF.TRF_TP_CD = 'L'
+		   AND  TRF.DELT_FLG = 'N'
+		   <![CDATA[
+		   AND  TRF.TRF_TERM_FM_DT <= #trf_term_dt#
+		   AND  TRF.TRF_TERM_TO_DT >= #trf_term_dt#
+			]]>
+		<isNotNull property="trdp_cd">
+		   AND  TRF.TRDP_CD = #trdp_cd#
+		</isNotNull>
+		<isNotNull property="trdp_tp_cd">
+		   AND  TRF.TRDP_TP_CD = #trdp_tp_cd#
+		</isNotNull>
+		<isNotNull property="sell_buy_tp_cd">
+		   AND  TRF.SELL_BUY_TP_CD = #sell_buy_tp_cd#
+		</isNotNull>
+		<isNotNull property="bnd_clss_cd">
+		   AND  TRF.BND_CLSS_CD = #bnd_clss_cd#
+		</isNotNull>
+		<isNotNull property="pol_cd">
+		   AND  TRF.POL_CD = #pol_cd#
+		</isNotNull>
+		<isNotNull property="pod_cd">
+		   AND  TRF.POD_CD = #pod_cd#
+		</isNotNull>
+    </select>
+    
+    <select id="selectInlandTariff2" parameterClass="HashMap" resultClass="String">
+    	SELECT  TOP 1
+				X.TRF_CTRT_NO
+		  FROM (
+		  		SELECT  TOP 1 
+						'1' AS SEQ, '2' AS RANK, TRF.TRF_CTRT_NO
+				  FROM  TB_FRT_TRF TRF
+				 WHERE  TRF.TRF_TP_CD = 'L'
+				   AND  TRF.DELT_FLG = 'N'
+				   <![CDATA[
+				   AND  TRF.TRF_TERM_FM_DT <= #trf_term_dt#
+				   AND  TRF.TRF_TERM_TO_DT >= #trf_term_dt#
+					]]>
+				   AND  TRF.TRDP_CD = #trdp_cd#
+				   AND  TRF.TRDP_TP_CD = #trdp_tp_cd#
+				   AND  TRF.SELL_BUY_TP_CD = #sell_buy_tp_cd#
+				   AND  TRF.BND_CLSS_CD = #bnd_clss_cd#
+				   AND  TRF.POL_CD = #pol_cd#
+	 UNION ALL
+	 			SELECT  TOP 1 
+						'2' AS SEQ, '2' AS RANK, TRF.TRF_CTRT_NO
+				  FROM  TB_FRT_TRF TRF
+				 WHERE  TRF.TRF_TP_CD = 'L'
+				   AND  TRF.DELT_FLG = 'N'
+				   <![CDATA[
+				   AND  TRF.TRF_TERM_FM_DT <= #trf_term_dt#
+				   AND  TRF.TRF_TERM_TO_DT >= #trf_term_dt#
+					]]>
+				   AND  TRF.TRDP_CD = #trdp_cd#
+				   AND  TRF.TRDP_TP_CD = #trdp_tp_cd#
+				   AND  TRF.SELL_BUY_TP_CD = #sell_buy_tp_cd#
+				   AND  TRF.BND_CLSS_CD = #bnd_clss_cd#
+				   AND  TRF.POD_CD = #pod_cd#
+	 UNION ALL
+	 			SELECT  TOP 1 
+						'3' AS SEQ, '2' AS RANK, TRF.TRF_CTRT_NO
+				  FROM  TB_FRT_TRF TRF
+				 WHERE  TRF.TRF_TP_CD = 'L'
+				   AND  TRF.DELT_FLG = 'N'
+				   <![CDATA[
+				   AND  TRF.TRF_TERM_FM_DT <= #trf_term_dt#
+				   AND  TRF.TRF_TERM_TO_DT >= #trf_term_dt#
+					]]>
+				   AND  TRF.TRDP_CD = #trdp_cd#
+				   AND  TRF.TRDP_TP_CD = #trdp_tp_cd#
+				   AND  TRF.SELL_BUY_TP_CD = #sell_buy_tp_cd#
+				   AND  TRF.POL_CD = #pol_cd#
+				   AND  TRF.POD_CD = #pod_cd#
+	 UNION ALL
+	 			SELECT  TOP 1 
+						'4' AS SEQ, '2' AS RANK, TRF.TRF_CTRT_NO
+				  FROM  TB_FRT_TRF TRF
+				 WHERE  TRF.TRF_TP_CD = 'L'
+				   AND  TRF.DELT_FLG = 'N'
+				   <![CDATA[
+				   AND  TRF.TRF_TERM_FM_DT <= #trf_term_dt#
+				   AND  TRF.TRF_TERM_TO_DT >= #trf_term_dt#
+					]]>
+				   AND  TRF.TRDP_CD = #trdp_cd#
+				   AND  TRF.TRDP_TP_CD = #trdp_tp_cd#
+				   AND  TRF.BND_CLSS_CD = #bnd_clss_cd#
+				   AND  TRF.POL_CD = #pol_cd#
+				   AND  TRF.POD_CD = #pod_cd#
+	 UNION ALL
+	 			SELECT  TOP 1 
+						'5' AS SEQ, '2' AS RANK, TRF.TRF_CTRT_NO
+				  FROM  TB_FRT_TRF TRF
+				 WHERE  TRF.TRF_TP_CD = 'L'
+				   AND  TRF.DELT_FLG = 'N'
+				   <![CDATA[
+				   AND  TRF.TRF_TERM_FM_DT <= #trf_term_dt#
+				   AND  TRF.TRF_TERM_TO_DT >= #trf_term_dt#
+					]]>
+				   AND  TRF.TRDP_CD = #trdp_cd#
+				   AND  TRF.SELL_BUY_TP_CD = #sell_buy_tp_cd#
+				   AND  TRF.BND_CLSS_CD = #bnd_clss_cd#
+				   AND  TRF.POL_CD = #pol_cd#
+				   AND  TRF.POD_CD = #pod_cd#
+	 UNION ALL
+	 			SELECT  TOP 1 
+						'6' AS SEQ, '2' AS RANK, TRF.TRF_CTRT_NO
+				  FROM  TB_FRT_TRF TRF
+				 WHERE  TRF.TRF_TP_CD = 'L'
+				   AND  TRF.DELT_FLG = 'N'
+				   <![CDATA[
+				   AND  TRF.TRF_TERM_FM_DT <= #trf_term_dt#
+				   AND  TRF.TRF_TERM_TO_DT >= #trf_term_dt#
+					]]>
+				   AND  TRF.TRDP_TP_CD = #trdp_tp_cd#
+				   AND  TRF.SELL_BUY_TP_CD = #sell_buy_tp_cd#
+				   AND  TRF.BND_CLSS_CD = #bnd_clss_cd#
+				   AND  TRF.POL_CD = #pol_cd#
+				   AND  TRF.POD_CD = #pod_cd#
+				) X
+	</select>
+	
+    <select id="selectInlandTariff3" parameterClass="HashMap" resultClass="String">
+    	SELECT  TOP 1
+				X.TRF_CTRT_NO
+		  FROM (
+		  		SELECT  TOP 1 
+						'1' AS SEQ, '3' AS RANK, TRF.TRF_CTRT_NO
+				  FROM  TB_FRT_TRF TRF
+				 WHERE  TRF.TRF_TP_CD = 'L'
+				   AND  TRF.DELT_FLG = 'N'
+				   <![CDATA[
+				   AND  TRF.TRF_TERM_FM_DT <= #trf_term_dt#
+				   AND  TRF.TRF_TERM_TO_DT >= #trf_term_dt#
+					]]>
+				   AND  TRF.TRDP_CD = #trdp_cd#
+				   AND  TRF.TRDP_TP_CD = #trdp_tp_cd#
+				   AND  TRF.SELL_BUY_TP_CD = #sell_buy_tp_cd#
+				   AND  TRF.BND_CLSS_CD = #bnd_clss_cd#
+	 UNION ALL
+	 			SELECT  TOP 1 
+						'2' AS SEQ, '3' AS RANK, TRF.TRF_CTRT_NO
+				  FROM  TB_FRT_TRF TRF
+				 WHERE  TRF.TRF_TP_CD = 'L'
+				   AND  TRF.DELT_FLG = 'N'
+				   <![CDATA[
+				   AND  TRF.TRF_TERM_FM_DT <= #trf_term_dt#
+				   AND  TRF.TRF_TERM_TO_DT >= #trf_term_dt#
+					]]>
+				   AND  TRF.TRDP_CD = #trdp_cd#
+				   AND  TRF.TRDP_TP_CD = #trdp_tp_cd#
+				   AND  TRF.SELL_BUY_TP_CD = #sell_buy_tp_cd#
+				   AND  TRF.POL_CD = #pol_cd#
+	 UNION ALL
+	 			SELECT  TOP 1 
+						'3' AS SEQ, '3' AS RANK, TRF.TRF_CTRT_NO
+				  FROM  TB_FRT_TRF TRF
+				 WHERE  TRF.TRF_TP_CD = 'L'
+				   AND  TRF.DELT_FLG = 'N'
+				   <![CDATA[
+				   AND  TRF.TRF_TERM_FM_DT <= #trf_term_dt#
+				   AND  TRF.TRF_TERM_TO_DT >= #trf_term_dt#
+					]]>
+				   AND  TRF.TRDP_CD = #trdp_cd#
+				   AND  TRF.TRDP_TP_CD = #trdp_tp_cd#
+				   AND  TRF.BND_CLSS_CD = #bnd_clss_cd#
+				   AND  TRF.POL_CD = #pol_cd#
+	 UNION ALL
+	 			SELECT  TOP 1 
+						'4' AS SEQ, '3' AS RANK, TRF.TRF_CTRT_NO
+				  FROM  TB_FRT_TRF TRF
+				 WHERE  TRF.TRF_TP_CD = 'L'
+				   AND  TRF.DELT_FLG = 'N'
+				   <![CDATA[
+				   AND  TRF.TRF_TERM_FM_DT <= #trf_term_dt#
+				   AND  TRF.TRF_TERM_TO_DT >= #trf_term_dt#
+					]]>
+				   AND  TRF.TRDP_CD = #trdp_cd#
+				   AND  TRF.SELL_BUY_TP_CD = #sell_buy_tp_cd#
+				   AND  TRF.BND_CLSS_CD = #bnd_clss_cd#
+				   AND  TRF.POL_CD = #pol_cd#
+	 UNION ALL
+	 			SELECT  TOP 1 
+						'5' AS SEQ, '3' AS RANK, TRF.TRF_CTRT_NO
+				  FROM  TB_FRT_TRF TRF
+				 WHERE  TRF.TRF_TP_CD = 'L'
+				   AND  TRF.DELT_FLG = 'N'
+				   <![CDATA[
+				   AND  TRF.TRF_TERM_FM_DT <= #trf_term_dt#
+				   AND  TRF.TRF_TERM_TO_DT >= #trf_term_dt#
+					]]>
+				   AND  TRF.TRDP_TP_CD = #trdp_tp_cd#
+				   AND  TRF.SELL_BUY_TP_CD = #sell_buy_tp_cd#
+				   AND  TRF.BND_CLSS_CD = #bnd_clss_cd#
+				   AND  TRF.POL_CD = #pol_cd#
+	 UNION ALL
+	 			SELECT  TOP 1 
+						'6' AS SEQ, '3' AS RANK, TRF.TRF_CTRT_NO
+				  FROM  TB_FRT_TRF TRF
+				 WHERE  TRF.TRF_TP_CD = 'L'
+				   AND  TRF.DELT_FLG = 'N'
+				   <![CDATA[
+				   AND  TRF.TRF_TERM_FM_DT <= #trf_term_dt#
+				   AND  TRF.TRF_TERM_TO_DT >= #trf_term_dt#
+					]]>
+				   AND  TRF.TRDP_CD = #trdp_cd#
+				   AND  TRF.TRDP_TP_CD = #trdp_tp_cd#
+				   AND  TRF.SELL_BUY_TP_CD = #sell_buy_tp_cd#
+				   AND  TRF.POD_CD = #pod_cd#
+	 UNION ALL
+	 			SELECT  TOP 1 
+						'7' AS SEQ, '3' AS RANK, TRF.TRF_CTRT_NO
+				  FROM  TB_FRT_TRF TRF
+				 WHERE  TRF.TRF_TP_CD = 'L'
+				   AND  TRF.DELT_FLG = 'N'
+				   <![CDATA[
+				   AND  TRF.TRF_TERM_FM_DT <= #trf_term_dt#
+				   AND  TRF.TRF_TERM_TO_DT >= #trf_term_dt#
+					]]>
+				   AND  TRF.TRDP_CD = #trdp_cd#
+				   AND  TRF.TRDP_TP_CD = #trdp_tp_cd#
+				   AND  TRF.BND_CLSS_CD = #bnd_clss_cd#
+				   AND  TRF.POD_CD = #pod_cd#
+	 UNION ALL
+	 			SELECT  TOP 1 
+						'8' AS SEQ, '3' AS RANK, TRF.TRF_CTRT_NO
+				  FROM  TB_FRT_TRF TRF
+				 WHERE  TRF.TRF_TP_CD = 'L'
+				   AND  TRF.DELT_FLG = 'N'
+				   <![CDATA[
+				   AND  TRF.TRF_TERM_FM_DT <= #trf_term_dt#
+				   AND  TRF.TRF_TERM_TO_DT >= #trf_term_dt#
+					]]>
+				   AND  TRF.TRDP_CD = #trdp_cd#
+				   AND  TRF.SELL_BUY_TP_CD = #sell_buy_tp_cd#
+				   AND  TRF.BND_CLSS_CD = #bnd_clss_cd#
+				   AND  TRF.POD_CD = #pod_cd#
+	 UNION ALL
+	 			SELECT  TOP 1 
+						'9' AS SEQ, '3' AS RANK, TRF.TRF_CTRT_NO
+				  FROM  TB_FRT_TRF TRF
+				 WHERE  TRF.TRF_TP_CD = 'L'
+				   AND  TRF.DELT_FLG = 'N'
+				   <![CDATA[
+				   AND  TRF.TRF_TERM_FM_DT <= #trf_term_dt#
+				   AND  TRF.TRF_TERM_TO_DT >= #trf_term_dt#
+					]]>
+				   AND  TRF.TRDP_TP_CD = #trdp_tp_cd#
+				   AND  TRF.SELL_BUY_TP_CD = #sell_buy_tp_cd#
+				   AND  TRF.BND_CLSS_CD = #bnd_clss_cd#
+				   AND  TRF.POD_CD = #pod_cd#
+	 UNION ALL
+	 			SELECT  TOP 1 
+						'10' AS SEQ, '3' AS RANK, TRF.TRF_CTRT_NO
+				  FROM  TB_FRT_TRF TRF
+				 WHERE  TRF.TRF_TP_CD = 'L'
+				   AND  TRF.DELT_FLG = 'N'
+				   <![CDATA[
+				   AND  TRF.TRF_TERM_FM_DT <= #trf_term_dt#
+				   AND  TRF.TRF_TERM_TO_DT >= #trf_term_dt#
+					]]>
+				   AND  TRF.TRDP_CD = #trdp_cd#
+				   AND  TRF.TRDP_TP_CD = #trdp_tp_cd#
+				   AND  TRF.POL_CD = #pol_cd#
+				   AND  TRF.POD_CD = #pod_cd#
+	 UNION ALL
+	 			SELECT  TOP 1 
+						'11' AS SEQ, '3' AS RANK, TRF.TRF_CTRT_NO
+				  FROM  TB_FRT_TRF TRF
+				 WHERE  TRF.TRF_TP_CD = 'L'
+				   AND  TRF.DELT_FLG = 'N'
+				   <![CDATA[
+				   AND  TRF.TRF_TERM_FM_DT <= #trf_term_dt#
+				   AND  TRF.TRF_TERM_TO_DT >= #trf_term_dt#
+					]]>
+				   AND  TRF.TRDP_CD = #trdp_cd#
+				   AND  TRF.SELL_BUY_TP_CD = #sell_buy_tp_cd#
+				   AND  TRF.POL_CD = #pol_cd#
+				   AND  TRF.POD_CD = #pod_cd#
+	 UNION ALL
+	 			SELECT  TOP 1 
+						'12' AS SEQ, '3' AS RANK, TRF.TRF_CTRT_NO
+				  FROM  TB_FRT_TRF TRF
+				 WHERE  TRF.TRF_TP_CD = 'L'
+				   AND  TRF.DELT_FLG = 'N'
+				   <![CDATA[
+				   AND  TRF.TRF_TERM_FM_DT <= #trf_term_dt#
+				   AND  TRF.TRF_TERM_TO_DT >= #trf_term_dt#
+					]]>
+				   AND  TRF.TRDP_TP_CD = #trdp_tp_cd#
+				   AND  TRF.SELL_BUY_TP_CD = #sell_buy_tp_cd#
+				   AND  TRF.POL_CD = #pol_cd#
+				   AND  TRF.POD_CD = #pod_cd#
+	 UNION ALL
+	 			SELECT  TOP 1 
+						'13' AS SEQ, '3' AS RANK, TRF.TRF_CTRT_NO
+				  FROM  TB_FRT_TRF TRF
+				 WHERE  TRF.TRF_TP_CD = 'L'
+				   AND  TRF.DELT_FLG = 'N'
+				   <![CDATA[
+				   AND  TRF.TRF_TERM_FM_DT <= #trf_term_dt#
+				   AND  TRF.TRF_TERM_TO_DT >= #trf_term_dt#
+					]]>
+				   AND  TRF.TRDP_CD = #trdp_cd#
+				   AND  TRF.BND_CLSS_CD = #bnd_clss_cd#
+				   AND  TRF.POL_CD = #pol_cd#
+				   AND  TRF.POD_CD = #pod_cd#
+	 UNION ALL
+	 			SELECT  TOP 1 
+						'14' AS SEQ, '3' AS RANK, TRF.TRF_CTRT_NO
+				  FROM  TB_FRT_TRF TRF
+				 WHERE  TRF.TRF_TP_CD = 'L'
+				   AND  TRF.DELT_FLG = 'N'
+				   <![CDATA[
+				   AND  TRF.TRF_TERM_FM_DT <= #trf_term_dt#
+				   AND  TRF.TRF_TERM_TO_DT >= #trf_term_dt#
+					]]>
+				   AND  TRF.TRDP_TP_CD = #trdp_tp_cd#
+				   AND  TRF.BND_CLSS_CD = #bnd_clss_cd#
+				   AND  TRF.POL_CD = #pol_cd#
+				   AND  TRF.POD_CD = #pod_cd#
+	 UNION ALL
+	 			SELECT  TOP 1 
+						'15' AS SEQ, '3' AS RANK, TRF.TRF_CTRT_NO
+				  FROM  TB_FRT_TRF TRF
+				 WHERE  TRF.TRF_TP_CD = 'L'
+				   AND  TRF.DELT_FLG = 'N'
+				   <![CDATA[
+				   AND  TRF.TRF_TERM_FM_DT <= #trf_term_dt#
+				   AND  TRF.TRF_TERM_TO_DT >= #trf_term_dt#
+					]]>
+				   AND  TRF.SELL_BUY_TP_CD = #sell_buy_tp_cd#
+				   AND  TRF.BND_CLSS_CD = #bnd_clss_cd#
+				   AND  TRF.POL_CD = #pol_cd#
+				   AND  TRF.POD_CD = #pod_cd#
+				) X
+	</select>
+	
+	<select id="selectInlandTariff4" parameterClass="HashMap" resultClass="String">
+    	SELECT  TOP 1
+				X.TRF_CTRT_NO
+		  FROM (
+		  		SELECT  TOP 1 
+						'1' AS SEQ, '4' AS RANK, TRF.TRF_CTRT_NO
+				  FROM  TB_FRT_TRF TRF
+				 WHERE  TRF.TRF_TP_CD = 'L'
+				   AND  TRF.DELT_FLG = 'N'
+				   <![CDATA[
+				   AND  TRF.TRF_TERM_FM_DT <= #trf_term_dt#
+				   AND  TRF.TRF_TERM_TO_DT >= #trf_term_dt#
+					]]>
+				   AND  TRF.TRDP_CD = #trdp_cd#
+				   AND  TRF.TRDP_TP_CD = #trdp_tp_cd#
+				   AND  TRF.SELL_BUY_TP_CD = #sell_buy_tp_cd#
+	 UNION ALL
+	 			SELECT  TOP 1 
+						'2' AS SEQ, '4' AS RANK, TRF.TRF_CTRT_NO
+				  FROM  TB_FRT_TRF TRF
+				 WHERE  TRF.TRF_TP_CD = 'L'
+				   AND  TRF.DELT_FLG = 'N'
+				   <![CDATA[
+				   AND  TRF.TRF_TERM_FM_DT <= #trf_term_dt#
+				   AND  TRF.TRF_TERM_TO_DT >= #trf_term_dt#
+					]]>
+				   AND  TRF.TRDP_CD = #trdp_cd#
+				   AND  TRF.TRDP_TP_CD = #trdp_tp_cd#
+				   AND  TRF.BND_CLSS_CD = #bnd_clss_cd#
+	 UNION ALL
+	 			SELECT  TOP 1 
+						'3' AS SEQ, '4' AS RANK, TRF.TRF_CTRT_NO
+				  FROM  TB_FRT_TRF TRF
+				 WHERE  TRF.TRF_TP_CD = 'L'
+				   AND  TRF.DELT_FLG = 'N'
+				   <![CDATA[
+				   AND  TRF.TRF_TERM_FM_DT <= #trf_term_dt#
+				   AND  TRF.TRF_TERM_TO_DT >= #trf_term_dt#
+					]]>
+				   AND  TRF.TRDP_CD = #trdp_cd#
+				   AND  TRF.SELL_BUY_TP_CD = #sell_buy_tp_cd#
+				   AND  TRF.BND_CLSS_CD = #bnd_clss_cd#
+	 UNION ALL
+	 			SELECT  TOP 1 
+						'4' AS SEQ, '4' AS RANK, TRF.TRF_CTRT_NO
+				  FROM  TB_FRT_TRF TRF
+				 WHERE  TRF.TRF_TP_CD = 'L'
+				   AND  TRF.DELT_FLG = 'N'
+				   <![CDATA[
+				   AND  TRF.TRF_TERM_FM_DT <= #trf_term_dt#
+				   AND  TRF.TRF_TERM_TO_DT >= #trf_term_dt#
+					]]>
+				   AND  TRF.TRDP_TP_CD = #trdp_tp_cd#
+				   AND  TRF.SELL_BUY_TP_CD = #sell_buy_tp_cd#
+				   AND  TRF.BND_CLSS_CD = #bnd_clss_cd#
+	 UNION ALL
+	 			SELECT  TOP 1 
+						'5' AS SEQ, '4' AS RANK, TRF.TRF_CTRT_NO
+				  FROM  TB_FRT_TRF TRF
+				 WHERE  TRF.TRF_TP_CD = 'L'
+				   AND  TRF.DELT_FLG = 'N'
+				   <![CDATA[
+				   AND  TRF.TRF_TERM_FM_DT <= #trf_term_dt#
+				   AND  TRF.TRF_TERM_TO_DT >= #trf_term_dt#
+					]]>
+				   AND  TRF.TRDP_CD = #trdp_cd#
+				   AND  TRF.TRDP_TP_CD = #trdp_tp_cd#
+				   AND  TRF.POL_CD = #pol_cd#
+	 UNION ALL
+	 			SELECT  TOP 1 
+						'6' AS SEQ, '4' AS RANK, TRF.TRF_CTRT_NO
+				  FROM  TB_FRT_TRF TRF
+				 WHERE  TRF.TRF_TP_CD = 'L'
+				   AND  TRF.DELT_FLG = 'N'
+				   <![CDATA[
+				   AND  TRF.TRF_TERM_FM_DT <= #trf_term_dt#
+				   AND  TRF.TRF_TERM_TO_DT >= #trf_term_dt#
+					]]>
+				   AND  TRF.TRDP_CD = #trdp_cd#
+				   AND  TRF.SELL_BUY_TP_CD = #sell_buy_tp_cd#
+				   AND  TRF.POL_CD = #pol_cd#
+	 UNION ALL
+	 			SELECT  TOP 1 
+						'7' AS SEQ, '4' AS RANK, TRF.TRF_CTRT_NO
+				  FROM  TB_FRT_TRF TRF
+				 WHERE  TRF.TRF_TP_CD = 'L'
+				   AND  TRF.DELT_FLG = 'N'
+				   <![CDATA[
+				   AND  TRF.TRF_TERM_FM_DT <= #trf_term_dt#
+				   AND  TRF.TRF_TERM_TO_DT >= #trf_term_dt#
+					]]>
+				   AND  TRF.TRDP_TP_CD = #trdp_tp_cd#
+				   AND  TRF.SELL_BUY_TP_CD = #sell_buy_tp_cd#
+				   AND  TRF.POL_CD = #pol_cd#
+	 UNION ALL
+	 			SELECT  TOP 1 
+						'8' AS SEQ, '4' AS RANK, TRF.TRF_CTRT_NO
+				  FROM  TB_FRT_TRF TRF
+				 WHERE  TRF.TRF_TP_CD = 'L'
+				   AND  TRF.DELT_FLG = 'N'
+				   <![CDATA[
+				   AND  TRF.TRF_TERM_FM_DT <= #trf_term_dt#
+				   AND  TRF.TRF_TERM_TO_DT >= #trf_term_dt#
+					]]>
+				   AND  TRF.TRDP_CD = #trdp_cd#
+				   AND  TRF.BND_CLSS_CD = #bnd_clss_cd#
+				   AND  TRF.POL_CD = #pol_cd#
+	 UNION ALL
+	 			SELECT  TOP 1 
+						'9' AS SEQ, '4' AS RANK, TRF.TRF_CTRT_NO
+				  FROM  TB_FRT_TRF TRF
+				 WHERE  TRF.TRF_TP_CD = 'L'
+				   AND  TRF.DELT_FLG = 'N'
+				   <![CDATA[
+				   AND  TRF.TRF_TERM_FM_DT <= #trf_term_dt#
+				   AND  TRF.TRF_TERM_TO_DT >= #trf_term_dt#
+					]]>
+				   AND  TRF.TRDP_TP_CD = #trdp_tp_cd#
+				   AND  TRF.BND_CLSS_CD = #bnd_clss_cd#
+				   AND  TRF.POL_CD = #pol_cd#
+	 UNION ALL
+	 			SELECT  TOP 1 
+						'10' AS SEQ, '4' AS RANK, TRF.TRF_CTRT_NO
+				  FROM  TB_FRT_TRF TRF
+				 WHERE  TRF.TRF_TP_CD = 'L'
+				   AND  TRF.DELT_FLG = 'N'
+				   <![CDATA[
+				   AND  TRF.TRF_TERM_FM_DT <= #trf_term_dt#
+				   AND  TRF.TRF_TERM_TO_DT >= #trf_term_dt#
+					]]>
+				   AND  TRF.SELL_BUY_TP_CD = #sell_buy_tp_cd#
+				   AND  TRF.BND_CLSS_CD = #bnd_clss_cd#
+				   AND  TRF.POL_CD = #pol_cd#
+	 UNION ALL
+	 			SELECT  TOP 1 
+						'11' AS SEQ, '4' AS RANK, TRF.TRF_CTRT_NO
+				  FROM  TB_FRT_TRF TRF
+				 WHERE  TRF.TRF_TP_CD = 'L'
+				   AND  TRF.DELT_FLG = 'N'
+				   <![CDATA[
+				   AND  TRF.TRF_TERM_FM_DT <= #trf_term_dt#
+				   AND  TRF.TRF_TERM_TO_DT >= #trf_term_dt#
+					]]>
+				   AND  TRF.TRDP_CD = #trdp_cd#
+				   AND  TRF.TRDP_TP_CD = #trdp_tp_cd#
+				   AND  TRF.POD_CD = #pod_cd#
+	 UNION ALL
+	 			SELECT  TOP 1 
+						'12' AS SEQ, '4' AS RANK, TRF.TRF_CTRT_NO
+				  FROM  TB_FRT_TRF TRF
+				 WHERE  TRF.TRF_TP_CD = 'L'
+				   AND  TRF.DELT_FLG = 'N'
+				   <![CDATA[
+				   AND  TRF.TRF_TERM_FM_DT <= #trf_term_dt#
+				   AND  TRF.TRF_TERM_TO_DT >= #trf_term_dt#
+					]]>
+				   AND  TRF.TRDP_CD = #trdp_cd#
+				   AND  TRF.SELL_BUY_TP_CD = #sell_buy_tp_cd#
+				   AND  TRF.POD_CD = #pod_cd#
+	 UNION ALL
+	 			SELECT  TOP 1 
+						'13' AS SEQ, '4' AS RANK, TRF.TRF_CTRT_NO
+				  FROM  TB_FRT_TRF TRF
+				 WHERE  TRF.TRF_TP_CD = 'L'
+				   AND  TRF.DELT_FLG = 'N'
+				   <![CDATA[
+				   AND  TRF.TRF_TERM_FM_DT <= #trf_term_dt#
+				   AND  TRF.TRF_TERM_TO_DT >= #trf_term_dt#
+					]]>
+				   AND  TRF.TRDP_TP_CD = #trdp_tp_cd#
+				   AND  TRF.SELL_BUY_TP_CD = #sell_buy_tp_cd#
+				   AND  TRF.POD_CD = #pod_cd#
+	 UNION ALL
+	 			SELECT  TOP 1 
+						'14' AS SEQ, '4' AS RANK, TRF.TRF_CTRT_NO
+				  FROM  TB_FRT_TRF TRF
+				 WHERE  TRF.TRF_TP_CD = 'L'
+				   AND  TRF.DELT_FLG = 'N'
+				   <![CDATA[
+				   AND  TRF.TRF_TERM_FM_DT <= #trf_term_dt#
+				   AND  TRF.TRF_TERM_TO_DT >= #trf_term_dt#
+					]]>
+				   AND  TRF.TRDP_CD = #trdp_cd#
+				   AND  TRF.BND_CLSS_CD = #bnd_clss_cd#
+				   AND  TRF.POD_CD = #pod_cd#
+	 UNION ALL
+	 			SELECT  TOP 1 
+						'15' AS SEQ, '4' AS RANK, TRF.TRF_CTRT_NO
+				  FROM  TB_FRT_TRF TRF
+				 WHERE  TRF.TRF_TP_CD = 'L'
+				   AND  TRF.DELT_FLG = 'N'
+				   <![CDATA[
+				   AND  TRF.TRF_TERM_FM_DT <= #trf_term_dt#
+				   AND  TRF.TRF_TERM_TO_DT >= #trf_term_dt#
+					]]>
+				   AND  TRF.TRDP_TP_CD = #trdp_tp_cd#
+				   AND  TRF.BND_CLSS_CD = #bnd_clss_cd#
+				   AND  TRF.POD_CD = #pod_cd#
+	 UNION ALL
+	 			SELECT  TOP 1 
+						'16' AS SEQ, '4' AS RANK, TRF.TRF_CTRT_NO
+				  FROM  TB_FRT_TRF TRF
+				 WHERE  TRF.TRF_TP_CD = 'L'
+				   AND  TRF.DELT_FLG = 'N'
+				   <![CDATA[
+				   AND  TRF.TRF_TERM_FM_DT <= #trf_term_dt#
+				   AND  TRF.TRF_TERM_TO_DT >= #trf_term_dt#
+					]]>
+				   AND  TRF.SELL_BUY_TP_CD = #sell_buy_tp_cd#
+				   AND  TRF.BND_CLSS_CD = #bnd_clss_cd#
+				   AND  TRF.POD_CD = #pod_cd#
+	 UNION ALL
+	 			SELECT  TOP 1 
+						'17' AS SEQ, '4' AS RANK, TRF.TRF_CTRT_NO
+				  FROM  TB_FRT_TRF TRF
+				 WHERE  TRF.TRF_TP_CD = 'L'
+				   AND  TRF.DELT_FLG = 'N'
+				   <![CDATA[
+				   AND  TRF.TRF_TERM_FM_DT <= #trf_term_dt#
+				   AND  TRF.TRF_TERM_TO_DT >= #trf_term_dt#
+					]]>
+				   AND  TRF.TRDP_CD = #trdp_cd#
+				   AND  TRF.POL_CD = #pol_cd#
+				   AND  TRF.POD_CD = #pod_cd#
+	 UNION ALL
+	 			SELECT  TOP 1 
+						'18' AS SEQ, '4' AS RANK, TRF.TRF_CTRT_NO
+				  FROM  TB_FRT_TRF TRF
+				 WHERE  TRF.TRF_TP_CD = 'L'
+				   AND  TRF.DELT_FLG = 'N'
+				   <![CDATA[
+				   AND  TRF.TRF_TERM_FM_DT <= #trf_term_dt#
+				   AND  TRF.TRF_TERM_TO_DT >= #trf_term_dt#
+					]]>
+				   AND  TRF.TRDP_TP_CD = #trdp_tp_cd#
+				   AND  TRF.POL_CD = #pol_cd#
+				   AND  TRF.POD_CD = #pod_cd#
+	 UNION ALL
+	 			SELECT  TOP 1 
+						'19' AS SEQ, '4' AS RANK, TRF.TRF_CTRT_NO
+				  FROM  TB_FRT_TRF TRF
+				 WHERE  TRF.TRF_TP_CD = 'L'
+				   AND  TRF.DELT_FLG = 'N'
+				   <![CDATA[
+				   AND  TRF.TRF_TERM_FM_DT <= #trf_term_dt#
+				   AND  TRF.TRF_TERM_TO_DT >= #trf_term_dt#
+					]]>
+				   AND  TRF.SELL_BUY_TP_CD = #sell_buy_tp_cd#
+				   AND  TRF.POL_CD = #pol_cd#
+				   AND  TRF.POD_CD = #pod_cd#
+	 UNION ALL
+	 			SELECT  TOP 1 
+						'20' AS SEQ, '4' AS RANK, TRF.TRF_CTRT_NO
+				  FROM  TB_FRT_TRF TRF
+				 WHERE  TRF.TRF_TP_CD = 'L'
+				   AND  TRF.DELT_FLG = 'N'
+				   <![CDATA[
+				   AND  TRF.TRF_TERM_FM_DT <= #trf_term_dt#
+				   AND  TRF.TRF_TERM_TO_DT >= #trf_term_dt#
+					]]>
+				   AND  TRF.BND_CLSS_CD = #bnd_clss_cd#
+				   AND  TRF.POL_CD = #pol_cd#
+				   AND  TRF.POD_CD = #pod_cd#
+				) X
+	</select>
+	<select id="selectInlandTariff5" parameterClass="HashMap" resultClass="String">
+    	SELECT  TOP 1
+				X.TRF_CTRT_NO
+		  FROM (
+		  		SELECT  TOP 1 
+						'1' AS SEQ, '5' AS RANK, TRF.TRF_CTRT_NO
+				  FROM  TB_FRT_TRF TRF
+				 WHERE  TRF.TRF_TP_CD = 'L'
+				   AND  TRF.DELT_FLG = 'N'
+				   <![CDATA[
+				   AND  TRF.TRF_TERM_FM_DT <= #trf_term_dt#
+				   AND  TRF.TRF_TERM_TO_DT >= #trf_term_dt#
+					]]>
+				   AND  TRF.TRDP_CD = #trdp_cd#
+				   AND  TRF.TRDP_TP_CD = #trdp_tp_cd#
+	 UNION ALL
+	 			SELECT  TOP 1 
+						'2' AS SEQ, '5' AS RANK, TRF.TRF_CTRT_NO
+				  FROM  TB_FRT_TRF TRF
+				 WHERE  TRF.TRF_TP_CD = 'L'
+				   AND  TRF.DELT_FLG = 'N'
+				   <![CDATA[
+				   AND  TRF.TRF_TERM_FM_DT <= #trf_term_dt#
+				   AND  TRF.TRF_TERM_TO_DT >= #trf_term_dt#
+					]]>
+				   AND  TRF.TRDP_CD = #trdp_cd#
+				   AND  TRF.SELL_BUY_TP_CD = #sell_buy_tp_cd#
+	 UNION ALL
+	 			SELECT  TOP 1 
+						'3' AS SEQ, '5' AS RANK, TRF.TRF_CTRT_NO
+				  FROM  TB_FRT_TRF TRF
+				 WHERE  TRF.TRF_TP_CD = 'L'
+				   AND  TRF.DELT_FLG = 'N'
+				   <![CDATA[
+				   AND  TRF.TRF_TERM_FM_DT <= #trf_term_dt#
+				   AND  TRF.TRF_TERM_TO_DT >= #trf_term_dt#
+					]]>
+				   AND  TRF.TRDP_TP_CD = #trdp_tp_cd#
+				   AND  TRF.SELL_BUY_TP_CD = #sell_buy_tp_cd#
+	 UNION ALL
+	 			SELECT  TOP 1 
+						'4' AS SEQ, '5' AS RANK, TRF.TRF_CTRT_NO
+				  FROM  TB_FRT_TRF TRF
+				 WHERE  TRF.TRF_TP_CD = 'L'
+				   AND  TRF.DELT_FLG = 'N'
+				   <![CDATA[
+				   AND  TRF.TRF_TERM_FM_DT <= #trf_term_dt#
+				   AND  TRF.TRF_TERM_TO_DT >= #trf_term_dt#
+					]]>
+				   AND  TRF.TRDP_CD = #trdp_cd#
+				   AND  TRF.BND_CLSS_CD = #bnd_clss_cd#
+	 UNION ALL
+	 			SELECT  TOP 1 
+						'5' AS SEQ, '5' AS RANK, TRF.TRF_CTRT_NO
+				  FROM  TB_FRT_TRF TRF
+				 WHERE  TRF.TRF_TP_CD = 'L'
+				   AND  TRF.DELT_FLG = 'N'
+				   <![CDATA[
+				   AND  TRF.TRF_TERM_FM_DT <= #trf_term_dt#
+				   AND  TRF.TRF_TERM_TO_DT >= #trf_term_dt#
+					]]>
+				   AND  TRF.TRDP_TP_CD = #trdp_tp_cd#
+				   AND  TRF.BND_CLSS_CD = #bnd_clss_cd#
+	 UNION ALL
+	 			SELECT  TOP 1 
+						'6' AS SEQ, '5' AS RANK, TRF.TRF_CTRT_NO
+				  FROM  TB_FRT_TRF TRF
+				 WHERE  TRF.TRF_TP_CD = 'L'
+				   AND  TRF.DELT_FLG = 'N'
+				   <![CDATA[
+				   AND  TRF.TRF_TERM_FM_DT <= #trf_term_dt#
+				   AND  TRF.TRF_TERM_TO_DT >= #trf_term_dt#
+					]]>
+				   AND  TRF.SELL_BUY_TP_CD = #sell_buy_tp_cd#
+				   AND  TRF.BND_CLSS_CD = #bnd_clss_cd#
+	 UNION ALL
+	 			SELECT  TOP 1 
+						'7' AS SEQ, '5' AS RANK, TRF.TRF_CTRT_NO
+				  FROM  TB_FRT_TRF TRF
+				 WHERE  TRF.TRF_TP_CD = 'L'
+				   AND  TRF.DELT_FLG = 'N'
+				   <![CDATA[
+				   AND  TRF.TRF_TERM_FM_DT <= #trf_term_dt#
+				   AND  TRF.TRF_TERM_TO_DT >= #trf_term_dt#
+					]]>
+				   AND  TRF.TRDP_CD = #trdp_cd#
+				   AND  TRF.POL_CD = #pol_cd#
+	 UNION ALL
+	 			SELECT  TOP 1 
+						'8' AS SEQ, '5' AS RANK, TRF.TRF_CTRT_NO
+				  FROM  TB_FRT_TRF TRF
+				 WHERE  TRF.TRF_TP_CD = 'L'
+				   AND  TRF.DELT_FLG = 'N'
+				   <![CDATA[
+				   AND  TRF.TRF_TERM_FM_DT <= #trf_term_dt#
+				   AND  TRF.TRF_TERM_TO_DT >= #trf_term_dt#
+					]]>
+				   AND  TRF.TRDP_TP_CD = #trdp_tp_cd#
+				   AND  TRF.POL_CD = #pol_cd#
+	 UNION ALL
+	 			SELECT  TOP 1 
+						'9' AS SEQ, '5' AS RANK, TRF.TRF_CTRT_NO
+				  FROM  TB_FRT_TRF TRF
+				 WHERE  TRF.TRF_TP_CD = 'L'
+				   AND  TRF.DELT_FLG = 'N'
+				   <![CDATA[
+				   AND  TRF.TRF_TERM_FM_DT <= #trf_term_dt#
+				   AND  TRF.TRF_TERM_TO_DT >= #trf_term_dt#
+					]]>
+				   AND  TRF.SELL_BUY_TP_CD = #sell_buy_tp_cd#
+				   AND  TRF.POL_CD = #pol_cd#
+	 UNION ALL
+	 			SELECT  TOP 1 
+						'10' AS SEQ, '5' AS RANK, TRF.TRF_CTRT_NO
+				  FROM  TB_FRT_TRF TRF
+				 WHERE  TRF.TRF_TP_CD = 'L'
+				   AND  TRF.DELT_FLG = 'N'
+				   <![CDATA[
+				   AND  TRF.TRF_TERM_FM_DT <= #trf_term_dt#
+				   AND  TRF.TRF_TERM_TO_DT >= #trf_term_dt#
+					]]>
+				   AND  TRF.BND_CLSS_CD = #bnd_clss_cd#
+				   AND  TRF.POL_CD = #pol_cd#
+	 UNION ALL
+	 			SELECT  TOP 1 
+						'11' AS SEQ, '5' AS RANK, TRF.TRF_CTRT_NO
+				  FROM  TB_FRT_TRF TRF
+				 WHERE  TRF.TRF_TP_CD = 'L'
+				   AND  TRF.DELT_FLG = 'N'
+				   <![CDATA[
+				   AND  TRF.TRF_TERM_FM_DT <= #trf_term_dt#
+				   AND  TRF.TRF_TERM_TO_DT >= #trf_term_dt#
+					]]>
+				   AND  TRF.TRDP_CD = #trdp_cd#
+				   AND  TRF.POD_CD = #pod_cd#
+	 UNION ALL
+	 			SELECT  TOP 1 
+						'12' AS SEQ, '5' AS RANK, TRF.TRF_CTRT_NO
+				  FROM  TB_FRT_TRF TRF
+				 WHERE  TRF.TRF_TP_CD = 'L'
+				   AND  TRF.DELT_FLG = 'N'
+				   <![CDATA[
+				   AND  TRF.TRF_TERM_FM_DT <= #trf_term_dt#
+				   AND  TRF.TRF_TERM_TO_DT >= #trf_term_dt#
+					]]>
+				   AND  TRF.TRDP_TP_CD = #trdp_tp_cd#
+				   AND  TRF.POD_CD = #pod_cd#
+	 UNION ALL
+	 			SELECT  TOP 1 
+						'13' AS SEQ, '5' AS RANK, TRF.TRF_CTRT_NO
+				  FROM  TB_FRT_TRF TRF
+				 WHERE  TRF.TRF_TP_CD = 'L'
+				   AND  TRF.DELT_FLG = 'N'
+				   <![CDATA[
+				   AND  TRF.TRF_TERM_FM_DT <= #trf_term_dt#
+				   AND  TRF.TRF_TERM_TO_DT >= #trf_term_dt#
+					]]>
+				   AND  TRF.SELL_BUY_TP_CD = #sell_buy_tp_cd#
+				   AND  TRF.POD_CD = #pod_cd#
+	 UNION ALL
+	 			SELECT  TOP 1 
+						'14' AS SEQ, '5' AS RANK, TRF.TRF_CTRT_NO
+				  FROM  TB_FRT_TRF TRF
+				 WHERE  TRF.TRF_TP_CD = 'L'
+				   AND  TRF.DELT_FLG = 'N'
+				   <![CDATA[
+				   AND  TRF.TRF_TERM_FM_DT <= #trf_term_dt#
+				   AND  TRF.TRF_TERM_TO_DT >= #trf_term_dt#
+					]]>
+				   AND  TRF.BND_CLSS_CD = #bnd_clss_cd#
+				   AND  TRF.POD_CD = #pod_cd#
+	 UNION ALL
+	 			SELECT  TOP 1 
+						'15' AS SEQ, '5' AS RANK, TRF.TRF_CTRT_NO
+				  FROM  TB_FRT_TRF TRF
+				 WHERE  TRF.TRF_TP_CD = 'L'
+				   AND  TRF.DELT_FLG = 'N'
+				   <![CDATA[
+				   AND  TRF.TRF_TERM_FM_DT <= #trf_term_dt#
+				   AND  TRF.TRF_TERM_TO_DT >= #trf_term_dt#
+					]]>
+				   AND  TRF.POL_CD = #pol_cd#
+				   AND  TRF.POD_CD = #pod_cd#
+				) X
+	</select>
+	
+	<select id="selectInlandTariff6" parameterClass="HashMap" resultClass="String">
+    	SELECT  TOP 1
+				X.TRF_CTRT_NO
+		  FROM (
+		  		SELECT  TOP 1 
+						'1' AS SEQ, '6' AS RANK, TRF.TRF_CTRT_NO
+				  FROM  TB_FRT_TRF TRF
+				 WHERE  TRF.TRF_TP_CD = 'L'
+				   AND  TRF.DELT_FLG = 'N'
+				   <![CDATA[
+				   AND  TRF.TRF_TERM_FM_DT <= #trf_term_dt#
+				   AND  TRF.TRF_TERM_TO_DT >= #trf_term_dt#
+					]]>
+				   AND  TRF.TRDP_CD = #trdp_cd#
+	 UNION ALL
+	 			SELECT  TOP 1 
+						'2' AS SEQ, '6' AS RANK, TRF.TRF_CTRT_NO
+				  FROM  TB_FRT_TRF TRF
+				 WHERE  TRF.TRF_TP_CD = 'L'
+				   AND  TRF.DELT_FLG = 'N'
+				   <![CDATA[
+				   AND  TRF.TRF_TERM_FM_DT <= #trf_term_dt#
+				   AND  TRF.TRF_TERM_TO_DT >= #trf_term_dt#
+					]]>
+				   AND  TRF.TRDP_TP_CD = #trdp_tp_cd#
+	 UNION ALL
+	 			SELECT  TOP 1 
+						'3' AS SEQ, '6' AS RANK, TRF.TRF_CTRT_NO
+				  FROM  TB_FRT_TRF TRF
+				 WHERE  TRF.TRF_TP_CD = 'L'
+				   AND  TRF.DELT_FLG = 'N'
+				   <![CDATA[
+				   AND  TRF.TRF_TERM_FM_DT <= #trf_term_dt#
+				   AND  TRF.TRF_TERM_TO_DT >= #trf_term_dt#
+					]]>
+				   AND  TRF.SELL_BUY_TP_CD = #sell_buy_tp_cd#
+	 UNION ALL
+	 			SELECT  TOP 1 
+						'4' AS SEQ, '6' AS RANK, TRF.TRF_CTRT_NO
+				  FROM  TB_FRT_TRF TRF
+				 WHERE  TRF.TRF_TP_CD = 'L'
+				   AND  TRF.DELT_FLG = 'N'
+				   <![CDATA[
+				   AND  TRF.TRF_TERM_FM_DT <= #trf_term_dt#
+				   AND  TRF.TRF_TERM_TO_DT >= #trf_term_dt#
+					]]>
+				   AND  TRF.BND_CLSS_CD = #bnd_clss_cd#
+	 UNION ALL
+	 			SELECT  TOP 1 
+						'5' AS SEQ, '6' AS RANK, TRF.TRF_CTRT_NO
+				  FROM  TB_FRT_TRF TRF
+				 WHERE  TRF.TRF_TP_CD = 'L'
+				   AND  TRF.DELT_FLG = 'N'
+				   <![CDATA[
+				   AND  TRF.TRF_TERM_FM_DT <= #trf_term_dt#
+				   AND  TRF.TRF_TERM_TO_DT >= #trf_term_dt#
+					]]>
+				   AND  TRF.POL_CD = #pol_cd#
+	 UNION ALL
+	 			SELECT  TOP 1 
+						'6' AS SEQ, '6' AS RANK, TRF.TRF_CTRT_NO
+				  FROM  TB_FRT_TRF TRF
+				 WHERE  TRF.TRF_TP_CD = 'L'
+				   AND  TRF.DELT_FLG = 'N'
+				   <![CDATA[
+				   AND  TRF.TRF_TERM_FM_DT <= #trf_term_dt#
+				   AND  TRF.TRF_TERM_TO_DT >= #trf_term_dt#
+					]]>
+				   AND  TRF.POD_CD = #pod_cd#
+				) X
+	</select>
+	
+	<select id="selectInlandTariff7" parameterClass="HashMap" resultClass="String">
+    	SELECT  TOP 1
+				X.TRF_CTRT_NO
+		  FROM (
+		  		SELECT  TOP 1 
+						'1' AS SEQ, '7' AS RANK, TRF.TRF_CTRT_NO
+				  FROM  TB_FRT_TRF TRF
+				 WHERE  TRF.TRF_TP_CD = 'L'
+				   AND  TRF.DELT_FLG = 'N'
+				   <![CDATA[
+				   AND  TRF.TRF_TERM_FM_DT <= #trf_term_dt#
+				   AND  TRF.TRF_TERM_TO_DT >= #trf_term_dt#
+					]]>
+				   AND  TRF.TRDP_CD = ''
+				   AND  TRF.TRDP_TP_CD = ''
+				   AND  TRF.SELL_BUY_TP_CD = ''
+				   AND  TRF.BND_CLSS_CD = ''
+				   AND  TRF.POL_CD = ''
+				   AND  TRF.POD_CD = ''
+				) X
+	</select>
+</sqlMap>

@@ -1,0 +1,2878 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE sqlMap PUBLIC "-//ibatis.apache.org//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="rpt.print">
+
+	<!-- Container List Count   -->
+    <select id="selectCNTR_LIST_CNT" parameterClass="HashMap" resultClass="String">
+         SELECT  COUNT(cntr.cntr_no) AS cntr_no
+           FROM  tb_cntr_list cntr
+		  WHERE  cntr.intg_bl_seq = #intg_bl_seq#
+    </select>
+
+    <select id="selectIntg_BL_SEQ" parameterClass="HashMap" resultClass="String">
+    	 SELECT  MAX(frt.intg_bl_seq) AS intg_bl_seq
+		   FROM  tb_inv inv, tb_inv_dtl dtl, tb_frt frt
+		  WHERE  inv.inv_seq = dtl.inv_seq
+			AND  inv.inv_seq = frt.inv_seq
+			AND  dtl.inv_no = #inv_no#
+    </select>
+
+    <select id="selectOrgBlQty" parameterClass="HashMap" resultClass="Integer">
+         SELECT  CASE WHEN bl.org_bl_qty IS NULL THEN 0
+                      WHEN bl.org_bl_qty IS NOT NULL THEN bl.org_bl_qty
+                       END org_bl_qty
+           FROM  tb_intg_bl bl
+          WHERE  bl.intg_bl_seq = #intg_bl_seq#
+    </select>
+
+    <update id="updateOrgBlQty" parameterClass="HashMap">
+         UPDATE  tb_intg_bl
+            SET  org_bl_qty = #org_bl_qty# + 1
+          WHERE  intg_bl_seq = #intg_bl_seq#
+    </update>
+
+
+    <select id="selectINTG_BL" parameterClass="HashMap" resultClass="HashMap">
+         SELECT  bl.desc_txt, bl.mk_txt, bl.obrd_dt_tm, bl.bl_iss_dt
+           FROM  tb_intg_bl bl
+		  WHERE  bl.intg_bl_seq = #intg_bl_seq#
+    </select>
+
+    <select id="selectINTG_BL_LIST" parameterClass="HashMap" resultClass="HashMap">
+         SELECT  bl.desc_txt, bl.mk_txt
+           FROM  tb_intg_bl bl
+		  WHERE  bl.sr_no = #sr_no#
+		    AND  bl.biz_clss_cd = 'M'
+    </select>
+
+    <select id="selectInvDateInfo" parameterClass="HashMap" resultClass="HashMap">
+     	 SELECT  top 1 dtl.clt_due_dt, dtl.inv_dt, dtl.buy_inv_no
+	 	   FROM  tb_inv_dtl dtl
+	 	  WHERE  dtl.inv_no = #inv_no#
+    </select>
+
+    <select id="selectGInvDateInfo" parameterClass="HashMap" resultClass="HashMap">
+     	 SELECT  top 1 mst.due_dt, mst.bil_dt, mst.xch_rt_dt
+	 	   FROM  tb_eq_inv_mst mst
+	 	  WHERE  mst.inv_no = #inv_no#
+    </select>
+
+    <select id="selectDateInfo" parameterClass="HashMap" resultClass="com.clt.apps.fis.rpt.dto.DateVO">
+    	 SELECT  bl.etd_dt_tm, bl.eta_dt_tm
+		   FROM  tb_intg_bl bl
+		  WHERE  bl.intg_bl_seq = #intg_bl_seq#
+    </select>
+
+    <select id="selectWoCntrList" parameterClass="HashMap" resultClass="com.clt.apps.fis.rpt.dto.WoCntrVO">
+    	 SELECT  cntr.cntr_qty, cntr.cntr_tpsz_cd
+           FROM  tb_wo_cntr_list cntr
+          WHERE  cntr.wo_no = #wo_no#
+    </select>
+
+    <select id="selectSeqNo" parameterClass="HashMap" resultClass="String">
+    	 SELECT  'GL' + SUBSTRING(CONVERT(varchar, seq.rgst_tms, 112), 3, 4) + SUBSTRING(CONVERT(varchar, seq.doc_seq + 10000), 2, 4)
+           FROM  tb_com_doc_seq seq
+          WHERE  seq.doc_key = #doc_key#
+            AND  seq.doc_tp = #doc_tp#
+    </select>
+
+    <select id="selectNewSeqNo" parameterClass="HashMap" resultClass="String">
+         SELECT  SUBSTRING(CONVERT(varchar, ISNULL(
+						                          (SELECT  MAX(seq.doc_seq)
+						                             FROM  tb_com_doc_seq seq
+						                            WHERE  SUBSTRING(CONVERT(varchar, seq.rgst_tms, 101), 1, 2) = SUBSTRING(CONVERT(varchar, #rcv_dt#, 101), 5, 2)
+						                              AND  seq.doc_tp = #doc_tp#), 0) + 10001), 2, 4) AS seq
+    </select>
+
+    <insert id="insertSeqNo" parameterClass="HashMap">
+        INSERT tb_com_doc_seq
+        (doc_key, doc_seq, DOC_TP, RGST_TMS)
+        VALUES
+        (#doc_key#, #doc_seq#, #doc_tp#, GETDATE())
+    </insert>
+
+    <select id="selectShpr_ADDR_INFO" parameterClass="HashMap" resultClass="String">
+         SELECT  shp.trdp_addr AS shpr_trdp_addr
+           FROM  tb_intg_bl bl
+LEFT OUTER JOIN  tb_bl_prnr shp
+ON bl.intg_bl_seq = shp.intg_bl_seq  AND shp.bl_trdp_tp_cd = 'S01' AND shp.delt_flg = 'N'
+          WHERE  bl.intg_bl_seq = #intg_bl_seq#
+            AND  bl.biz_clss_cd = 'M'
+    </select>
+
+    <select id="selectObrdDt_INFO" parameterClass="HashMap" resultClass="String">
+         SELECT  bl.obrd_dt_tm
+           FROM  tb_intg_bl bl
+          WHERE  bl.intg_bl_seq = #intg_bl_seq#
+    </select>
+
+    <select id="selectCaText" parameterClass="HashMap" resultClass="HashMap">
+         SELECT  ca.pre_info_txt, ca.corr_info_txt
+           FROM  tb_ca ca
+		  WHERE  ca.ca_no = #ca_no#
+    </select>
+
+    <select id="selectInvBlCntrInfo" parameterClass="HashMap" resultClass="com.clt.apps.fis.rpt.dto.CntrVO">
+         SELECT  bl.bl_no, cntr.cntr_no
+           FROM  tb_inv_dtl idtl, tb_inv_rlt irlt, tb_frt frt, tb_intg_bl bl, tb_cntr_list cntr
+          WHERE  idtl.inv_no = irlt.inv_no
+            AND  irlt.frt_seq = frt.frt_seq
+            AND  frt.intg_bl_seq = bl.intg_bl_seq
+            AND  bl.intg_bl_seq = cntr.intg_bl_seq
+            AND  idtl.inv_no = #inv_no#
+       GROUP BY  bl.bl_no, cntr.cntr_no
+    </select>
+
+    <select id="selectSR_CNTR_LIST_CNT" parameterClass="HashMap" resultClass="String">
+         SELECT COUNT(*) AS cntr_no
+           FROM (
+		         SELECT  COUNT(cntr.cntr_no) AS cntr_no
+		           FROM  tb_cntr_list cntr
+		          WHERE  cntr.intg_bl_seq IN (SELECT  bl.intg_bl_seq
+		                                       FROM  tb_intg_bl bl
+		                                      WHERE  bl.sr_no = #sr_no#
+		                                        AND  bl.biz_clss_cd = 'H')
+		       GROUP BY  cntr.cntr_no
+		        ) X
+    </select>
+
+    <select id="selectINV_RMK" parameterClass="HashMap" resultClass="String">
+		 SELECT  inv.inv_rmk
+           FROM  tb_inv inv, tb_inv_dtl idtl
+          WHERE  inv.inv_seq = idtl.inv_seq
+            AND  idtl.inv_no = #inv_no#
+    </select>
+
+    <select id="selectINV_STATUS" parameterClass="HashMap" resultClass="String">
+		 SELECT  CASE WHEN inv.inv_sts_cd = 'IS' THEN 'Invoice Status : Issued'
+		              WHEN inv.inv_sts_cd = 'IC' THEN 'Invoice Status : Confirm' ELSE 'Invoice Status : End' END AS inv_sts
+           FROM  tb_inv inv, tb_inv_dtl idtl
+          WHERE  inv.inv_seq = idtl.inv_seq
+            AND  idtl.inv_no = #inv_no#
+    </select>
+
+    <select id="selectMasterAgentInfo" parameterClass="String" resultClass="HashMap">
+    	SELECT	agt.trdp_nm AS agt_nm,		agt.trdp_addr AS agt_addr,		agt.trdp_pic AS agt_pic,
+				agt.trdp_phn AS agt_phn,	agt.trdp_fax AS agt_fax,		agt.trdp_cd AS agt_cd
+		  FROM	TB_INTG_BL mbl
+
+		  JOIN	tb_bl_prnr agt
+			ON	mbl.intg_bl_seq = agt.intg_bl_seq AND agt.bl_trdp_tp_cd = 'C01'
+
+		 WHERE	mbl.INTG_BL_SEQ = #intg_bl_seq#
+    </select>
+
+    <select id="selectHouseAgentList" parameterClass="String" resultClass="HashMap">
+    	SELECT	MAX(agt.trdp_nm) AS trdp_nm,		agt.trdp_cd
+		  FROM	tb_intg_bl mbl
+
+		  JOIN	tb_intg_bl_rlt rlt
+			ON	mbl.intg_bl_seq = rlt.rlt_intg_bl_seq AND rlt.delt_flg = 'N'
+
+		  JOIN	tb_intg_bl hbl
+			ON	rlt.intg_bl_seq = hbl.intg_bl_seq AND hbl.delt_flg = 'N'
+
+		  JOIN	tb_bl_prnr agt
+			ON	hbl.intg_bl_seq = agt.intg_bl_seq AND agt.bl_trdp_tp_cd = 'P01' AND agt.delt_flg = 'N'
+
+		 WHERE	mbl.intg_bl_seq = #intg_bl_seq#
+		GROUP BY agt.trdp_cd
+		ORDER BY MAX(agt.trdp_nm) ASC
+    </select>
+
+    <select id="selectBlAgentList" parameterClass="String" resultClass="HashMap">
+    	SELECT	agt.trdp_nm,				agt.trdp_cd,			'M' AS bl_flg
+		  FROM	tb_intg_bl mbl
+
+		  JOIN	tb_bl_prnr agt
+			ON	mbl.intg_bl_seq = agt.intg_bl_seq AND agt.bl_trdp_tp_cd = 'C01' AND agt.delt_flg = 'N'
+
+		 WHERE	mbl.intg_bl_seq = #intg_bl_seq#
+
+		UNION ALL
+
+    	SELECT	agt.trdp_nm,				agt.trdp_cd,			'H' AS bl_flg
+		  FROM	tb_intg_bl mbl
+
+		  JOIN	tb_intg_bl_rlt rlt
+			ON	mbl.intg_bl_seq = rlt.rlt_intg_bl_seq AND rlt.delt_flg = 'N'
+
+		  JOIN	tb_intg_bl hbl
+			ON	rlt.intg_bl_seq = hbl.intg_bl_seq AND hbl.delt_flg = 'N'
+
+		  JOIN	tb_bl_prnr agt
+			ON	hbl.intg_bl_seq = agt.intg_bl_seq AND agt.bl_trdp_tp_cd = 'P01' AND agt.delt_flg = 'N'
+
+		 WHERE	mbl.intg_bl_seq = #intg_bl_seq#
+
+		GROUP BY agt.trdp_cd, agt.trdp_nm
+		ORDER BY agt.trdp_nm ASC
+    </select>
+
+    <select id="selectMblCntrList" parameterClass="String" resultClass="HashMap">
+		SELECT	cntr.cntr_no, cntr.cntr_tpsz_cd, cntr.seal_no1
+
+		  FROM	tb_intg_bl mbl
+
+		  JOIN	tb_intg_bl_rlt rlt
+			ON	mbl.intg_bl_seq = rlt.rlt_intg_bl_seq
+
+		  JOIN	tb_cntr_list cntr
+			ON	rlt.intg_bl_seq = cntr.intg_bl_seq
+
+		 WHERE	mbl.intg_bl_seq = #intg_bl_seq#
+
+		GROUP BY cntr.cntr_no, cntr.CNTR_TPSZ_CD, cntr.SEAL_NO1
+		ORDER BY cntr.cntr_no ASC
+    </select>
+
+    <select id="selectHblCustList" parameterClass="HashMap" resultClass="com.clt.apps.fis.rpt.dto.HblCustVO">
+    	/* selectHblCustList */
+		WITH bl_info AS (
+				SELECT
+		            hbl.intg_bl_seq,
+		            hbl.bl_no,
+		            hbl.cust_ref_no,
+					cust.trdp_cd AS cust_cd,
+		            cust.trdp_nm AS cust_nm,
+					brk.trdp_cd AS brk_cd,
+		            brk.trdp_nm AS brk_nm
+		        FROM
+		            tb_intg_bl_rlt rlt        
+		        JOIN
+		            tb_intg_bl hbl      
+		                ON hbl.intg_bl_seq = rlt.intg_bl_seq      
+		        LEFT OUTER JOIN
+					tb_bl_prnr cust      
+						ON hbl.intg_bl_seq = cust.intg_bl_seq 
+						AND cust.bl_trdp_tp_cd = 'S02' 
+						AND cust.delt_flg = 'N' 
+				LEFT OUTER JOIN
+		            tb_bl_prnr brk      
+		                ON brk.intg_bl_seq = hbl.intg_bl_seq 
+		                AND brk.bl_trdp_tp_cd = 'C03' 
+		                AND brk.delt_flg = 'N'   
+		        WHERE
+		            rlt.rlt_intg_bl_seq =  #intg_bl_seq#
+		)
+		
+		SELECT bl.intg_bl_seq, MAX(bl.bl_no) AS bl_no, MAX(bl.cust_ref_no) AS cust_ref_no, 
+		       MAX(bl.cust_cd) AS cust_cd, MAX(bl.cust_nm) AS cust_nm,
+			   CASE WHEN MAX(cust_pic_eml) != '' THEN 'Y' ELSE 'N' END AS cust_eml_flg,
+			   CASE WHEN MAX(cust_pic_eml) != '' THEN MAX(cust_pic_eml) ELSE '' END AS cust_eml,
+			   CASE WHEN MAX(cust_pic_fax) != '' THEN 'Y' ELSE 'N' END AS cust_fax_flg,
+			   CASE WHEN MAX(cust_pic_fax) != '' THEN MAX(cust_pic_fax) ELSE '' END AS cust_fax,
+			   MAX(bl.brk_cd) AS brk_cd, MAX(bl.brk_nm) AS brk_nm, 
+			   CASE WHEN MAX(brk_pic_eml) != '' THEN 'Y' ELSE 'N' END AS brk_eml_flg,
+			   CASE WHEN MAX(brk_pic_eml) != '' THEN MAX(brk_pic_eml) ELSE '' END AS brk_eml,
+			   CASE WHEN MAX(brk_pic_fax) != '' THEN 'Y' ELSE 'N' END AS brk_fax_flg,
+			   CASE WHEN MAX(brk_pic_fax) != '' THEN MAX(brk_pic_fax) ELSE '' END AS brk_fax
+		FROM
+		(
+		SELECT bl.intg_bl_seq,
+			   cust_eml.pic_eml AS cust_pic_eml,
+			   '' AS cust_pic_fax,
+			   '' AS brk_pic_eml,
+			   '' AS brk_pic_fax,
+			   row_number() over(partition by intg_bl_seq order by intg_bl_seq, cust_eml.pic_eml) row_no
+		FROM bl_info bl 
+		LEFT OUTER JOIN
+		    tb_trdp_cntc_pson cust_eml   
+		        ON cust_eml.trdp_cd = bl.cust_cd
+				AND cust_eml.delt_flg = 'N'
+				AND cust_eml.pic_eml_flg = 'Y'
+				AND isnull(cust_eml.pic_eml, '') != ''
+				AND (
+		            isnull(cust_eml.trd_div_cd, '') = ''               
+		            or cust_eml.trd_div_cd = substring(#rpt_biz_tp#, 1, 2)               
+		            or cust_eml.trd_div_cd = substring(#rpt_biz_tp#, 1, 1)              
+		            or cust_eml.trd_div_cd = substring(#rpt_biz_tp#, 2, 1)                    
+		        )  
+		GROUP BY intg_bl_seq, cust_eml.pic_eml   
+		
+		UNION ALL
+		
+		SELECT bl.intg_bl_seq,
+			   '' AS cust_pic_eml,
+			   cust_fax.pic_fax AS cust_pic_fax,
+			   '' AS brk_pic_eml,
+			   '' AS brk_pic_fax,
+			   row_number() over(partition by intg_bl_seq order by intg_bl_seq, cust_fax.pic_fax) row_no     
+		FROM bl_info bl    
+		LEFT OUTER JOIN
+		    tb_trdp_cntc_pson cust_fax      
+		        ON cust_fax.trdp_cd = bl.cust_cd
+				AND cust_fax.delt_flg = 'N'
+				AND isnull(cust_fax.pic_fax, '') != ''
+				AND (
+		            isnull(cust_fax.trd_div_cd, '') = ''               
+		            or cust_fax.trd_div_cd = substring(#rpt_biz_tp#, 1, 2)               
+		            or cust_fax.trd_div_cd = substring(#rpt_biz_tp#, 1, 1)              
+		            or cust_fax.trd_div_cd = substring(#rpt_biz_tp#, 2, 1)                    
+		        )
+		GROUP BY intg_bl_seq, cust_fax.pic_fax      
+		
+		UNION ALL
+		
+		SELECT bl.intg_bl_seq,   
+			   '' AS cust_pic_eml,
+			   '' AS cust_pic_fax,
+			   brk_eml.pic_eml AS brk_pic_eml,
+			   '' AS brk_pic_fax,
+			   row_number() over(partition by intg_bl_seq order by intg_bl_seq, brk_eml.pic_eml) row_no
+		FROM bl_info bl 
+		LEFT OUTER JOIN
+		    tb_trdp_cntc_pson brk_eml   
+		        ON brk_eml.trdp_cd = bl.brk_cd
+				AND brk_eml.delt_flg = 'N'
+				AND brk_eml.pic_eml_flg = 'Y'
+				AND isnull(brk_eml.pic_eml, '') != ''
+				AND (
+		            isnull(brk_eml.trd_div_cd, '') = ''               
+		            or brk_eml.trd_div_cd = substring(#rpt_biz_tp#, 1, 2)               
+		            or brk_eml.trd_div_cd = substring(#rpt_biz_tp#, 1, 1)              
+		            or brk_eml.trd_div_cd = substring(#rpt_biz_tp#, 2, 1)                    
+		        ) 
+		GROUP BY intg_bl_seq, brk_eml.pic_eml      
+		
+		UNION ALL
+		
+		SELECT bl.intg_bl_seq,     
+			   '' AS cust_pic_eml,
+			   '' AS cust_pic_fax,
+			   '' AS brk_pic_eml,
+			   brk_fax.pic_fax AS brk_pic_fax,
+			   row_number() over(partition by intg_bl_seq order by intg_bl_seq, brk_fax.pic_fax) row_no     
+		FROM bl_info bl    
+		LEFT OUTER JOIN
+		    tb_trdp_cntc_pson brk_fax      
+		        ON brk_fax.trdp_cd = bl.brk_cd
+				AND brk_fax.delt_flg = 'N'
+				AND isnull(brk_fax.pic_fax, '') != ''
+				AND (
+		            isnull(brk_fax.trd_div_cd, '') = ''               
+		            or brk_fax.trd_div_cd = substring(#rpt_biz_tp#, 1, 2)               
+		            or brk_fax.trd_div_cd = substring(#rpt_biz_tp#, 1, 1)              
+		            or brk_fax.trd_div_cd = substring(#rpt_biz_tp#, 2, 1)                    
+		        )  
+		GROUP BY intg_bl_seq, brk_fax.pic_fax  
+		) inval
+		JOIN bl_info bl ON inval.intg_bl_seq = bl.intg_bl_seq
+		GROUP BY bl.intg_bl_seq, row_no
+		ORDER BY bl.intg_bl_seq, row_no
+    </select>
+
+    <select id="selectSendFaxInfo" parameterClass="String" resultClass="com.clt.apps.fis.rpt.dto.FaxInfoVO">
+		SELECT	locl_nm,			rep_fax,			trdp_cd
+		  FROM	tb_trdp
+		 WHERE	trdp_cd IN ('000320')
+    </select>
+
+    <insert id="insertFaxInfo" parameterClass="com.clt.apps.fis.rpt.dto.FaxInfoVO">
+    	<!-- MSSQL 2008 Ver
+    	INSERT INTO tb_fax(
+    		fax_cre_no,
+    		fax_seq,
+    		fax_title,					snd_pic_nm,					rcpt_cmp_nm,
+    		rcpt_pic_nm,				fax_no,						fax_status,
+    		rgst_usrid,					rgst_ofc_cd,				rgst_tms
+    	)VALUES(
+    		#fax_cre_no#,
+    		(SELECT ISNULL(MAX(fax_seq),0)+1 FROM tb_fax WHERE fax_cre_no = #fax_cre_no#),
+    		#fax_title#,				#snd_pic_nm#,				#rcpt_cmp_nm#,
+    		#rcpt_pic_nm#,				#fax_no#,					#fax_status#,
+    		#rgst_usrid#,				#rgst_ofc_cd#,				GETDATE()
+    	)
+    	-->    	
+    	<!-- 2013.06.05 LHK, MSSQL 2005 version 으로 Query 수정 (Insert into () values()구문에 하위 쿼리 사용할 수 없슴) -->
+    	INSERT INTO tb_fax(
+    		fax_cre_no,
+    		fax_seq,
+    		fax_title,					snd_pic_nm,					rcpt_cmp_nm,
+    		rcpt_pic_nm,				fax_no,						fax_status,
+    		rgst_usrid,					rgst_ofc_cd,				rgst_tms
+    	) SELECT
+    		#fax_cre_no#,
+    		(SELECT ISNULL(MAX(fax_seq),0)+1 FROM tb_fax WHERE fax_cre_no = #fax_cre_no#),
+    		#fax_title#,				#snd_pic_nm#,				#rcpt_cmp_nm#,
+    		#rcpt_pic_nm#,				#fax_no#,					#fax_status#,
+    		#rgst_usrid#,				#rgst_ofc_cd#,				GETDATE()
+    	
+    </insert>
+
+    <update id="updateFaxInfo" parameterClass="HashMap">
+    	UPDATE	tb_fax
+    	   SET	fax_status = #rtn_send_code#
+    	 WHERE	fax_cre_no = #rtn_corp_code#
+    </update>
+
+	<select id="selectMasterProfitInfo" parameterClass="HashMap" resultClass="com.clt.apps.common.dto.CurrVO">
+		SELECT DISTINCT frt.inv_curr_cd AS curr_cd
+          FROM tb_frt frt
+	   		   JOIN
+		       (SELECT bl.intg_bl_seq, bl.rgst_ofc_cd
+			     FROM (
+			  			SELECT 'H' bl_kind, bl.bl_no, rlt.intg_bl_seq as intg_bl_seq, bl.rgst_ofc_cd
+			              FROM tb_intg_bl bl
+				               LEFT OUTER JOIN
+				                tb_intg_bl_rlt rlt
+				               ON bl.intg_bl_seq = rlt.rlt_intg_bl_seq
+				               AND rlt.delt_flg = 'N'
+			             WHERE bl.intg_bl_seq = #intg_bl_seq#
+			  			UNION
+			  			SELECT 'M' bl_kind, bl.bl_no, bl.intg_bl_seq  as intg_bl_seq, bl.rgst_ofc_cd
+			   			  FROM tb_intg_bl  bl
+			   			 WHERE bl.intg_bl_seq = #intg_bl_seq#
+			          ) bl
+			     ) bl
+			     ON frt.intg_bl_seq = bl.intg_bl_seq
+			   JOIN
+			    tb_inv inv
+			     ON inv.inv_seq = frt.inv_seq
+			     AND inv.delt_flg = 'N'
+			   LEFT OUTER JOIN
+			    tb_inv_dtl dtl
+			     ON dtl.inv_seq = inv.inv_seq
+			     AND dtl.delt_flg = 'N'
+			   LEFT OUTER JOIN
+                tb_frt_cd frt_cd
+                 ON  frt_cd.frt_cd = frt.frt_cd
+                 AND frt_cd.delt_flg = 'N'
+         WHERE frt.delt_flg = 'N'
+           AND frt_cd.pfmc_flg = 'Y'
+    </select>
+
+	<select id="selectMasterHblProfitInfo" parameterClass="HashMap" resultClass="com.clt.apps.common.dto.CurrVO">
+		SELECT DISTINCT frt.inv_curr_cd AS curr_cd
+          FROM tb_frt frt
+	   		   JOIN
+		       (SELECT bl.intg_bl_seq, bl.rgst_ofc_cd
+			     FROM (
+			  			SELECT 'H' bl_kind, bl.bl_no, rlt.intg_bl_seq as intg_bl_seq, bl.rgst_ofc_cd
+			              FROM tb_intg_bl bl
+				               LEFT OUTER JOIN
+				                tb_intg_bl_rlt rlt
+				                 ON bl.intg_bl_seq = rlt.rlt_intg_bl_seq
+				                 AND rlt.delt_flg = 'N'
+			             WHERE bl.intg_bl_seq = #intg_bl_seq#
+			               AND bl.delt_flg = 'N'
+			  			UNION
+			  			SELECT 'M' bl_kind, bl.bl_no, bl.intg_bl_seq  as intg_bl_seq, bl.rgst_ofc_cd
+			   			  FROM tb_intg_bl  bl
+			   			 WHERE bl.intg_bl_seq = #intg_bl_seq#
+			          ) bl
+			     ) bl
+			     ON frt.intg_bl_seq = bl.intg_bl_seq
+			   JOIN
+			    tb_inv inv
+			     ON inv.inv_seq = frt.inv_seq
+			     AND inv.delt_flg = 'N'
+			   LEFT OUTER JOIN
+			    tb_inv_dtl dtl
+			     ON dtl.inv_seq = inv.inv_seq
+			     AND dtl.delt_flg = 'N'
+			   LEFT OUTER JOIN
+                tb_frt_cd frt_cd
+                 ON  frt_cd.frt_cd = frt.frt_cd
+                 AND frt_cd.delt_flg = 'N'
+		WHERE frt.delt_flg = 'N'
+		  AND frt_cd.pfmc_flg = 'Y'
+		ORDER BY frt.inv_curr_cd
+    </select>
+
+    <select id="selectHouseProfitInfo" parameterClass="HashMap" resultClass="com.clt.apps.common.dto.CurrVO">
+		SELECT DISTINCT frt.inv_curr_cd AS curr_cd
+          FROM tb_frt frt
+	   		   JOIN
+		       (SELECT bl.intg_bl_seq, bl.rgst_ofc_cd
+			     FROM (
+			  			SELECT 'M' bl_kind, bl.bl_no, rlt.rlt_intg_bl_seq as intg_bl_seq, bl.rgst_ofc_cd
+			              FROM tb_intg_bl bl
+				               LEFT OUTER JOIN
+				                tb_intg_bl_rlt rlt
+				                 ON bl.intg_bl_seq = rlt.intg_bl_seq
+				                 AND rlt.delt_flg = 'N'
+			             WHERE bl.intg_bl_seq = #intg_bl_seq#
+			  			UNION
+			  			SELECT 'H' bl_kind, bl.bl_no, bl.intg_bl_seq  as intg_bl_seq, bl.rgst_ofc_cd
+			   			  FROM tb_intg_bl  bl
+			   			 WHERE bl.intg_bl_seq = #intg_bl_seq#
+			          ) bl
+			     ) bl
+			     ON frt.intg_bl_seq = bl.intg_bl_seq
+			   JOIN
+			    tb_inv inv
+			     ON inv.inv_seq = frt.inv_seq
+			     AND inv.delt_flg = 'N'
+			   LEFT OUTER JOIN
+			    tb_inv_dtl dtl
+			     ON dtl.inv_seq = inv.inv_seq
+			     AND dtl.delt_flg = 'N'
+			   LEFT OUTER JOIN
+                tb_frt_cd frt_cd
+                 ON  frt_cd.frt_cd = frt.frt_cd
+                 AND frt_cd.delt_flg = 'N'
+		WHERE frt.delt_flg = 'N'
+		  AND frt_cd.pfmc_flg = 'Y'
+    </select>
+
+    <select id="selectOtherProfitInfo" parameterClass="HashMap" resultClass="com.clt.apps.common.dto.CurrVO">
+		SELECT DISTINCT frt.inv_curr_cd AS curr_cd
+          FROM tb_frt frt
+	   		   JOIN
+		       (SELECT  'N' bl_kind, oth.*
+			      FROM  tb_oth_sales oth
+			     WHERE  oth.delt_flg = 'N'
+				   AND  oth_seq = #oth_seq#
+			    ) bl
+			     ON frt.oth_seq = bl.oth_seq
+			   JOIN
+			    tb_inv inv
+			     ON inv.inv_seq = frt.inv_seq
+			     AND inv.delt_flg = 'N'
+			   LEFT OUTER JOIN tb_inv_dtl dtl
+			     ON dtl.inv_seq = inv.inv_seq
+			     AND dtl.delt_flg = 'N'
+			   LEFT OUTER JOIN
+                tb_frt_cd frt_cd
+                 ON  frt_cd.frt_cd = frt.frt_cd
+                 AND frt_cd.delt_flg = 'N'
+		WHERE frt.delt_flg = 'N'
+		  AND frt_cd.pfmc_flg = 'Y'
+    </select>
+    <!-- WMS ACCOUNT LKH 2015.01.20 -->
+    <select id="selectWmsProfitInfo" parameterClass="HashMap" resultClass="com.clt.apps.common.dto.CurrVO">
+		/** RptPrintSQL.xml > selectWmsProfitInfo **/
+		SELECT DISTINCT frt.inv_curr_cd AS curr_cd
+          FROM tb_frt frt
+	   		   JOIN
+		       (SELECT  'N' bl_kind, oth.*
+			      FROM  tb_wm_doc_mst oth
+			     WHERE  oth.delt_flg = 'N'
+				   AND  wm_doc_seq = #oth_seq#
+			    ) bl
+			     ON frt.wms_seq = bl.wm_doc_seq
+			   JOIN 
+			    tb_inv inv
+			     ON inv.inv_seq = frt.inv_seq
+			     AND inv.delt_flg = 'N'
+			   LEFT OUTER JOIN tb_inv_dtl dtl
+			     ON dtl.inv_seq = inv.inv_seq
+			     AND dtl.delt_flg = 'N'
+			   LEFT OUTER JOIN
+                tb_frt_cd frt_cd
+                 ON  frt_cd.frt_cd = frt.frt_cd
+                 AND frt_cd.delt_flg = 'N'
+		WHERE frt.delt_flg = 'N'
+		  AND frt_cd.pfmc_flg = 'Y'
+    </select>
+
+	<!-- LHK 20130903 Query 변경, Finance Exchange Rate 기준으로 Day rate 우선, 없을 경우 Month rate 둘 다 없을 경우 Grid 에서 입력 받음. 없는 경우 조회 로직으로 변경 -->
+    <select id="selectMblOneCurrList" parameterClass="HashMap" resultClass="com.clt.apps.fis.pfm.mgt.management.dto.ProfitReportVO">
+		 /** RptPrintSQL.xml > selectMblOneCurrList **/
+		SELECT bl.curr_cd as curr_cd
+		      ,bl.inv_post_mm as aply_fm_dt
+        	  ,0 as rate
+	          /**
+	          , case when bl.curr_cd = '$f_curr_cd$'
+	                then 1
+	                else ixc.xch_rt_ut
+	           end  as rate
+	          **/ 
+	      FROM (
+				SELECT DISTINCT frt.inv_curr_cd AS curr_cd
+				               ,substring(frt.inv_post_dt,1,6)  as inv_post_mm
+            				   ,frt.inv_post_dt as inv_post_dt     
+		          FROM tb_frt frt
+			   		   JOIN
+			   		    (SELECT bl.intg_bl_seq, bl.rgst_ofc_cd, bl.post_dt
+					     FROM (
+					  			SELECT 'H' bl_kind, bl.bl_no, rlt.intg_bl_seq as intg_bl_seq, bl.rgst_ofc_cd, bl.post_dt
+					              FROM tb_intg_bl bl
+						               LEFT OUTER JOIN
+						                tb_intg_bl_rlt rlt
+						               ON bl.intg_bl_seq = rlt.rlt_intg_bl_seq
+						               AND rlt.delt_flg = 'N'
+					             WHERE bl.intg_bl_seq = #intg_bl_seq#
+					  			UNION
+					  			SELECT 'M' bl_kind, bl.bl_no, bl.intg_bl_seq  as intg_bl_seq, bl.rgst_ofc_cd, bl.post_dt
+					   			  FROM tb_intg_bl  bl
+					   			 WHERE bl.intg_bl_seq = #intg_bl_seq#
+					          ) bl
+					     ) bl
+			     		ON frt.intg_bl_seq = bl.intg_bl_seq
+					   JOIN
+					    tb_inv inv
+					     ON inv.inv_seq = frt.inv_seq
+					     AND inv.delt_flg = 'N'
+					   LEFT OUTER JOIN
+					    tb_inv_dtl dtl
+					     ON dtl.inv_seq = inv.inv_seq
+					     AND dtl.delt_flg = 'N'
+					   LEFT OUTER JOIN
+		                tb_frt_cd frt_cd
+		                 ON  frt_cd.frt_cd = frt.frt_cd
+		                 AND frt_cd.delt_flg = 'N'
+		         WHERE frt.delt_flg = 'N'
+		           AND frt_cd.pfmc_flg = 'Y'
+		      ) bl
+	    	LEFT OUTER JOIN
+			    tb_finc_perf_xcrt fixc_mm              
+			        ON  fixc_mm.fm_curr_cd = bl.curr_cd    
+			        AND fixc_mm.dt_clss_cd = 'M' 
+			        AND substring(fixc_mm.aply_fm_dt,1,6) = bl.inv_post_mm
+			        AND fixc_mm.delt_flg = 'N'                                                       
+			        AND fixc_mm.to_curr_cd = '$f_curr_cd$'   
+			LEFT OUTER JOIN
+			    tb_finc_perf_xcrt fixc_dd              
+			        ON  fixc_dd.fm_curr_cd = bl.curr_cd    
+			        AND fixc_dd.dt_clss_cd = 'D' 
+			        AND fixc_dd.aply_fm_dt = bl.inv_post_dt
+			        AND fixc_dd.delt_flg = 'N'                                                       
+			        AND fixc_dd.to_curr_cd = '$f_curr_cd$'
+		WHERE ISNULL(fixc_dd.xch_rt_ut,fixc_mm.xch_rt_ut) IS NULL
+		  AND bl.curr_cd != '$f_curr_cd$'       
+		GROUP BY
+		    bl.curr_cd,
+		    bl.inv_post_mm
+    </select>
+    
+    <select id="selectMblOneCurrListBatch" parameterClass="HashMap" resultClass="com.clt.apps.fis.pfm.mgt.management.dto.ProfitReportVO">
+		 /** RptPrintSQL.xml > selectMblOneCurrListBatch **/
+select a.*
+  from (
+	select mdtl.inv_aply_curr_cd           as curr_cd,
+	       substring(mdtl.inv_post_dt,1,6) as aply_fm_dt,
+	       0 as rate
+	  from tb_intg_bl mbl
+	         join tb_frt mfrt     on mbl.intg_bl_seq = mfrt.intg_bl_seq and mfrt.delt_flg = 'N'
+	         join tb_inv minv     on minv.inv_seq = mfrt.inv_seq and minv.delt_flg = 'N'
+	         join tb_inv_dtl mdtl on mdtl.inv_seq = minv.inv_seq and mdtl.delt_flg = 'N',
+	       tb_add_info_bnd bnd
+	 where mbl.intg_bl_seq = bnd.intg_bl_seq
+	   and mbl.biz_clss_cd = 'M'
+	<isNotEmpty property="s_ofc_cd">
+	   and mbl.ref_ofc_cd = #s_ofc_cd#
+	</isNotEmpty>
+	   and ( 1 = 1
+	<isNotEmpty property="s_oi_dptm_flg">
+	   		or (mbl.air_sea_clss_cd = 'S' and bnd.bnd_clss_cd = 'I')
+	</isNotEmpty>
+	<isNotEmpty property="s_ai_dptm_flg">
+	   		or (mbl.air_sea_clss_cd = 'A' and bnd.bnd_clss_cd = 'I')
+	</isNotEmpty>
+	<isNotEmpty property="s_oe_dptm_flg">
+	   		or (mbl.air_sea_clss_cd = 'S' and bnd.bnd_clss_cd = 'O')
+	</isNotEmpty>
+	<isNotEmpty property="s_ae_dptm_flg">
+	   		or (mbl.air_sea_clss_cd = 'A' and bnd.bnd_clss_cd = 'O')
+	</isNotEmpty>
+	       )
+	<isEmpty property="s_oi_dptm_flg">
+		<isEmpty property="s_ai_dptm_flg">
+			<isEmpty property="s_oe_dptm_flg">
+				<isEmpty property="s_ae_dptm_flg">
+		and 1 = 2
+				</isEmpty>
+			</isEmpty>
+		</isEmpty>
+	</isEmpty>
+	<isNotEmpty property="s_opr_usrid">
+	   and bnd.issued_by = #s_opr_usrid#
+	</isNotEmpty>
+	
+	   and mbl.post_dt between #s_prd_strdt# and #s_prd_enddt#
+	   and mbl.delt_flg = 'N'
+	   and bnd.delt_flg = 'N'
+	   and not exists ( select 'X'
+	                      from tb_finc_perf_xcrt x
+	                     where x.fm_curr_cd = mdtl.inv_aply_curr_cd
+	                       and x.to_curr_cd = #s_curr_cd#
+	                       and x.dt_clss_cd = 'M'
+				                 and x.aply_fm_dt like substring(mdtl.inv_post_dt,1,6)+'%'
+				                 and x.delt_flg = 'N'
+	                  )
+	   and not exists ( select 'X'
+	                      from tb_finc_perf_xcrt x
+	                     where x.fm_curr_cd = mdtl.inv_aply_curr_cd
+	                       and x.to_curr_cd = #s_curr_cd#
+	                       and x.dt_clss_cd = 'D'
+				                 and x.aply_fm_dt = mdtl.inv_post_dt
+				                 and x.delt_flg = 'N'
+	                  )
+	  group by mdtl.inv_aply_curr_cd, substring(mdtl.inv_post_dt,1,6)
+	union
+	select hdtl.inv_aply_curr_cd           as curr_cd,
+	       substring(hdtl.inv_post_dt,1,6) as aply_fm_dt,
+	       0 as rate
+	  from tb_intg_bl mbl,
+	       tb_add_info_bnd bnd,
+	       tb_intg_bl_rlt rlt,
+	       tb_intg_bl hbl
+	         join tb_frt hfrt     on hbl.intg_bl_seq = hfrt.intg_bl_seq and hfrt.delt_flg = 'N'
+	         join tb_inv hinv     on hinv.inv_seq = hfrt.inv_seq and hinv.delt_flg = 'N'
+	         join tb_inv_dtl hdtl on hdtl.inv_seq = hinv.inv_seq and hdtl.delt_flg = 'N'
+	 where mbl.intg_bl_seq = bnd.intg_bl_seq
+	   and mbl.intg_bl_seq = rlt.rlt_intg_bl_seq
+	   and hbl.intg_bl_seq = bnd.intg_bl_seq
+	   and mbl.biz_clss_cd = 'M'
+	<isNotEmpty property="s_ofc_cd">
+	   and mbl.ref_ofc_cd = #s_ofc_cd#
+	</isNotEmpty>
+	   and ( 1 = 1
+	<isNotEmpty property="s_oi_dptm_flg">
+	   		or (mbl.air_sea_clss_cd = 'S' and bnd.bnd_clss_cd = 'I')
+	</isNotEmpty>
+	<isNotEmpty property="s_ai_dptm_flg">
+	   		or (mbl.air_sea_clss_cd = 'A' and bnd.bnd_clss_cd = 'I')
+	</isNotEmpty>
+	<isNotEmpty property="s_oe_dptm_flg">
+	   		or (mbl.air_sea_clss_cd = 'S' and bnd.bnd_clss_cd = 'O')
+	</isNotEmpty>
+	<isNotEmpty property="s_ae_dptm_flg">
+	   		or (mbl.air_sea_clss_cd = 'A' and bnd.bnd_clss_cd = 'O')
+	</isNotEmpty>
+	       )
+	<isEmpty property="s_oi_dptm_flg">
+		<isEmpty property="s_ai_dptm_flg">
+			<isEmpty property="s_oe_dptm_flg">
+				<isEmpty property="s_ae_dptm_flg">
+		and 1 = 2
+				</isEmpty>
+			</isEmpty>
+		</isEmpty>
+	</isEmpty>
+	<isNotEmpty property="s_opr_usrid">
+	   and bnd.issued_by = #s_opr_usrid#
+	</isNotEmpty>
+	
+	   and mbl.post_dt between #s_prd_strdt# and #s_prd_enddt#
+	   and mbl.delt_flg = 'N'
+	   and bnd.delt_flg = 'N'
+	   and rlt.delt_flg = 'N'
+	   and hbl.delt_flg = 'N'
+	   and not exists ( select 'X'
+	                      from tb_finc_perf_xcrt x
+	                     where x.fm_curr_cd = hdtl.inv_aply_curr_cd
+	                       and x.to_curr_cd = #s_curr_cd#
+	                       and x.dt_clss_cd = 'M'
+				                 and x.aply_fm_dt like substring(hdtl.inv_post_dt,1,6)+'%'
+				                 and x.delt_flg = 'N'
+	                  )
+	   and not exists ( select 'X'
+	                      from tb_finc_perf_xcrt x
+	                     where x.fm_curr_cd = hdtl.inv_aply_curr_cd
+	                       and x.to_curr_cd = #s_curr_cd#
+	                       and x.dt_clss_cd = 'D'
+				                 and x.aply_fm_dt = hdtl.inv_post_dt
+				                 and x.delt_flg = 'N'
+	                  )
+	  group by hdtl.inv_aply_curr_cd, substring(hdtl.inv_post_dt,1,6)
+	union
+	select dtl.inv_aply_curr_cd as curr_cd,
+	       substring(dtl.inv_post_dt,1,6) as aply_fm_dt,
+	       0 as rate
+	  from tb_oth_sales oth
+	         join tb_frt frt     on oth.oth_seq = frt.oth_seq and frt.delt_flg = 'N'
+	         join tb_inv inv     on inv.inv_seq = frt.inv_seq and inv.delt_flg = 'N'
+	         join tb_inv_dtl dtl on dtl.inv_seq = inv.inv_seq and dtl.delt_flg = 'N'
+	 where oth.delt_flg = 'N'
+	<isNotEmpty property="s_ofc_cd">
+	   and oth.ofc_cd = #s_ofc_cd#
+	</isNotEmpty>
+	<isEmpty property="s_on_dptm_flg">
+	   and 1 = 2
+	</isEmpty>
+	<isNotEmpty property="s_opr_usrid">
+	   and oth.issued_by = #s_opr_usrid#
+	</isNotEmpty>
+	
+	   and oth.post_dt between #s_prd_strdt# and #s_prd_enddt#
+	   and not exists ( select 'X'
+	                      from tb_finc_perf_xcrt x
+	                     where x.fm_curr_cd = dtl.inv_aply_curr_cd
+	                       and x.to_curr_cd = #s_curr_cd#
+	                       and x.dt_clss_cd = 'M'
+				                 and x.aply_fm_dt like substring(dtl.inv_post_dt,1,6)+'%'
+				                 and x.delt_flg = 'N'
+	                  )
+	   and not exists ( select 'X'
+	                      from tb_finc_perf_xcrt x
+	                     where x.fm_curr_cd = dtl.inv_aply_curr_cd
+	                       and x.to_curr_cd = #s_curr_cd#
+	                       and x.dt_clss_cd = 'D'
+				                 and x.aply_fm_dt = dtl.inv_post_dt
+				                 and x.delt_flg = 'N'
+	                  )
+	 group by dtl.inv_aply_curr_cd, substring(dtl.inv_post_dt,1,6)
+) a
+where a.curr_cd != #s_curr_cd#
+
+    </select>
+
+	<select id="searchMblByHblOneCurrList" parameterClass="HashMap" resultClass="com.clt.apps.fis.pfm.mgt.management.dto.ProfitReportVO">
+		/** RptPrintSQL.xml > searchMblByHblOneCurrList **/
+		SELECT bl.curr_cd as curr_cd
+	          ,bl.inv_post_mm as aply_fm_dt
+        	  ,0 as rate
+	      FROM (
+	      		SELECT DISTINCT frt.inv_curr_cd AS curr_cd
+						       ,substring(frt.inv_post_dt,1,6)  as inv_post_mm
+            				   ,frt.inv_post_dt as inv_post_dt     
+		          FROM tb_frt frt
+			   		   JOIN
+			   		    (SELECT bl.intg_bl_seq, bl.rgst_ofc_cd, bl.post_dt
+					     FROM (
+					  			SELECT 'H' bl_kind, bl.bl_no, rlt.intg_bl_seq as intg_bl_seq, bl.rgst_ofc_cd, bl.post_dt
+					              FROM tb_intg_bl bl
+						               LEFT OUTER JOIN
+						                tb_intg_bl_rlt rlt
+						                 ON bl.intg_bl_seq = rlt.rlt_intg_bl_seq
+						                 AND rlt.delt_flg = 'N'
+					             WHERE bl.intg_bl_seq = #intg_bl_seq#
+					  			UNION
+					  			SELECT 'M' bl_kind, bl.bl_no, bl.intg_bl_seq  as intg_bl_seq, bl.rgst_ofc_cd, bl.post_dt
+					   			  FROM tb_intg_bl  bl
+					   			 WHERE bl.intg_bl_seq = #intg_bl_seq#
+					          ) bl
+					     ) bl
+					     ON frt.intg_bl_seq = bl.intg_bl_seq
+					   JOIN
+					    tb_inv inv
+					     ON inv.inv_seq = frt.inv_seq
+					     AND inv.delt_flg = 'N'
+					   LEFT OUTER JOIN
+					    tb_inv_dtl dtl
+					     ON dtl.inv_seq = inv.inv_seq
+					     AND dtl.delt_flg = 'N'
+					   LEFT OUTER JOIN
+		                tb_frt_cd frt_cd
+		                 ON  frt_cd.frt_cd = frt.frt_cd
+		                 AND frt_cd.delt_flg = 'N'
+				WHERE frt.delt_flg = 'N'
+				  AND frt_cd.pfmc_flg = 'Y'
+			) bl
+	    	LEFT OUTER JOIN
+			    tb_finc_perf_xcrt fixc_mm              
+			        ON  fixc_mm.fm_curr_cd = bl.curr_cd    
+			        AND fixc_mm.dt_clss_cd = 'M' 
+			        AND substring(fixc_mm.aply_fm_dt,1,6) = bl.inv_post_mm
+			        AND fixc_mm.delt_flg = 'N'                                                       
+			        AND fixc_mm.to_curr_cd = '$f_curr_cd$'   
+			LEFT OUTER JOIN
+			    tb_finc_perf_xcrt fixc_dd              
+			        ON  fixc_dd.fm_curr_cd = bl.curr_cd    
+			        AND fixc_dd.dt_clss_cd = 'D' 
+			        AND fixc_dd.aply_fm_dt = bl.inv_post_dt
+			        AND fixc_dd.delt_flg = 'N'                                                       
+			        AND fixc_dd.to_curr_cd = '$f_curr_cd$'
+		WHERE ISNULL(fixc_dd.xch_rt_ut,fixc_mm.xch_rt_ut) IS NULL
+		  AND bl.curr_cd != '$f_curr_cd$'   
+		GROUP BY
+		    bl.curr_cd,
+		    bl.inv_post_mm
+    </select>
+
+    <select id="searchHblByHblOneCurrList" parameterClass="HashMap" resultClass="com.clt.apps.fis.pfm.mgt.management.dto.ProfitReportVO">
+		/** RptPrintSQL.xml > searchHblByHblOneCurrList **/
+		SELECT bl.curr_cd as curr_cd
+	          ,bl.inv_post_mm as aply_fm_dt
+        	  ,0 as rate
+	      FROM (
+	      		SELECT DISTINCT frt.inv_curr_cd AS curr_cd
+						       ,substring(frt.inv_post_dt,1,6)  as inv_post_mm
+            				   ,frt.inv_post_dt as inv_post_dt
+		          FROM tb_frt frt
+			   		   JOIN
+				       (SELECT bl.intg_bl_seq, bl.rgst_ofc_cd, bl.post_dt
+					     FROM (
+					  			SELECT 'M' bl_kind, bl.bl_no, rlt.rlt_intg_bl_seq as intg_bl_seq, bl.rgst_ofc_cd, bl.post_dt
+					              FROM tb_intg_bl bl
+						               LEFT OUTER JOIN
+						                tb_intg_bl_rlt rlt
+						                 ON bl.intg_bl_seq = rlt.intg_bl_seq
+						                 AND rlt.delt_flg = 'N'
+					             WHERE bl.intg_bl_seq = #intg_bl_seq#
+					  			UNION
+					  			SELECT 'H' bl_kind, bl.bl_no, bl.intg_bl_seq  as intg_bl_seq, bl.rgst_ofc_cd, bl.post_dt
+					   			  FROM tb_intg_bl  bl
+					   			 WHERE bl.intg_bl_seq = #intg_bl_seq#
+					          ) bl
+					     ) bl
+					     ON frt.intg_bl_seq = bl.intg_bl_seq
+					   JOIN
+					    tb_inv inv
+					     ON inv.inv_seq = frt.inv_seq
+					     AND inv.delt_flg = 'N'
+					   LEFT OUTER JOIN
+					    tb_inv_dtl dtl
+					     ON dtl.inv_seq = inv.inv_seq
+					     AND dtl.delt_flg = 'N'
+					   LEFT OUTER JOIN
+		                tb_frt_cd frt_cd
+		                 ON  frt_cd.frt_cd = frt.frt_cd
+		                 AND frt_cd.delt_flg = 'N'
+				WHERE frt.delt_flg = 'N'
+				  AND frt_cd.pfmc_flg = 'Y'
+			) bl
+		    LEFT OUTER JOIN
+			    tb_finc_perf_xcrt fixc_mm              
+			        ON  fixc_mm.fm_curr_cd = bl.curr_cd    
+			        AND fixc_mm.dt_clss_cd = 'M' 
+			        AND substring(fixc_mm.aply_fm_dt,1,6) = bl.inv_post_mm
+			        AND fixc_mm.delt_flg = 'N'                                                       
+			        AND fixc_mm.to_curr_cd = '$f_curr_cd$'   
+			LEFT OUTER JOIN
+			    tb_finc_perf_xcrt fixc_dd              
+			        ON  fixc_dd.fm_curr_cd = bl.curr_cd    
+			        AND fixc_dd.dt_clss_cd = 'D' 
+			        AND fixc_dd.aply_fm_dt = bl.inv_post_dt
+			        AND fixc_dd.delt_flg = 'N'                                                       
+			        AND fixc_dd.to_curr_cd = '$f_curr_cd$'
+		WHERE ISNULL(fixc_dd.xch_rt_ut,fixc_mm.xch_rt_ut) IS NULL
+		  AND bl.curr_cd != '$f_curr_cd$'   
+		GROUP BY
+		    bl.curr_cd,
+		    bl.inv_post_mm
+    </select>
+    
+    <!-- #18793, [GPL]Profit Report jsjang 2013.11.8 -->
+    <select id="searchMblSummaryMultiProfitList" parameterClass="HashMap" resultClass="com.clt.apps.fis.pfm.mgt.management.dto.ProfitListVO">
+    	/** RptPrintSQL.xml > searchMblSummaryMultiProfitList **/
+    	<![CDATA[
+    	SELECT  #inv_curr_cd# as inv_curr_cd
+		       ,prf.bl_kind 
+		       ,prf.bl_no 
+		       ,prf.sell_buy_tp_cd 
+		       ,case when prf.inv_no != '' then prf.inv_no else '(None)' end AS inv_no
+		       ,prf.bill_to 
+		       ,prf.inv_post_dt 
+		       ,sum(prf.local_inv_amt)  AS local_inv_ttl_amt 
+		       ,sum(prf.cost_inv_amt)   AS cost_inv_ttl_amt 
+		       ,sum(prf.agent_inv_amt)  AS agent_inv_ttl_amt 
+		       ,sum(prf.local_inv_amt - prf.cost_inv_amt + prf.agent_inv_amt) AS prf_amt
+		       ,(SELECT MIN(j_mst.clr_yn)             
+                   FROM tb_jnr_mst j_mst, tb_jnr_dtl j_dtl            
+                  WHERE j_mst.jnr_no = j_dtl.jnr_no
+                    AND j_dtl.inv_seq = prf.inv_seq
+                    AND ISNULL(j_mst.DELT_FLG,'N') = 'N'
+			        AND ISNULL(j_dtl.DELT_FLG,'N') = 'N'
+			        AND ISNULL(j_mst.VOID_YN,'N')  = 'N')    AS clr_yn 
+		       ,prf.org_bl_rcvd_flg 
+		       ,prf.rcvd_dt_tm 
+		       ,prf.express_tp_cd 
+		       ,prf.rlsd_dt_tm 
+		       ,prf.last_chk_no 
+		       ,prf.last_pay_dt 
+		       
+		       ,max(prf.ref_ofc_cd) AS ref_ofc_cd
+			   ,prf.inv_seq
+			   ,max(prf.trdp_cd) AS trdp_cd
+			   ,max(prf.ofc_cd) AS ofc_cd
+			   ,(select upper(x.CNT_CD) from tb_ofc x where x.OFC_CD = MAX(prf.ofc_cd) ) AS bl_cnt_cd		       
+		FROM   (SELECT bl.bl_kind 
+		               ,bl.bl_no 
+		               ,inv.sell_buy_tp_cd    
+		               ,CASE 
+		                  WHEN inv.sell_buy_tp_cd = 'B' THEN Isnull(dtl.buy_inv_no, '(None)') 
+		                  ELSE Isnull(dtl.inv_no, '(None)') 
+		                END                          AS inv_no 
+		               ,(SELECT trdp.locl_nm 
+		                 FROM   tb_trdp trdp 
+		                 WHERE  trdp.trdp_cd = inv.trdp_cd) AS bill_to 
+		               ,dtl.inv_post_dt                
+		               ,CASE 
+		                  WHEN inv.sell_buy_tp_cd = 'S' THEN Isnull(frt.inv_amt, 0)
+		                  ELSE 0 
+		                END                          AS local_inv_amt
+		               ,CASE 
+		                  WHEN inv.sell_buy_tp_cd = 'B' THEN Isnull(frt.inv_amt, 0)
+		                  ELSE 0 
+		                END                          AS cost_inv_amt 
+		               ,CASE 
+		                  WHEN inv.sell_buy_tp_cd = 'C' OR inv.sell_buy_tp_cd = 'D'
+		                  THEN  Isnull(frt.inv_amt, 0) - ISNULL(frt.cr_amt, 0)
+		                  ELSE 0 
+		                END                          AS agent_inv_amt 
+		               ,(SELECT MAX(jnr_no) AS jnr_no 
+		                 FROM   tb_jnr_dtl j_dtl 
+		                 WHERE  j_dtl.inv_seq = dtl.inv_seq 
+		                 )           AS jnr_no 
+		               ,bl.org_bl_rcvd_flg 
+		               ,bl.rcvd_dt_tm 
+		               ,bl.express_tp_cd 
+		               ,bl.rlsd_dt_tm 
+		               ,dtl.last_chk_no 
+		               ,dtl.last_pay_dt 
+		               ,bl.rgst_ofc_cd 
+					   ,bl.ref_ofc_cd
+					   ,dtl.inv_seq
+					   ,inv.trdp_cd
+					   ,inv.ofc_cd		               
+		        FROM   tb_frt frt 
+		               JOIN (SELECT bl.bl_kind 
+		                            ,bl.bl_no 
+		                            ,bl.intg_bl_seq 
+		                            ,bl.rgst_ofc_cd 
+		                            ,bl.org_bl_rcvd_flg 
+		                            ,bl.rcvd_dt_tm 
+		                            ,bl.express_tp_cd 
+		                            ,bl.rlsd_dt_tm 
+		                            ,bl.ref_ofc_cd
+		                     FROM   (SELECT 'H' bl_kind 
+		                                    ,hbl.bl_no 
+		                                    ,hbl.intg_bl_seq 
+		                                    ,hbl.rgst_ofc_cd 
+		                                    ,hbl.org_bl_rcvd_flg 
+		                                    ,hbl.rcvd_dt_tm 
+		                                    ,hbl.express_tp_cd 
+		                                    ,hbl.rlsd_dt_tm 
+		                                    ,hbl.ref_ofc_cd
+		                             FROM   tb_intg_bl bl 
+		                                    LEFT OUTER JOIN tb_intg_bl_rlt rlt 
+		                                      ON bl.intg_bl_seq = rlt.rlt_intg_bl_seq 
+		                                         AND rlt.delt_flg = 'N' 
+		                                    LEFT OUTER JOIN tb_intg_bl hbl 
+		                                      ON hbl.intg_bl_seq = rlt.intg_bl_seq 
+		                                         AND hbl.delt_flg = 'N' 
+		                             WHERE  bl.intg_bl_seq = #intg_bl_seq# 
+		                             UNION 
+		                             SELECT 'M'             bl_kind 
+		                                    ,bl.bl_no 
+		                                    ,bl.intg_bl_seq AS intg_bl_seq 
+		                                    ,bl.rgst_ofc_cd 
+		                                    ,bl.org_bl_rcvd_flg 
+		                                    ,bl.rcvd_dt_tm 
+		                                    ,bl.express_tp_cd 
+		                                    ,bl.rlsd_dt_tm 
+		                                    ,bl.ref_ofc_cd
+		                             FROM   tb_intg_bl bl 
+		                             WHERE  bl.intg_bl_seq = #intg_bl_seq#) bl) bl 
+		                 ON frt.intg_bl_seq = bl.intg_bl_seq 
+		               JOIN tb_inv inv 
+		                 ON inv.inv_seq = frt.inv_seq 
+		                    AND inv.delt_flg = 'N' 
+		               LEFT OUTER JOIN tb_inv_dtl dtl 
+		                 ON dtl.inv_seq = inv.inv_seq
+		                    AND dtl.delt_flg = 'N' 
+		               LEFT OUTER JOIN tb_frt_cd frt_cd 
+		                 ON frt_cd.frt_cd = frt.frt_cd 
+		                    AND frt_cd.delt_flg = 'N'   
+		        WHERE  1=1
+		        AND    frt.inv_curr_cd = #inv_curr_cd#
+		        AND    frt.delt_flg = 'N'
+		        AND    frt_cd.pfmc_flg = 'Y'    ) prf 
+		GROUP  BY  prf.bl_kind 
+		          ,prf.inv_no 		          
+		          ,prf.bl_no 
+		          ,prf.sell_buy_tp_cd 
+		          ,prf.bill_to 
+		          ,prf.inv_post_dt 
+		          ,prf.jnr_no 
+		          ,prf.org_bl_rcvd_flg 
+		          ,prf.rcvd_dt_tm 
+		          ,prf.express_tp_cd 
+		          ,prf.rlsd_dt_tm 
+		          ,prf.last_chk_no 
+		          ,prf.last_pay_dt 
+		          ,prf.inv_seq
+		ORDER  BY  prf.bl_kind DESC
+				  ,prf.bl_no
+		          ,prf.inv_no 
+		          ,prf.bill_to 
+		          ,prf.inv_post_dt   
+		]]>          
+    </select>
+    
+    <select id="searchMblSummaryOneProfitList" parameterClass="HashMap" resultClass="com.clt.apps.fis.pfm.mgt.management.dto.ProfitListVO">
+    	/** RptPrintSQL.xml > searchMblSummaryOneProfitList **/
+    	<![CDATA[ 
+    	SELECT  #f_curr_cd# as inv_curr_cd
+    	       ,prf.bl_kind 
+		       ,prf.bl_no 
+		       ,prf.sell_buy_tp_cd 
+		       ,prf.inv_no 
+		       ,prf.bill_to 
+		       ,prf.inv_post_dt
+		       ,min(prf.xch_rt_ut) as xch_rt_ut
+		       ,sum(prf.local_inv_amt)  AS local_inv_ttl_amt 
+		       ,sum(prf.cost_inv_amt)   AS cost_inv_ttl_amt 
+		       ,sum(prf.agent_inv_amt)  AS agent_inv_ttl_amt 
+		       ,sum(prf.local_inv_amt - prf.cost_inv_amt + prf.agent_inv_amt) AS prf_amt
+		       ,(SELECT MIN(j_mst.clr_yn)             
+                   FROM tb_jnr_mst j_mst, tb_jnr_dtl j_dtl            
+                  WHERE j_mst.jnr_no = j_dtl.jnr_no
+                    AND j_dtl.inv_seq = prf.inv_seq
+                    AND ISNULL(j_mst.DELT_FLG,'N') = 'N'
+			        AND ISNULL(j_dtl.DELT_FLG,'N') = 'N'
+			        AND ISNULL(j_mst.VOID_YN,'N')  = 'N')   AS clr_yn 
+		       ,prf.org_bl_rcvd_flg 
+		       ,prf.rcvd_dt_tm 
+		       ,prf.express_tp_cd 
+		       ,prf.rlsd_dt_tm 
+		       ,prf.last_chk_no 
+		       ,prf.last_pay_dt 		       
+		       ,max(prf.ref_ofc_cd) AS ref_ofc_cd
+			   ,prf.inv_seq
+			   ,max(prf.trdp_cd) AS trdp_cd
+			   ,max(prf.ofc_cd) AS ofc_cd
+			   ,(select upper(x.CNT_CD) from tb_ofc x where x.OFC_CD = MAX(prf.ofc_cd) ) AS bl_cnt_cd		
+		FROM   (SELECT bl.bl_kind 
+		               ,bl.bl_no 
+		               ,inv.sell_buy_tp_cd   
+		               ,CASE 
+		                  WHEN inv.sell_buy_tp_cd = 'B' THEN Isnull(dtl.buy_inv_no, '(None)') 
+		                  ELSE Isnull(dtl.inv_no, '(None)') 
+		                END                          AS inv_no 
+		               ,(SELECT trdp.locl_nm 
+		                 FROM   tb_trdp trdp 
+		                 WHERE  trdp.trdp_cd = inv.trdp_cd) AS bill_to 
+		               ,dtl.inv_post_dt                
+		               ,CASE 
+		                  WHEN inv.sell_buy_tp_cd = 'S' 
+		                  THEN Isnull(frt.inv_amt, 0) 
+		                  		* (CASE WHEN frt.inv_curr_cd = #f_curr_cd# 
+		                  				THEN 1 
+		                  				ELSE ISNULL(dd_ex_rt.xch_rt_ut, ISNULL(mm_ex_rt.xch_rt_ut, ISNULL(gd_ex_rt.xch_rt_ut, 0))) 
+		                  			END)
+		                  ELSE 0 
+		                END                          AS local_inv_amt
+		               ,CASE 
+		                  WHEN inv.sell_buy_tp_cd = 'B' THEN Isnull(frt.inv_amt, 0) 
+		                  		* (CASE WHEN frt.inv_curr_cd = #f_curr_cd# 
+		                  				THEN 1 
+		                  				ELSE ISNULL(dd_ex_rt.xch_rt_ut, ISNULL(mm_ex_rt.xch_rt_ut, ISNULL(gd_ex_rt.xch_rt_ut, 0))) 
+		                  			END)
+		                  ELSE 0 
+		                END                          AS cost_inv_amt 
+		               ,CASE 
+		                  WHEN inv.sell_buy_tp_cd = 'C' OR inv.sell_buy_tp_cd = 'D'
+		                  THEN ISNULL(frt.inv_amt, 0) 
+		                  		* (CASE WHEN frt.inv_curr_cd = #f_curr_cd# 
+		                  				THEN 1 
+		                  				ELSE ISNULL(dd_ex_rt.xch_rt_ut, ISNULL(mm_ex_rt.xch_rt_ut, ISNULL(gd_ex_rt.xch_rt_ut, 0))) 
+		                  			END)
+		                  		- ISNULL(frt.cr_amt, 0) 
+		                  			* (CASE WHEN frt.inv_curr_cd = #f_curr_cd# 
+			                  				THEN 1 
+			                  				ELSE ISNULL(dd_ex_rt.xch_rt_ut, ISNULL(mm_ex_rt.xch_rt_ut, ISNULL(gd_ex_rt.xch_rt_ut, 0))) 
+		                  				END)
+		                  ELSE 0 
+		                END                          AS agent_inv_amt 
+		               ,(SELECT MAX(jnr_no) AS jnr_no 
+		                 FROM   tb_jnr_dtl j_dtl 
+		                 WHERE  j_dtl.inv_seq = dtl.inv_seq 
+		                 )           AS jnr_no 
+		               ,bl.org_bl_rcvd_flg 
+		               ,bl.rcvd_dt_tm 
+		               ,bl.express_tp_cd 
+		               ,bl.rlsd_dt_tm 
+		               ,dtl.last_chk_no 
+		               ,dtl.last_pay_dt 
+		               ,bl.rgst_ofc_cd 
+		               ,(CASE WHEN frt.inv_curr_cd = #f_curr_cd# 
+            				  THEN 1 
+            				  ELSE ISNULL(dd_ex_rt.xch_rt_ut, ISNULL(mm_ex_rt.xch_rt_ut, ISNULL(gd_ex_rt.xch_rt_ut, 0))) 
+           				 END) as xch_rt_ut
+           			   ,bl.ref_ofc_cd
+					   ,dtl.inv_seq
+					   ,inv.trdp_cd
+					   ,inv.ofc_cd		 
+		        FROM   tb_frt frt 
+		               JOIN (SELECT bl.bl_kind 
+		                            ,bl.bl_no 
+		                            ,bl.intg_bl_seq 
+		                            ,bl.rgst_ofc_cd 
+		                            ,bl.org_bl_rcvd_flg 
+		                            ,bl.rcvd_dt_tm 
+		                            ,bl.express_tp_cd 
+		                            ,bl.rlsd_dt_tm 
+		                            ,bl.ref_ofc_cd
+		                     FROM   (SELECT 'H' bl_kind 
+		                                    ,hbl.bl_no 
+		                                    ,hbl.intg_bl_seq 
+		                                    ,hbl.rgst_ofc_cd 
+		                                    ,hbl.org_bl_rcvd_flg 
+		                                    ,hbl.rcvd_dt_tm 
+		                                    ,hbl.express_tp_cd 
+		                                    ,hbl.rlsd_dt_tm 
+		                                    ,hbl.ref_ofc_cd
+		                             FROM   tb_intg_bl bl 
+		                                    LEFT OUTER JOIN tb_intg_bl_rlt rlt 
+		                                      ON bl.intg_bl_seq = rlt.rlt_intg_bl_seq 
+		                                         AND rlt.delt_flg = 'N' 
+		                                    LEFT OUTER JOIN tb_intg_bl hbl 
+		                                      ON hbl.intg_bl_seq = rlt.intg_bl_seq 
+		                                         AND hbl.delt_flg = 'N' 
+		                             WHERE  bl.intg_bl_seq = #intg_bl_seq#
+		                             UNION 
+		                             SELECT 'M'             bl_kind 
+		                                    ,bl.bl_no 
+		                                    ,bl.intg_bl_seq AS intg_bl_seq 
+		                                    ,bl.rgst_ofc_cd 
+		                                    ,bl.org_bl_rcvd_flg 
+		                                    ,bl.rcvd_dt_tm 
+		                                    ,bl.express_tp_cd 
+		                                    ,bl.rlsd_dt_tm 
+		                                    ,bl.ref_ofc_cd
+		                             FROM   tb_intg_bl bl 
+		                             WHERE  bl.intg_bl_seq = #intg_bl_seq#) bl) bl 
+		                 ON frt.intg_bl_seq = bl.intg_bl_seq 
+		               JOIN tb_inv inv 
+		                 ON inv.inv_seq = frt.inv_seq 
+		                    AND inv.delt_flg = 'N' 
+		               LEFT OUTER JOIN tb_inv_dtl dtl 
+		                 ON dtl.inv_seq = inv.inv_seq
+		                    AND dtl.delt_flg = 'N'
+		               LEFT OUTER JOIN tb_frt_cd frt_cd 
+		                 ON frt_cd.frt_cd = frt.frt_cd 
+		                    AND frt_cd.delt_flg = 'N' 
+		               LEFT OUTER JOIN tb_finc_perf_xcrt dd_ex_rt              
+				        ON  dd_ex_rt.fm_curr_cd = frt.inv_curr_cd    
+					        AND dd_ex_rt.delt_flg = 'N'                                                       
+					        AND dd_ex_rt.to_curr_cd = #f_curr_cd#   
+					        AND dd_ex_rt.dt_clss_cd = 'D' 
+					        AND dd_ex_rt.aply_fm_dt = frt.inv_post_dt    
+					        LEFT OUTER JOIN tb_finc_perf_xcrt mm_ex_rt              
+				        ON  mm_ex_rt.fm_curr_cd = frt.inv_curr_cd   
+					        AND mm_ex_rt.delt_flg = 'N'                                                       
+					        AND mm_ex_rt.to_curr_cd = #f_curr_cd#   
+					        AND mm_ex_rt.dt_clss_cd = 'M' 
+					        AND substring(mm_ex_rt.aply_fm_dt,1,6) = substring(frt.inv_post_dt,1,6)
+		                LEFT OUTER JOIN ($one_curr_rate_sql$) gd_ex_rt 
+		                 ON gd_ex_rt.curr_cd = frt.inv_curr_cd  
+		                 AND gd_ex_rt.aply_fm_dt = substring(frt.inv_post_dt,1,6)      
+		        WHERE  frt.delt_flg = 'N'
+		        AND    frt_cd.pfmc_flg = 'Y' ) prf 
+		GROUP  BY  prf.bl_kind 
+		          ,prf.inv_no 
+		          ,prf.bl_no 
+		          ,prf.sell_buy_tp_cd 
+		          ,prf.bill_to 
+		          ,prf.inv_post_dt 
+		          ,prf.jnr_no 
+		          ,prf.org_bl_rcvd_flg 
+		          ,prf.rcvd_dt_tm 
+		          ,prf.express_tp_cd 
+		          ,prf.rlsd_dt_tm 
+		          ,prf.last_chk_no 
+		          ,prf.last_pay_dt 
+		          ,prf.inv_seq
+		ORDER  BY  prf.bl_kind DESC
+				  ,prf.bl_no
+		          ,prf.inv_no 
+		          ,prf.bill_to 
+		          ,prf.inv_post_dt 
+		]]>          
+    </select>
+    
+    <select id="searchMblDetailMultiProfitList" parameterClass="HashMap" resultClass="com.clt.apps.fis.pfm.mgt.management.dto.ProfitListVO">
+    	/** RptPrintSQL.xml > searchMblDetailMultiProfitList **/
+    	<![CDATA[
+    	SELECT  #inv_curr_cd# as inv_curr_cd
+		       ,prf.bl_kind 
+		       ,prf.frt_nm 
+		       ,prf.local_inv_amt 
+		       ,prf.cost_inv_amt 
+		       ,prf.debit_inv_amt 
+		       ,prf.cr_amt 
+		       ,(prf.local_inv_amt - prf.cost_inv_amt + prf.debit_inv_amt - prf.cr_amt) AS prf_amt
+		       ,prf.bl_no 
+		       ,prf.sell_buy_tp_cd 
+		       ,prf.inv_no 
+		       ,#inv_curr_cd#+prf.bl_no+prf.inv_no as inv_no2
+		       ,prf.bill_to 
+		       ,prf.inv_post_dt 
+		       ,#inv_curr_cd#+prf.bl_no+prf.inv_no+prf.bill_to+prf.inv_post_dt as remark2
+		       ,SUM(prf.local_inv_amt) OVER (partition by  prf.inv_seq) as local_inv_ttl_amt
+		       ,SUM(prf.cost_inv_amt) OVER (partition by  prf.inv_seq) as cost_inv_ttl_amt
+		       ,SUM(prf.debit_inv_amt-prf.cr_amt) OVER (partition by  prf.inv_seq) as agent_inv_ttl_amt 
+		       ,(SELECT MIN(j_mst.clr_yn)             
+                   FROM tb_jnr_mst j_mst, tb_jnr_dtl j_dtl            
+                  WHERE j_mst.jnr_no = j_dtl.jnr_no
+                    AND j_dtl.inv_seq = prf.inv_seq
+                    AND ISNULL(j_mst.DELT_FLG,'N') = 'N'
+			        AND ISNULL(j_dtl.DELT_FLG,'N') = 'N'
+			        AND ISNULL(j_mst.VOID_YN,'N')  = 'N') AS clr_yn 
+		       ,prf.org_bl_rcvd_flg 
+		       ,prf.rcvd_dt_tm 
+		       ,prf.express_tp_cd 
+		       ,prf.rlsd_dt_tm 
+		       ,prf.last_chk_no 
+		       ,prf.last_pay_dt 
+		       
+		       ,prf.ref_ofc_cd
+		       ,prf.inv_seq
+			   ,prf.trdp_cd
+			   ,prf.ofc_cd
+			   ,(select upper(x.CNT_CD) from tb_ofc x where x.OFC_CD = prf.ofc_cd ) AS bl_cnt_cd	
+			   ,(select max(bl_no) from tb_intg_bl where intg_bl_seq = intg_bl_seq_2) as rmk_bl_no	   
+		FROM   (SELECT  frt.inv_seq
+		               ,bl.bl_kind 
+		               ,((SELECT frt_cd.frt_cd 
+		                    FROM   tb_frt_cd frt_cd 
+		                   WHERE  frt_cd.frt_cd = frt.frt_cd 
+		                     AND frt_cd.delt_flg = 'N') + ' / ' + frt.frt_cd_nm) AS frt_nm 
+		               ,frt.inv_amt 
+		               ,CASE 
+		                  WHEN inv.sell_buy_tp_cd = 'S' THEN isnull(frt.INV_amt, 0) 
+		                  ELSE 0 
+		                END                                                                         AS local_inv_amt 
+		               ,CASE 
+		                  WHEN inv.sell_buy_tp_cd = 'B' THEN isnull(frt.INV_amt, 0) 
+		                  ELSE 0 
+		                END                                                                         AS cost_inv_amt 
+		               ,CASE 
+		                  WHEN inv.sell_buy_tp_cd = 'C' 
+		                        OR inv.sell_buy_tp_cd = 'D' THEN isnull(frt.INV_amt, 0) 
+		                  ELSE 0 
+		                END                                                                         AS debit_inv_amt 
+		               ,isnull(frt.cr_amt, 0)  AS cr_amt
+		               ,bl.bl_no 
+		               ,inv.sell_buy_tp_cd         
+		               ,CASE 
+		                  WHEN inv.sell_buy_tp_cd = 'B' THEN Isnull(dtl.buy_inv_no, '(None)') 
+		                  ELSE Isnull(dtl.inv_no, '(None)') 
+		                END                                                                         AS inv_no 
+		               ,(SELECT trdp.locl_nm 
+		                 FROM   tb_trdp trdp 
+		                 WHERE  trdp.trdp_cd = inv.trdp_cd)                                                AS bill_to 
+		               ,dtl.inv_post_dt
+		               ,(SELECT MAX(jnr_no) AS jnr_no 
+		                 FROM   tb_jnr_dtl j_dtl 
+		                 WHERE  j_dtl.inv_seq = dtl.inv_seq 
+		                 )                                                          AS jnr_no 
+		               ,bl.org_bl_rcvd_flg 
+		               ,bl.rcvd_dt_tm 
+		               ,bl.express_tp_cd 
+		               ,bl.rlsd_dt_tm 
+		               ,dtl.last_chk_no 
+		               ,dtl.last_pay_dt 
+		               ,bl.rgst_ofc_cd 
+		               
+		               ,bl.ref_ofc_cd
+					   ,inv.trdp_cd
+					   ,inv.ofc_cd	
+					   ,frt.intg_bl_seq_2
+		        FROM   tb_frt frt 
+		               JOIN (SELECT bl.bl_kind 
+		                            ,bl.bl_no 
+		                            ,bl.intg_bl_seq 
+		                            ,bl.rgst_ofc_cd 
+		                            ,bl.org_bl_rcvd_flg 
+		                            ,bl.rcvd_dt_tm 
+		                            ,bl.express_tp_cd 
+		                            ,bl.rlsd_dt_tm 
+		                            ,bl.ref_ofc_cd
+		                     FROM   (SELECT 'H' bl_kind 
+		                                    ,hbl.bl_no 
+		                                    ,hbl.intg_bl_seq 
+		                                    ,hbl.rgst_ofc_cd 
+		                                    ,hbl.org_bl_rcvd_flg 
+		                                    ,hbl.rcvd_dt_tm 
+		                                    ,hbl.express_tp_cd 
+		                                    ,hbl.rlsd_dt_tm 
+		                                    ,hbl.ref_ofc_cd
+		                             FROM   tb_intg_bl bl 
+		                                    LEFT OUTER JOIN tb_intg_bl_rlt rlt 
+		                                      ON bl.intg_bl_seq = rlt.rlt_intg_bl_seq 
+		                                         AND rlt.delt_flg = 'N' 
+		                                    LEFT OUTER JOIN tb_intg_bl hbl 
+		                                      ON hbl.intg_bl_seq = rlt.intg_bl_seq 
+		                                         AND hbl.delt_flg = 'N' 
+		                             WHERE  bl.intg_bl_seq = #intg_bl_seq#
+		                             UNION 
+		                             SELECT 'M'             bl_kind 
+		                                    ,bl.bl_no 
+		                                    ,bl.intg_bl_seq AS intg_bl_seq 
+		                                    ,bl.rgst_ofc_cd 
+		                                    ,bl.org_bl_rcvd_flg 
+		                                    ,bl.rcvd_dt_tm 
+		                                    ,bl.express_tp_cd 
+		                                    ,bl.rlsd_dt_tm 
+		                                    ,bl.ref_ofc_cd
+		                             FROM   tb_intg_bl bl 
+		                             WHERE  bl.intg_bl_seq = #intg_bl_seq#) bl) bl 
+		                 ON frt.intg_bl_seq = bl.intg_bl_seq 
+		               JOIN tb_inv inv 
+		                 ON inv.inv_seq = frt.inv_seq 
+		                    AND inv.delt_flg = 'N' 
+		               LEFT OUTER JOIN tb_inv_dtl dtl 
+		                 ON dtl.inv_seq = inv.inv_seq
+		                    AND dtl.delt_flg = 'N'
+		               LEFT OUTER JOIN tb_frt_cd frt_cd 
+		                 ON frt_cd.frt_cd = frt.frt_cd 
+		                    AND frt_cd.delt_flg = 'N'    
+		        WHERE  1=1
+		        AND    frt.inv_curr_cd = #inv_curr_cd#
+		        AND    frt.delt_flg = 'N'
+		        AND    frt_cd.pfmc_flg = 'Y' 
+		           ) prf 
+		ORDER  BY  prf.bl_kind DESC
+				  ,prf.bl_no
+		          ,prf.inv_no 
+		          ,prf.bill_to 
+		          ,prf.inv_post_dt 
+		]]>           
+    </select>
+    
+    <select id="searchMblDetailOneProfitList" parameterClass="HashMap" resultClass="com.clt.apps.fis.pfm.mgt.management.dto.ProfitListVO">
+    	/** RptPrintSQL.xml > searchMblDetailOneProfitList **/
+    	<![CDATA[
+    	SELECT  #f_curr_cd# as inv_curr_cd
+    	       ,prf.bl_kind 
+		       ,prf.frt_nm 
+		       ,prf.local_inv_amt      AS local_inv_amt 
+		       ,prf.cost_inv_amt       AS cost_inv_amt 
+		       ,prf.debit_inv_amt      AS debit_inv_amt 
+		       ,prf.cr_amt             AS cr_amt 
+		       ,(prf.local_inv_amt - prf.cost_inv_amt + prf.debit_inv_amt - prf.cr_amt) AS prf_amt
+		       ,prf.bl_no 
+		       ,prf.sell_buy_tp_cd 
+		       ,prf.inv_no 
+		       ,prf.bill_to 
+		       ,prf.inv_post_dt 
+		       ,#f_curr_cd#+prf.bl_no+prf.inv_no+prf.bill_to+prf.inv_post_dt as remark2
+		       ,SUM(prf.local_inv_amt) OVER (partition by  prf.inv_seq) as local_inv_ttl_amt
+		       ,SUM(prf.cost_inv_amt) OVER (partition by  prf.inv_seq) as cost_inv_ttl_amt
+		       ,SUM(prf.debit_inv_amt-prf.cr_amt) OVER (partition by  prf.inv_seq) as agent_inv_ttl_amt 
+		       ,(SELECT MIN(j_mst.clr_yn)             
+                   FROM tb_jnr_mst j_mst, tb_jnr_dtl j_dtl            
+                  WHERE j_mst.jnr_no = j_dtl.jnr_no
+                    AND j_dtl.inv_seq = prf.inv_seq
+                    AND ISNULL(j_mst.DELT_FLG,'N') = 'N'
+			        AND ISNULL(j_dtl.DELT_FLG,'N') = 'N'
+			        AND ISNULL(j_mst.VOID_YN,'N')  = 'N')    AS clr_yn 
+		       ,prf.org_bl_rcvd_flg 
+		       ,prf.rcvd_dt_tm 
+		       ,prf.express_tp_cd 
+		       ,prf.rlsd_dt_tm 
+		       ,prf.last_chk_no 
+		       ,prf.last_pay_dt 
+		       ,prf.xch_rt_ut as xch_rt_ut		       
+		       ,prf.ref_ofc_cd
+		       ,prf.inv_seq
+			   ,prf.trdp_cd
+			   ,prf.ofc_cd
+			   ,(select upper(x.CNT_CD) from tb_ofc x where x.OFC_CD = prf.ofc_cd ) AS bl_cnt_cd
+			   ,(select max(bl_no) from tb_intg_bl where intg_bl_seq = intg_bl_seq_2) as rmk_bl_no		  
+		FROM   (SELECT  frt.inv_seq
+		               ,frt.inv_curr_cd
+		               ,bl.bl_kind 
+		               ,((SELECT frt_cd.frt_cd 
+		                    FROM tb_frt_cd frt_cd 
+		                   WHERE  frt_cd = frt.frt_cd 
+		                     AND frt_cd.delt_flg = 'N')  + ' / ' + frt.frt_cd_nm) AS frt_nm
+		               ,CASE 
+		                  WHEN inv.sell_buy_tp_cd = 'S' THEN isnull(frt.inv_amt, 0) 
+		                  		* (CASE WHEN frt.inv_curr_cd = #f_curr_cd# 
+			                  				THEN 1 
+			                  				ELSE ISNULL(dd_ex_rt.xch_rt_ut, ISNULL(mm_ex_rt.xch_rt_ut, ISNULL(gd_ex_rt.xch_rt_ut, 0))) 
+		                  				END)
+		                  ELSE 0 
+		                END                                                                         AS local_inv_amt 
+		               ,CASE 
+		                  WHEN inv.sell_buy_tp_cd = 'B' THEN isnull(frt.inv_amt, 0) 
+		                  		* (CASE WHEN frt.inv_curr_cd = #f_curr_cd# 
+			                  				THEN 1 
+			                  				ELSE ISNULL(dd_ex_rt.xch_rt_ut, ISNULL(mm_ex_rt.xch_rt_ut, ISNULL(gd_ex_rt.xch_rt_ut, 0))) 
+		                  				END)
+		                  ELSE 0 
+		                END                                                                         AS cost_inv_amt 
+		               ,CASE 
+		                  WHEN inv.sell_buy_tp_cd = 'C' 
+		                        OR inv.sell_buy_tp_cd = 'D' THEN isnull(frt.inv_amt, 0)
+		                        * (CASE WHEN frt.inv_curr_cd = #f_curr_cd# 
+			                  				THEN 1 
+			                  				ELSE ISNULL(dd_ex_rt.xch_rt_ut, ISNULL(mm_ex_rt.xch_rt_ut, ISNULL(gd_ex_rt.xch_rt_ut, 0))) 
+		                  				END)
+		                  ELSE 0 
+		                END                                                                         AS debit_inv_amt 
+		               ,isnull(frt.cr_amt, 0) 
+		               		* (CASE WHEN frt.inv_curr_cd = #f_curr_cd# 
+			                  				THEN 1 
+			                  				ELSE ISNULL(dd_ex_rt.xch_rt_ut, ISNULL(mm_ex_rt.xch_rt_ut, ISNULL(gd_ex_rt.xch_rt_ut, 0))) 
+		                  				END)	AS cr_amt
+		               ,bl.bl_no 
+		               ,inv.sell_buy_tp_cd        
+		               ,CASE 
+		                  WHEN inv.sell_buy_tp_cd = 'B' THEN Isnull(dtl.buy_inv_no, '(None)') 
+		                  ELSE Isnull(dtl.inv_no, '(None)') 
+		                END                                                                         AS inv_no 
+		               ,(SELECT trdp.locl_nm 
+		                 FROM   tb_trdp trdp 
+		                 WHERE  trdp.trdp_cd = inv.trdp_cd)                                                AS bill_to 
+		               ,dtl.inv_post_dt 
+		               ,(SELECT MAX(jnr_no) AS jnr_no 
+		                 FROM   tb_jnr_dtl j_dtl 
+		                 WHERE  j_dtl.inv_seq = dtl.inv_seq 
+		                 )                                                          AS jnr_no 
+		               ,bl.org_bl_rcvd_flg 
+		               ,bl.rcvd_dt_tm 
+		               ,bl.express_tp_cd 
+		               ,bl.rlsd_dt_tm 
+		               ,dtl.last_chk_no 
+		               ,dtl.last_pay_dt 
+		               ,bl.rgst_ofc_cd 
+		               ,(CASE WHEN frt.inv_curr_cd = #f_curr_cd# 
+			                  				THEN 1 
+			                  				ELSE ISNULL(dd_ex_rt.xch_rt_ut, ISNULL(mm_ex_rt.xch_rt_ut, ISNULL(gd_ex_rt.xch_rt_ut, 0))) 
+		                  				END) as xch_rt_ut
+		               ,bl.ref_ofc_cd
+					   ,inv.trdp_cd
+					   ,inv.ofc_cd	
+					   ,frt.intg_bl_seq_2
+		        FROM   tb_frt frt 
+		               JOIN (SELECT bl.bl_kind 
+		                            ,bl.bl_no 
+		                            ,bl.intg_bl_seq 
+		                            ,bl.rgst_ofc_cd 
+		                            ,bl.org_bl_rcvd_flg 
+		                            ,bl.rcvd_dt_tm 
+		                            ,bl.express_tp_cd 
+		                            ,bl.rlsd_dt_tm 
+		                            ,bl.ref_ofc_cd
+		                     FROM   (SELECT 'H' bl_kind 
+		                                    ,hbl.bl_no 
+		                                    ,hbl.intg_bl_seq 
+		                                    ,hbl.rgst_ofc_cd 
+		                                    ,hbl.org_bl_rcvd_flg 
+		                                    ,hbl.rcvd_dt_tm 
+		                                    ,hbl.express_tp_cd 
+		                                    ,hbl.rlsd_dt_tm 
+		                                    ,hbl.ref_ofc_cd
+		                             FROM   tb_intg_bl bl 
+		                                    LEFT OUTER JOIN tb_intg_bl_rlt rlt 
+		                                      ON bl.intg_bl_seq = rlt.rlt_intg_bl_seq 
+		                                         AND rlt.delt_flg = 'N' 
+		                                    LEFT OUTER JOIN tb_intg_bl hbl 
+		                                      ON hbl.intg_bl_seq = rlt.intg_bl_seq 
+		                                         AND hbl.delt_flg = 'N' 
+		                             WHERE  bl.intg_bl_seq = #intg_bl_seq#
+		                             UNION 
+		                             SELECT 'M'             bl_kind 
+		                                    ,bl.bl_no 
+		                                    ,bl.intg_bl_seq AS intg_bl_seq 
+		                                    ,bl.rgst_ofc_cd 
+		                                    ,bl.org_bl_rcvd_flg 
+		                                    ,bl.rcvd_dt_tm 
+		                                    ,bl.express_tp_cd 
+		                                    ,bl.rlsd_dt_tm 
+		                                    ,bl.ref_ofc_cd
+		                             FROM   tb_intg_bl bl 
+		                             WHERE  bl.intg_bl_seq = #intg_bl_seq#) bl) bl 
+		                 ON frt.intg_bl_seq = bl.intg_bl_seq 
+		               JOIN tb_inv inv 
+		                 ON inv.inv_seq = frt.inv_seq 
+		                    AND inv.delt_flg = 'N' 
+		               LEFT OUTER JOIN tb_inv_dtl dtl 
+		                 ON dtl.inv_seq = inv.inv_seq
+		                    AND dtl.delt_flg = 'N'
+		               LEFT OUTER JOIN tb_frt_cd frt_cd 
+		                 ON frt_cd.frt_cd = frt.frt_cd 
+		                    AND frt_cd.delt_flg = 'N'  
+		               LEFT OUTER JOIN tb_finc_perf_xcrt dd_ex_rt              
+				         ON dd_ex_rt.fm_curr_cd = frt.inv_curr_cd    
+					        AND dd_ex_rt.delt_flg = 'N'                                                       
+					        AND dd_ex_rt.to_curr_cd = #f_curr_cd#   
+					        AND dd_ex_rt.dt_clss_cd = 'D' 
+					        AND dd_ex_rt.aply_fm_dt = frt.inv_post_dt    
+					   LEFT OUTER JOIN tb_finc_perf_xcrt mm_ex_rt              
+				         ON mm_ex_rt.fm_curr_cd = frt.inv_curr_cd   
+					        AND mm_ex_rt.delt_flg = 'N'                                                       
+					        AND mm_ex_rt.to_curr_cd = #f_curr_cd#   
+					        AND mm_ex_rt.dt_clss_cd = 'M' 
+					        AND substring(mm_ex_rt.aply_fm_dt,1,6) = substring(frt.inv_post_dt,1,6)
+		               LEFT OUTER JOIN ($one_curr_rate_sql$) gd_ex_rt 
+		                 ON gd_ex_rt.curr_cd = frt.inv_curr_cd  
+		                    AND gd_ex_rt.aply_fm_dt = substring(frt.inv_post_dt,1,6)        
+		        WHERE  frt.delt_flg = 'N'
+		        AND    frt_cd.pfmc_flg = 'Y' 
+		        ) prf           
+		ORDER  BY  prf.bl_kind DESC
+				  ,prf.bl_no
+		          ,prf.inv_no 
+		          ,prf.bill_to 
+		          ,prf.inv_post_dt   
+		]]>          
+    </select>
+    
+    <select id="searchMblByHblMultiProfitList" parameterClass="HashMap" resultClass="com.clt.apps.fis.pfm.mgt.management.dto.ProfitListVO">
+    	 /** RptPrintSQL.xml > searchMblByHblMultiProfitList **/
+    	 <![CDATA[
+    	SELECT  #inv_curr_cd# as inv_curr_cd
+		       ,prf.intg_bl_seq 
+		       ,SUM(prf.local_inv_amt - prf.cost_inv_amt + prf.debit_inv_amt - prf.cr_amt) + (prf.mbl_inv_amt * prf.ratio / 100) AS prf_amt 
+		       ,prf.bl_no 
+		       ,prf.trdp_nm 
+		       ,prf.sls_usr_nm 
+		       ,prf.fnl_dest_loc_nm 
+		       ,prf.volume 
+		       ,prf.ratio 
+		       ,prf.mbl_inv_amt + SUM(SUM(prf.local_inv_amt - prf.cost_inv_amt + prf.debit_inv_amt - prf.cr_amt))  OVER(partition by prf.mbl_intg_bl_seq) AS prf_sum_amt   
+		FROM   (SELECT bl.intg_bl_seq 
+		               ,bl.mbl_intg_bl_seq
+		               ,CASE 
+		                  WHEN frt.inv_curr_cd = #inv_curr_cd# AND inv.sell_buy_tp_cd = 'S' AND frt_cd.pfmc_flg = 'Y' THEN ISNULL(frt.inv_sum_amt, 0)
+		                  ELSE 0 
+		                END AS local_inv_amt 
+		               ,CASE 
+		                  WHEN frt.inv_curr_cd = #inv_curr_cd# AND inv.sell_buy_tp_cd = 'B' AND frt_cd.pfmc_flg = 'Y' THEN ISNULL(frt.inv_sum_amt, 0)
+		                  ELSE 0 
+		                END AS cost_inv_amt 
+		               ,CASE 
+		                  WHEN frt.inv_curr_cd = #inv_curr_cd# AND (inv.sell_buy_tp_cd = 'C' OR inv.sell_buy_tp_cd = 'D') AND frt_cd.pfmc_flg = 'Y'  THEN ISNULL(frt.inv_sum_amt, 0) 
+		                  ELSE 0 
+		                END AS debit_inv_amt 
+		               ,CASE 
+		                  WHEN frt.inv_curr_cd = #inv_curr_cd# AND frt_cd.pfmc_flg = 'Y' THEN ISNULL(frt.cr_amt, 0)
+		                  ELSE 0 
+		                END  AS cr_amt
+		               ,bl.bl_no 
+		               ,bl.trdp_nm 
+		               ,bl.sls_usr_nm 
+		               ,bl.fnl_dest_loc_nm 
+		               ,ISNULL(bl.volume, 0) AS volume
+		               ,ISNULL(bl.ratio, 0) AS  ratio
+		               ,ISNULL(mbl_inv.mbl_inv_amt, 0) AS mbl_inv_amt
+		               ,frt_cd.pfmc_flg
+		        FROM   (SELECT  hbl.intg_bl_seq 
+		                       ,mbl.intg_bl_seq AS mbl_intg_bl_seq 
+		                       ,hbl.bl_no 
+		                       ,act.trdp_nm 
+		                       ,bnd.sls_usr_nm 
+		                       ,hbl.fnl_dest_loc_nm 
+		                       ,CASE 
+		                          WHEN #air_sea_clss_cd# = 'S' THEN ( CASE 
+		                                                   WHEN ( hbl.meas - hbl.grs_wgt / 1000 ) > 0 THEN hbl.meas 
+		                                                   ELSE hbl.grs_wgt / 1000 
+		                                                 END ) 
+		                          WHEN #air_sea_clss_cd# = 'A' THEN hbl.grs_wgt 
+		                        END             AS volume 
+		                      ,CASE WHEN #air_sea_clss_cd# = 'S' 
+		                            THEN  CASE WHEN ISNULL(CONVERT(FLOAT, #mbl_volume#), 0) = 0 
+		                                       THEN 0 
+		                                       ELSE (CASE WHEN (hbl.meas - hbl.grs_wgt/1000) > 0 
+		                                                  THEN hbl.meas
+		                                                  ELSE hbl.grs_wgt/1000
+		                                             END)/CONVERT(FLOAT, #mbl_volume#)*100
+		                                       END   
+		                            WHEN #air_sea_clss_cd# = 'A' 
+		                            THEN CASE WHEN ISNULL(CONVERT(FLOAT, #mbl_volume#), 0) = 0 
+		                                      THEN 0 
+		                                      ELSE  hbl.grs_wgt/CONVERT(FLOAT, #mbl_volume#)*100/1000*1000
+		                                 END 
+		                       END  AS ratio 
+		                FROM   tb_intg_bl mbl 
+		                       LEFT OUTER JOIN tb_intg_bl_rlt rlt 
+		                         ON rlt.rlt_intg_bl_seq = mbl.intg_bl_seq 
+		                            AND rlt.delt_flg = 'N' 
+		                       LEFT OUTER JOIN tb_intg_bl hbl 
+		                         ON rlt.intg_bl_seq = hbl.intg_bl_seq 
+		                            AND hbl.delt_flg = 'N' 
+		                       LEFT OUTER JOIN tb_bl_prnr act 
+		                         ON hbl.intg_bl_seq = act.intg_bl_seq 
+		                            AND act.bl_trdp_tp_cd = 'S02' 
+		                            AND act.delt_flg = 'N' 
+		                       LEFT OUTER JOIN tb_add_info_bnd bnd 
+		                         ON hbl.intg_bl_seq = bnd.intg_bl_seq 
+		                            AND bnd.bnd_clss_cd = 'O' 
+		                            AND bnd.delt_flg = 'N' 
+		                WHERE  mbl.intg_bl_seq = #intg_bl_seq# 
+		                   AND Isnull(hbl.sub_mbl_flg, 'N') = 'N'
+		                   ) bl 
+		               LEFT OUTER JOIN tb_frt frt 
+		                 ON bl.intg_bl_seq = Isnull(frt.intg_bl_seq_2, frt.intg_bl_seq)
+		                    AND isnull(frt.inv_seq, '') != ''
+		                    AND frt.delt_flg = 'N'                   
+		               LEFT OUTER JOIN tb_inv inv 
+		                 ON inv.inv_seq = frt.inv_seq 
+		                    AND inv.delt_flg = 'N' 
+		               LEFT OUTER JOIN tb_inv_dtl dtl 
+		                 ON dtl.inv_seq = inv.inv_seq 
+		                    AND dtl.delt_flg = 'N'
+		               LEFT OUTER JOIN tb_frt_cd frt_cd 
+		                 ON frt_cd.frt_cd = frt.frt_cd 
+		                    AND frt_cd.delt_flg = 'N'  
+		               LEFT OUTER JOIN (SELECT mbl.mbl_intg_bl_seq 
+		                                       ,SUM(local_inv_amt - cost_inv_amt + debit_inv_amt - cr_amt) AS mbl_inv_amt
+		                                FROM   (SELECT ( CASE 
+		                                                   WHEN inv.sell_buy_tp_cd = 'S' THEN ISNULL(frt.inv_sum_amt, 0) 
+		                                                   ELSE 0 
+		                                                 END )     AS local_inv_amt 
+		                                               ,( CASE 
+		                                                    WHEN inv.sell_buy_tp_cd = 'B' THEN ISNULL(frt.inv_sum_amt, 0) 
+		                                                    ELSE 0 
+		                                                  END )    AS cost_inv_amt 
+		                                               ,( CASE 
+		                                                    WHEN inv.sell_buy_tp_cd = 'C' 
+		                                                          OR inv.sell_buy_tp_cd = 'D' THEN ISNULL(frt.inv_sum_amt, 0) 
+		                                                    ELSE 0 
+		                                                  END )    AS debit_inv_amt 
+		                                               ,ISNULL(frt.cr_amt, 0) AS cr_amt 
+		                                               ,mbl.mbl_intg_bl_seq 
+		                                               ,frt.inv_curr_cd
+		                                        FROM   (SELECT mbl.intg_bl_seq  AS intg_bl_seq 
+		                                                       ,mbl.intg_bl_seq AS mbl_intg_bl_seq 
+		                                                FROM   tb_intg_bl mbl 
+		                                                WHERE  mbl.intg_bl_seq = #intg_bl_seq#                                                 
+		                                                UNION                                                 
+		                                                SELECT hbl.intg_bl_seq  AS intg_bl_seq 
+		                                                       ,mbl.intg_bl_seq AS mbl_intg_bl_seq 
+		                                                FROM   tb_intg_bl mbl 
+		                                                       LEFT OUTER JOIN tb_intg_bl_rlt rlt 
+		                                                         ON rlt.rlt_intg_bl_seq = mbl.intg_bl_seq 
+		                                                            AND rlt.delt_flg = 'N' 
+		                                                       LEFT OUTER JOIN tb_intg_bl hbl 
+		                                                         ON rlt.intg_bl_seq = hbl.intg_bl_seq 
+		                                                            AND hbl.delt_flg = 'N' 
+		                                                WHERE  mbl.intg_bl_seq = #intg_bl_seq# 
+		                                                   AND Isnull(hbl.sub_mbl_flg, 'N') = 'Y'
+		                                                ) mbl 
+		                                               JOIN tb_frt frt 
+		                                                 ON mbl.intg_bl_seq = Isnull(frt.intg_bl_seq_2, frt.intg_bl_seq) 
+		                                               JOIN tb_inv inv 
+		                                                 ON inv.inv_seq = frt.inv_seq 
+		                                                    AND inv.delt_flg = 'N' 
+		                                               LEFT OUTER JOIN tb_inv_dtl dtl 
+		                                                 ON dtl.inv_seq = inv.inv_seq 
+		                                                    AND dtl.delt_flg = 'N'
+		                                               LEFT OUTER JOIN tb_frt_cd frt_cd 
+		                                                 ON frt_cd.frt_cd = frt.frt_cd 
+		                                                 AND frt_cd.delt_flg = 'N'   
+		                                        WHERE  1=1
+		                                        AND    frt.inv_curr_cd = #inv_curr_cd#
+		                                        AND    frt.delt_flg = 'N'
+		                                        AND    frt_cd.pfmc_flg = 'Y'     
+		                                        ) mbl 
+		                                GROUP  BY mbl.mbl_intg_bl_seq
+		                                ) mbl_inv 
+		                 ON mbl_inv.mbl_intg_bl_seq = bl.mbl_intg_bl_seq         
+		 ) prf 
+		 WHERE  1=1   
+		GROUP  BY  prf.intg_bl_seq 
+		          ,prf.mbl_intg_bl_seq
+		          ,prf.bl_no 
+		          ,prf.trdp_nm 
+		          ,prf.sls_usr_nm 
+		          ,prf.fnl_dest_loc_nm 
+		          ,prf.volume 
+		          ,prf.ratio 
+		          ,prf.mbl_inv_amt 
+		ORDER  BY  prf.bl_no  
+		]]>          
+    </select>
+    
+    <select id="searchMblByHblOneProfitList" parameterClass="HashMap" resultClass="com.clt.apps.fis.pfm.mgt.management.dto.ProfitListVO">
+    	 /** RptPrintSQL.xml > searchMblByHblOneProfitList **/
+    	 <![CDATA[
+    	SELECT #f_curr_cd# as inv_curr_cd
+		       ,prf.intg_bl_seq 
+		       ,SUM(prf.local_inv_amt - prf.cost_inv_amt + prf.debit_inv_amt - prf.cr_amt) + (prf.mbl_inv_amt * prf.ratio / 100) AS prf_amt 
+		       ,prf.bl_no 
+		       ,prf.trdp_nm 
+		       ,prf.sls_usr_nm 
+		       ,prf.fnl_dest_loc_nm 
+		       ,prf.volume 
+		       ,prf.ratio 
+		       ,prf.mbl_inv_amt + SUM(SUM(prf.local_inv_amt - prf.cost_inv_amt + prf.debit_inv_amt - prf.cr_amt))  OVER(partition by prf.mbl_intg_bl_seq) AS prf_sum_amt 
+		FROM   (SELECT bl.intg_bl_seq 
+		               ,bl.mbl_intg_bl_seq
+		               ,CASE 
+		                  WHEN inv.sell_buy_tp_cd = 'S' AND frt_cd.pfmc_flg = 'Y' THEN ISNULL(frt.inv_sum_amt, 0) 
+		                  	* (CASE WHEN frt.inv_curr_cd = #f_curr_cd# 
+		            		        THEN 1 
+		            		        ELSE ISNULL(dd_ex_rt.xch_rt_ut, ISNULL(mm_ex_rt.xch_rt_ut, ISNULL(gd_ex_rt.xch_rt_ut, 0))) 
+		           		       END)
+		                  ELSE 0 
+		                END AS local_inv_amt 
+		               ,CASE 
+		                  WHEN inv.sell_buy_tp_cd = 'B' AND frt_cd.pfmc_flg = 'Y' THEN ISNULL(frt.inv_sum_amt, 0) 
+		                  	* (CASE WHEN frt.inv_curr_cd = #f_curr_cd# 
+		            		        THEN 1 
+		            		        ELSE ISNULL(dd_ex_rt.xch_rt_ut, ISNULL(mm_ex_rt.xch_rt_ut, ISNULL(gd_ex_rt.xch_rt_ut, 0))) 
+		           		       END)
+		                  ELSE 0 
+		                END AS cost_inv_amt 
+		               ,CASE 
+		                  WHEN (inv.sell_buy_tp_cd = 'C' 
+		                         OR inv.sell_buy_tp_cd = 'D') AND frt_cd.pfmc_flg = 'Y' THEN ISNULL(frt.inv_sum_amt, 0) 
+		                    * (CASE WHEN frt.inv_curr_cd = #f_curr_cd# 
+		            		        THEN 1 
+		            		        ELSE ISNULL(dd_ex_rt.xch_rt_ut, ISNULL(mm_ex_rt.xch_rt_ut, ISNULL(gd_ex_rt.xch_rt_ut, 0))) 
+		           		       END)
+		                  ELSE 0 
+		                END AS debit_inv_amt 
+		               ,CASE WHEN frt_cd.pfmc_flg = 'Y' THEN ISNULL(frt.cr_amt, 0) 
+		               		* (CASE WHEN frt.inv_curr_cd = #f_curr_cd# 
+		            		        THEN 1 
+		            		        ELSE ISNULL(dd_ex_rt.xch_rt_ut, ISNULL(mm_ex_rt.xch_rt_ut, ISNULL(gd_ex_rt.xch_rt_ut, 0))) 
+		           		       END) 
+		           		     ELSE 0 
+		           		END   as cr_amt
+		               ,bl.bl_no 
+		               ,bl.trdp_nm 
+		               ,bl.sls_usr_nm 
+		               ,bl.fnl_dest_loc_nm 
+		               ,ISNULL(bl.volume, 0) AS volume
+		               ,ISNULL(bl.ratio, 0) AS  ratio
+		               ,ISNULL(mbl_inv.mbl_inv_amt, 0) AS mbl_inv_amt 
+		               ,frt_cd.pfmc_flg
+		               ,(CASE WHEN frt.inv_curr_cd = #f_curr_cd# 
+            		          THEN 1 
+            		          ELSE ISNULL(dd_ex_rt.xch_rt_ut, ISNULL(mm_ex_rt.xch_rt_ut, ISNULL(gd_ex_rt.xch_rt_ut, 0))) 
+           		         END) as xch_rt_ut
+		        FROM   (SELECT hbl.intg_bl_seq 
+		                       ,mbl.intg_bl_seq AS mbl_intg_bl_seq 
+		                       ,hbl.bl_no 
+		                       ,act.trdp_nm 
+		                       ,bnd.sls_usr_nm 
+		                       ,hbl.fnl_dest_loc_nm 
+		                       ,CASE 
+		                           WHEN #air_sea_clss_cd# = 'S' THEN ( CASE 
+		                                                   WHEN ( hbl.meas - hbl.grs_wgt / 1000 ) > 0 THEN hbl.meas 
+		                                                   ELSE hbl.grs_wgt / 1000 
+		                                                 END ) 
+		                          WHEN #air_sea_clss_cd# = 'A' THEN hbl.grs_wgt 
+		                        END             AS volume 
+		                       ,CASE WHEN #air_sea_clss_cd# = 'S' 
+		                             THEN  CASE WHEN ISNULL(CONVERT(FLOAT, #mbl_volume#), 0) = 0 
+		                                        THEN 0 
+		                                        ELSE (CASE WHEN (hbl.meas - hbl.grs_wgt/1000) > 0 
+		                                                   THEN hbl.meas
+		                                                   ELSE hbl.grs_wgt/1000
+		                                             END)/CONVERT(FLOAT, #mbl_volume#)*100
+		                                        END   
+		                             WHEN #air_sea_clss_cd# = 'A' 
+		                             THEN CASE WHEN ISNULL(CONVERT(FLOAT, #mbl_volume#), 0) = 0 
+		                                       THEN 0 
+		                                       ELSE  hbl.grs_wgt/CONVERT(FLOAT, #mbl_volume#)*100/1000*1000
+		                                  END 
+		                       END  AS ratio 
+		                FROM   tb_intg_bl mbl 
+		                       LEFT OUTER JOIN tb_intg_bl_rlt rlt 
+		                         ON rlt.rlt_intg_bl_seq = mbl.intg_bl_seq 
+		                            AND rlt.delt_flg = 'N' 
+		                       LEFT OUTER JOIN tb_intg_bl hbl 
+		                         ON rlt.intg_bl_seq = hbl.intg_bl_seq 
+		                            AND hbl.delt_flg = 'N' 
+		                       LEFT OUTER JOIN tb_bl_prnr act 
+		                         ON hbl.intg_bl_seq = act.intg_bl_seq 
+		                            AND act.bl_trdp_tp_cd = 'S02' 
+		                            AND act.delt_flg = 'N' 
+		                       LEFT OUTER JOIN tb_add_info_bnd bnd 
+		                         ON hbl.intg_bl_seq = bnd.intg_bl_seq 
+		                            AND bnd.bnd_clss_cd = 'O' 
+		                            AND bnd.delt_flg = 'N' 
+		                WHERE  mbl.intg_bl_seq = #intg_bl_seq# 
+		                   AND Isnull(hbl.sub_mbl_flg, 'N') = 'N') bl 
+		               LEFT OUTER JOIN tb_frt frt 
+		                 ON bl.intg_bl_seq = Isnull(frt.intg_bl_seq_2, frt.intg_bl_seq)
+		                    AND isnull(frt.inv_seq, '') != '' 
+		                    AND frt.delt_flg = 'N' 
+		               LEFT OUTER JOIN tb_inv inv 
+		                 ON inv.inv_seq = frt.inv_seq 
+		                    AND inv.delt_flg = 'N' 
+		               LEFT OUTER JOIN tb_inv_dtl dtl 
+		                 ON dtl.inv_seq = inv.inv_seq 
+		                    AND dtl.delt_flg = 'N'
+		               LEFT OUTER JOIN tb_frt_cd frt_cd 
+		                 ON frt_cd.frt_cd = frt.frt_cd 
+		                    AND frt_cd.delt_flg = 'N'   
+		               LEFT OUTER JOIN tb_finc_perf_xcrt dd_ex_rt              
+				         ON dd_ex_rt.fm_curr_cd = frt.inv_curr_cd    
+					        AND dd_ex_rt.delt_flg = 'N'                                                       
+					        AND dd_ex_rt.to_curr_cd = #f_curr_cd#   
+					        AND dd_ex_rt.dt_clss_cd = 'D' 
+					        AND dd_ex_rt.aply_fm_dt = frt.inv_post_dt    
+					   LEFT OUTER JOIN tb_finc_perf_xcrt mm_ex_rt              
+				         ON mm_ex_rt.fm_curr_cd = frt.inv_curr_cd   
+					        AND mm_ex_rt.delt_flg = 'N'                                                       
+					        AND mm_ex_rt.to_curr_cd = #f_curr_cd#   
+					        AND mm_ex_rt.dt_clss_cd = 'M' 
+					        AND substring(mm_ex_rt.aply_fm_dt,1,6) = substring(frt.inv_post_dt,1,6)
+		               LEFT OUTER JOIN ($one_curr_rate_sql$) gd_ex_rt 
+		                 ON gd_ex_rt.curr_cd = frt.inv_curr_cd  
+		                    AND gd_ex_rt.aply_fm_dt = substring(frt.inv_post_dt,1,6)                                          
+		               LEFT OUTER JOIN (SELECT mbl.mbl_intg_bl_seq 
+		                                       ,SUM(local_inv_amt - cost_inv_amt + debit_inv_amt - cr_amt) AS mbl_inv_amt 
+		                                FROM   (SELECT mbl.mbl_intg_bl_seq 
+		                                               ,( CASE 
+		                                                    WHEN inv.sell_buy_tp_cd = 'S' THEN Isnull(frt.inv_sum_amt, 0) 
+		                                                    	* (CASE WHEN frt.inv_curr_cd = #f_curr_cd# 
+												            		    THEN 1 
+												            		    ELSE ISNULL(dd_ex_rt.xch_rt_ut, ISNULL(mm_ex_rt.xch_rt_ut, ISNULL(gd_ex_rt.xch_rt_ut, 0))) 
+												           		   END)
+		                                                    ELSE 0 
+		                                                  END )    AS local_inv_amt 
+		                                               ,( CASE 
+		                                                    WHEN inv.sell_buy_tp_cd = 'B' THEN Isnull(frt.inv_sum_amt, 0) 
+		                                                    	* (CASE WHEN frt.inv_curr_cd = #f_curr_cd# 
+												            		    THEN 1 
+												            		    ELSE ISNULL(dd_ex_rt.xch_rt_ut, ISNULL(mm_ex_rt.xch_rt_ut, ISNULL(gd_ex_rt.xch_rt_ut, 0))) 
+												           		   END)
+		                                                    ELSE 0 
+		                                                  END )    AS cost_inv_amt 
+		                                               ,( CASE 
+		                                                    WHEN inv.sell_buy_tp_cd = 'C' 
+		                                                          OR inv.sell_buy_tp_cd = 'D' THEN Isnull(frt.inv_sum_amt, 0) 
+		                                                          * (CASE WHEN frt.inv_curr_cd = #f_curr_cd# 
+												            		      THEN 1 
+												            		      ELSE ISNULL(dd_ex_rt.xch_rt_ut, ISNULL(mm_ex_rt.xch_rt_ut, ISNULL(gd_ex_rt.xch_rt_ut, 0))) 
+												           		     END)
+		                                                    ELSE 0 
+		                                                  END )    AS debit_inv_amt 
+		                                               ,Isnull(frt.cr_amt, 0) 
+		                                               		* (CASE WHEN frt.inv_curr_cd = #f_curr_cd# 
+											            		    THEN 1 
+											            		    ELSE ISNULL(dd_ex_rt.xch_rt_ut, ISNULL(mm_ex_rt.xch_rt_ut, ISNULL(gd_ex_rt.xch_rt_ut, 0))) 
+											           		   END) AS cr_amt                                                
+		                                        FROM   (SELECT mbl.intg_bl_seq  AS intg_bl_seq 
+		                                                       ,mbl.intg_bl_seq AS mbl_intg_bl_seq 
+		                                                FROM   tb_intg_bl mbl 
+		                                                WHERE  mbl.intg_bl_seq = #intg_bl_seq# 
+		                                                UNION 
+		                                                SELECT hbl.intg_bl_seq  AS intg_bl_seq 
+		                                                       ,mbl.intg_bl_seq AS mbl_intg_bl_seq 
+		                                                FROM   tb_intg_bl mbl 
+		                                                       LEFT OUTER JOIN tb_intg_bl_rlt rlt 
+		                                                         ON rlt.rlt_intg_bl_seq = mbl.intg_bl_seq 
+		                                                            AND rlt.delt_flg = 'N' 
+		                                                       LEFT OUTER JOIN tb_intg_bl hbl 
+		                                                         ON rlt.intg_bl_seq = hbl.intg_bl_seq 
+		                                                            AND hbl.delt_flg = 'N' 
+		                                                WHERE  mbl.intg_bl_seq = #intg_bl_seq# 
+		                                                   AND Isnull(hbl.sub_mbl_flg, 'N') = 'Y'
+		                                               ) mbl 
+		                                               JOIN tb_frt frt 
+		                                                 ON mbl.intg_bl_seq = Isnull(frt.intg_bl_seq_2, frt.intg_bl_seq) 
+		                                               JOIN tb_inv inv 
+		                                                 ON inv.inv_seq = frt.inv_seq 
+		                                                    AND inv.delt_flg = 'N' 
+		                                               LEFT OUTER JOIN tb_inv_dtl dtl 
+		                                                 ON dtl.inv_seq = inv.inv_seq
+		                                                    AND dtl.delt_flg = 'N'
+		                                               LEFT OUTER JOIN tb_frt_cd frt_cd 
+		                                                 ON frt_cd.frt_cd = frt.frt_cd 
+		                                                 AND frt_cd.delt_flg = 'N'   
+		                                               LEFT OUTER JOIN tb_finc_perf_xcrt dd_ex_rt              
+												         ON dd_ex_rt.fm_curr_cd = frt.inv_curr_cd    
+													        AND dd_ex_rt.delt_flg = 'N'                                                       
+													        AND dd_ex_rt.to_curr_cd = #f_curr_cd#   
+													        AND dd_ex_rt.dt_clss_cd = 'D' 
+													        AND dd_ex_rt.aply_fm_dt = frt.inv_post_dt    
+													   LEFT OUTER JOIN tb_finc_perf_xcrt mm_ex_rt              
+												         ON mm_ex_rt.fm_curr_cd = frt.inv_curr_cd   
+													        AND mm_ex_rt.delt_flg = 'N'                                                       
+													        AND mm_ex_rt.to_curr_cd = #f_curr_cd#   
+													        AND mm_ex_rt.dt_clss_cd = 'M' 
+													        AND substring(mm_ex_rt.aply_fm_dt,1,6) = substring(frt.inv_post_dt,1,6)
+										               LEFT OUTER JOIN ($one_curr_rate_sql$) gd_ex_rt 
+										                 ON gd_ex_rt.curr_cd = frt.inv_curr_cd  
+										                    AND gd_ex_rt.aply_fm_dt = substring(frt.inv_post_dt,1,6)     
+		                                        WHERE  frt.delt_flg = 'N'
+		                                        AND    frt_cd.pfmc_flg = 'Y'     
+		                                        ) mbl  
+		                                GROUP  BY mbl.mbl_intg_bl_seq
+		                               ) mbl_inv 
+		                 ON mbl_inv.mbl_intg_bl_seq = bl.mbl_intg_bl_seq        
+		        ) prf
+		WHERE  1=1       
+		GROUP  BY  prf.intg_bl_seq 
+		          ,prf.mbl_intg_bl_seq
+		          ,prf.bl_no 
+		          ,prf.trdp_nm 
+		          ,prf.sls_usr_nm 
+		          ,prf.fnl_dest_loc_nm 
+		          ,prf.volume 
+		          ,prf.ratio 
+		          ,prf.mbl_inv_amt 
+		ORDER  BY prf.bl_no  
+		]]>           
+    </select>
+    
+	<select id="searchHblByHblMultiProfitList" parameterClass="HashMap" resultClass="com.clt.apps.fis.pfm.mgt.management.dto.ProfitListVO">
+		/** RptPrintSQL.xml > searchHblByHblMultiProfitList **/
+		SELECT #inv_curr_cd# as inv_curr_cd
+		      ,prf.bl_kind
+		      ,prf.frt_kind
+		      ,prf.frt_nm
+		      ,(prf.local_inv_amt * prf.ratio/100) AS local_inv_amt
+		      ,(prf.cost_inv_amt* prf.ratio/100) AS cost_inv_amt
+		      ,(prf.debit_inv_amt* prf.ratio/100) - (prf.cr_amt * prf.ratio/100) AS dc_inv_amt
+		      ,(prf.debit_inv_amt* prf.ratio/100) AS debit_inv_amt
+		      ,(prf.cr_amt * prf.ratio/100) AS cr_amt
+		      ,prf.bl_no
+		      ,prf.sell_buy_tp_cd
+		      ,prf.inv_no
+		      ,prf.inv_no2
+		      ,prf.bill_to
+		      ,prf.inv_post_dt
+		      ,(SELECT MIN(j_mst.clr_yn)             
+		          FROM tb_jnr_mst j_mst, tb_jnr_dtl j_dtl            
+		         WHERE j_mst.jnr_no = j_dtl.jnr_no
+		           AND j_dtl.inv_seq = prf.inv_seq
+		           AND ISNULL(j_mst.DELT_FLG,'N') = 'N'
+			       AND ISNULL(j_dtl.DELT_FLG,'N') = 'N'
+			       AND ISNULL(j_mst.VOID_YN,'N')  = 'N') AS clr_yn
+		      ,prf.ratio
+		      ,prf.inv_seq
+		      ,prf.ref_ofc_cd
+			  ,prf.trdp_cd
+			  ,prf.ofc_cd
+		      ,(select upper(x.CNT_CD) from tb_ofc x where x.OFC_CD = prf.ofc_cd ) AS bl_cnt_cd
+		FROM (      
+		      <![CDATA[
+		      SELECT  bl.bl_kind
+		             ,CASE WHEN frt.intg_bl_seq <> ISNULL(frt.intg_bl_seq_2, frt.intg_bl_seq) 
+		                        AND bl.sub_mbl_flg = 'N'
+		                   THEN 'H'
+		                   WHEN frt.intg_bl_seq <> ISNULL(frt.intg_bl_seq_2, frt.intg_bl_seq) 
+		                        AND bl.sub_mbl_flg <> 'N'
+		                   THEN 'S'
+		                   ELSE bl.bl_kind
+		              END AS frt_kind
+		             ,((select frt_cd.frt_cd 
+		                   from tb_frt_cd frt_cd 
+		                  where frt_cd = frt.frt_cd) + ' / ' + frt.frt_cd_nm) AS frt_nm
+		             ,frt.inv_amt
+		             ,CASE WHEN inv.sell_buy_tp_cd = 'S'
+		                   THEN frt.inv_amt
+		                   ELSE 0
+		              END AS local_inv_amt 
+		             ,CASE WHEN inv.sell_buy_tp_cd = 'B'
+		                   THEN frt.inv_amt
+		                   ELSE 0
+		              END AS cost_inv_amt 
+		             ,CASE WHEN inv.sell_buy_tp_cd = 'C' or inv.sell_buy_tp_cd = 'D' 
+		                   THEN frt.inv_amt
+		                   ELSE 0
+		              END AS debit_inv_amt
+		            ,frt.cr_amt
+		            ,bl.bl_no
+		            ,inv.sell_buy_tp_cd                        
+		            ,dtl.inv_no
+		            ,dtl.inv_seq    
+		            ,bl.ref_ofc_cd
+					,inv.trdp_cd
+					,inv.ofc_cd   
+		            ,CASE WHEN inv.sell_buy_tp_cd = 'B'
+		                  THEN CASE WHEN ISNULL(dtl.buy_inv_no, '') = '' then '(None)' else dtl.buy_inv_no end
+		                  ELSE ISNULL(dtl.inv_no  , '(None)')        
+		             END  AS inv_no2                            
+		            ,(SELECT trdp.locl_nm 
+		              FROM  tb_trdp trdp 
+		              WHERE trdp.trdp_cd = inv.trdp_cd) AS bill_to
+		            ,dtl.inv_post_dt
+		            ,(SELECT MAX(jnr_no) AS jnr_no
+		              FROM   tb_jnr_dtl j_dtl
+		              WHERE  j_dtl.inv_seq = dtl.inv_seq
+		             ) AS jnr_no
+		            ,CASE WHEN frt.intg_bl_seq <> ISNULL(frt.intg_bl_seq_2, frt.intg_bl_seq)  
+		                       AND sub_mbl_flg = 'N'
+		                  THEN 100
+		                  ELSE bl.ratio 
+		             END AS ratio   
+		             ]]> 
+		      FROM   tb_frt frt
+		             JOIN     
+		             (SELECT 'H' bl_kind, hbl.bl_no, hbl.intg_bl_seq, hbl.rgst_ofc_cd,
+		                     hbl.org_bl_rcvd_flg, hbl.rcvd_dt_tm, hbl.express_tp_cd, hbl.rlsd_dt_tm, 
+		                     isnull(hbl.sub_mbl_flg, 'N') AS sub_mbl_flg, 100 ratio, hbl.ref_ofc_cd    
+		              FROM   tb_intg_bl  hbl 
+		              WHERE  hbl.intg_bl_seq = #intg_bl_seq#
+		              UNION
+		              SELECT 'M' bl_kind, mbl.bl_no, mbl.intg_bl_seq, mbl.rgst_ofc_cd,
+		                     mbl.org_bl_rcvd_flg, mbl.rcvd_dt_tm, mbl.express_tp_cd, mbl.rlsd_dt_tm,
+		                     isnull(hbl.sub_mbl_flg, 'N') as sub_mbl_flg,
+		                     CASE WHEN #air_sea_clss_cd# = 'S' 
+		                          THEN  CASE WHEN isnull(CONVERT(FLOAT, #mbl_volume#), 0) = 0 
+		                                     THEN 0 
+		                                     ELSE (CASE WHEN (hbl.meas - hbl.grs_wgt/1000) > 0 
+		                                                THEN hbl.meas
+		                                                ELSE hbl.grs_wgt/1000
+		                                           END)/CONVERT(FLOAT, #mbl_volume#)*100
+		                                END   
+		                          WHEN #air_sea_clss_cd# = 'A' 
+		                          THEN CASE WHEN ISNULL(CONVERT(FLOAT, #mbl_volume#), 0) = 0 
+		                                    THEN 0 
+		                                    ELSE  hbl.grs_wgt/CONVERT(FLOAT, #mbl_volume#)*100/1000*1000
+		                                    END 
+		                     END  as ratio
+		                     , mbl.ref_ofc_cd 
+		              FROM  tb_intg_bl  hbl   
+		                    LEFT OUTER JOIN tb_intg_bl_rlt rlt ON rlt.intg_bl_seq = hbl.intg_bl_seq AND hbl.delt_flg = 'N' 
+		                    LEFT OUTER JOIN tb_intg_bl mbl ON rlt.RLT_intg_bl_seq = mbl.intg_bl_seq AND mbl.delt_flg = 'N' 
+		              WHERE hbl.intg_bl_seq =  #intg_bl_seq#
+		              UNION
+		              SELECT 'M' bl_kind, mbl.bl_no, sbl.intg_bl_seq, mbl.rgst_ofc_cd,
+		                     mbl.org_bl_rcvd_flg, mbl.rcvd_dt_tm, mbl.express_tp_cd, mbl.rlsd_dt_tm,
+		                     ISNULL(sbl.sub_mbl_flg, 'N') as sub_mbl_flg,
+		                     CASE WHEN #air_sea_clss_cd# = 'S' 
+		                          THEN  CASE WHEN ISNULL(CONVERT(FLOAT, #mbl_volume#), 0) = 0 
+		                                     THEN 0 
+		                                     ELSE (CASE WHEN (hbl.meas - hbl.grs_wgt/1000) > 0 
+		                                                THEN hbl.meas
+		                                                ELSE hbl.grs_wgt/1000
+		                                           END)/CONVERT(FLOAT, #mbl_volume#)*100
+		                                END   
+		                    END  AS ratio  
+		                    , mbl.ref_ofc_cd
+		              FROM  tb_intg_bl  hbl   
+		                    LEFT OUTER JOIN TB_INTG_BL_RLT rlt ON rlt.INTG_BL_SEQ = hbl.intg_bl_seq AND rlt.delt_flg = 'N'
+		                    LEFT OUTER JOIN TB_INTG_BL mbl ON rlt.RLT_INTG_BL_SEQ = mbl.INTG_BL_SEQ AND mbl.delt_flg = 'N'
+		                    LEFT OUTER JOIN TB_INTG_BL_RLT srlt ON srlt.RLT_INTG_BL_SEQ = mbl.intg_bl_seq AND srlt.delt_flg = 'N'
+		                    LEFT OUTER JOIN TB_INTG_BL sbl ON srlt.INTG_BL_SEQ = sbl.INTG_BL_SEQ AND mbl.delt_flg = 'N'
+		             WHERE  hbl.intg_bl_seq =  #intg_bl_seq#
+		             AND  ISNULL(sbl.sub_mbl_flg, 'N') = 'Y'         
+		             ) bl                                                            
+		               ON bl.intg_bl_seq = ISNULL(frt.intg_bl_seq_2, frt.intg_bl_seq) 
+		              JOIN tb_inv inv                                                 
+		               ON inv.inv_seq = frt.inv_seq and inv.delt_flg = 'N'            
+		              LEFT OUTER JOIN tb_inv_dtl dtl                                  
+		               ON dtl.inv_seq = inv.inv_seq and dtl.delt_flg = 'N'                                  
+		              LEFT OUTER JOIN tb_frt_cd frt_cd                                
+		               ON  frt_cd.frt_cd = frt.frt_cd and frt_cd.delt_flg = 'N'       
+		        WHERE 1=1
+		        AND   frt.inv_curr_cd = #inv_curr_cd#
+		        AND   frt.delt_flg = 'N'  
+		        AND   frt_cd.pfmc_flg = 'Y'                                      
+		      ) prf                                                                     
+		ORDER BY prf.bl_kind DESC                                                       
+		        ,prf.inv_no                                                             
+		        ,prf.frt_kind DESC                                                      
+		        ,prf.bl_no 
+	     
+    </select>
+    
+    <select id="searchHblByHblOneProfitList" parameterClass="HashMap" resultClass="com.clt.apps.fis.pfm.mgt.management.dto.ProfitListVO">
+		/** RptPrintSQL.xml > searchHblByHblOneProfitList **/
+		SELECT  prf.inv_curr_cd
+			   ,prf.bl_kind
+		       ,prf.frt_kind
+		       ,prf.frt_nm
+		       ,prf.xch_rt_ut as xch_rt_ut 
+		       ,(prf.local_inv_amt * prf.ratio / 100) AS local_inv_amt
+		       ,(prf.cost_inv_amt  * prf.ratio / 100) AS cost_inv_amt
+		       ,(prf.debit_inv_amt  * prf.ratio / 100) - (prf.cr_amt  * prf.ratio / 100) AS dc_inv_amt
+		       ,(prf.debit_inv_amt * prf.ratio / 100) AS debit_inv_amt
+		       ,(prf.cr_amt  * ratio / 100) AS cr_amt
+		       ,prf.bl_no
+		       ,prf.sell_buy_tp_cd
+		       ,prf.inv_no
+		       ,prf.inv_no2
+		       ,prf.bill_to
+		       ,prf.inv_post_dt
+		       ,(SELECT MIN(j_mst.clr_yn)             
+                   FROM tb_jnr_mst j_mst, tb_jnr_dtl j_dtl            
+                  WHERE j_mst.jnr_no = j_dtl.jnr_no
+                    AND j_dtl.inv_seq = prf.inv_seq
+                    AND ISNULL(j_mst.DELT_FLG,'N') = 'N'
+			        AND ISNULL(j_dtl.DELT_FLG,'N') = 'N'
+			        AND ISNULL(j_mst.VOID_YN,'N')  = 'N') AS clr_yn
+		       ,prf.ratio
+		       ,prf.inv_seq
+		       ,prf.ref_ofc_cd
+			   ,prf.trdp_cd
+			   ,prf.ofc_cd
+		       ,(select upper(x.CNT_CD) from tb_ofc x where x.OFC_CD = prf.ofc_cd ) AS bl_cnt_cd
+		FROM  (      
+				 <![CDATA[
+		        SELECT  bl.bl_kind
+		               ,CASE WHEN frt.intg_bl_seq <> ISNULL(frt.intg_bl_seq_2, frt.intg_bl_seq) 
+		                          AND bl.sub_mbl_flg = 'N'
+		                     THEN 'H'
+		                     WHEN frt.intg_bl_seq <> ISNULL(frt.intg_bl_seq_2, frt.intg_bl_seq) 
+		                          AND bl.sub_mbl_flg <> 'N'
+		                     THEN 'S'
+		                     ELSE bl.bl_kind
+		                END AS frt_kind
+		               ,((select frt_cd.frt_cd 
+		                   from tb_frt_cd frt_cd 
+		                  where frt_cd = frt.frt_cd) + ' / ' + frt.frt_cd_nm) AS frt_nm
+		               ,frt.inv_amt
+		               ,CASE WHEN inv.sell_buy_tp_cd = 'S'
+		                     THEN ISNULL(frt.inv_amt, 0) 
+		                     	* (CASE WHEN frt.inv_curr_cd = #f_curr_cd# 
+		            				    THEN 1 
+		            				    ELSE ISNULL(dd_ex_rt.xch_rt_ut, ISNULL(mm_ex_rt.xch_rt_ut, ISNULL(gd_ex_rt.xch_rt_ut, 0))) 
+		           				   END)
+		                     ELSE 0
+		                END AS local_inv_amt 
+		               ,CASE WHEN inv.sell_buy_tp_cd = 'B'
+		                     THEN ISNULL(frt.inv_amt, 0) 
+		                     	* (CASE WHEN frt.inv_curr_cd = #f_curr_cd# 
+            				  		  	THEN 1 
+            				  			ELSE ISNULL(dd_ex_rt.xch_rt_ut, ISNULL(mm_ex_rt.xch_rt_ut, ISNULL(gd_ex_rt.xch_rt_ut, 0))) 
+           				 			END)
+		                     ELSE 0
+		                END AS cost_inv_amt 
+		               ,CASE WHEN inv.sell_buy_tp_cd = 'C' OR inv.sell_buy_tp_cd = 'D' 
+		                     THEN ISNULL(frt.inv_amt, 0) 
+		                     	* (CASE WHEN frt.inv_curr_cd = #f_curr_cd# 
+		            				  	THEN 1 
+		            				  	ELSE ISNULL(dd_ex_rt.xch_rt_ut, ISNULL(mm_ex_rt.xch_rt_ut, ISNULL(gd_ex_rt.xch_rt_ut, 0))) 
+		           				 	END)
+		                     ELSE 0
+		                END AS debit_inv_amt
+		               ,ISNULL(frt.cr_amt, 0) 
+		               		*(CASE WHEN frt.inv_curr_cd = #f_curr_cd# 
+	            				   THEN 1 
+	            				   ELSE ISNULL(dd_ex_rt.xch_rt_ut, ISNULL(mm_ex_rt.xch_rt_ut, ISNULL(gd_ex_rt.xch_rt_ut, 0))) 
+	           				  END) as cr_amt
+		               ,bl.bl_no
+		               ,inv.sell_buy_tp_cd                        
+		               ,dtl.inv_no          
+		               ,dtl.inv_seq    
+		               ,bl.ref_ofc_cd
+					   ,inv.trdp_cd
+					   ,inv.ofc_cd   
+		               ,CASE WHEN inv.sell_buy_tp_cd = 'B'
+		                     THEN CASE WHEN ISNULL(dtl.buy_inv_no, '') = '' THEN '(None)' ELSE dtl.buy_inv_no END
+		                     ELSE ISNULL(dtl.inv_no  , '(None)')        
+		                END  AS inv_no2                             
+		               ,(SELECT trdp.locl_nm 
+		                 FROM   tb_trdp trdp 
+		                 WHERE trdp.trdp_cd = inv.trdp_cd) AS bill_to
+		               ,dtl.inv_post_dt
+		               ,(SELECT MAX(jnr_no) AS jnr_no
+		                 FROM   tb_jnr_dtl j_dtl
+		                 WHERE  j_dtl.inv_seq = dtl.inv_seq
+		                ) AS jnr_no
+		               ,CASE WHEN frt.intg_bl_seq <> ISNULL(frt.intg_bl_seq_2, frt.intg_bl_seq)  
+		                          AND sub_mbl_flg = 'N'
+		                     THEN 100
+		                     ELSE bl.ratio 
+		                END AS ratio   
+		               ,(CASE WHEN frt.inv_curr_cd = #f_curr_cd# 
+            				  THEN 1 
+            				  ELSE ISNULL(dd_ex_rt.xch_rt_ut, ISNULL(mm_ex_rt.xch_rt_ut, ISNULL(gd_ex_rt.xch_rt_ut, 0))) 
+           				 END) as xch_rt_ut
+		               ,#f_curr_cd# as inv_curr_cd
+		        ]]>        
+		        FROM    tb_frt frt
+		                JOIN     
+		                (SELECT 'H' bl_kind, hbl.bl_no, hbl.intg_bl_seq, hbl.rgst_ofc_cd,
+		                        hbl.org_bl_rcvd_flg, hbl.rcvd_dt_tm, hbl.express_tp_cd, hbl.rlsd_dt_tm, 
+		                        ISNULL(hbl.sub_mbl_flg, 'N') AS sub_mbl_flg, 100 ratio, hbl.ref_ofc_cd    
+		                 FROM   tb_intg_bl  hbl 
+		                 WHERE  hbl.intg_bl_seq = #intg_bl_seq#
+		                 UNION
+		                 SELECT 'M' bl_kind, mbl.bl_no, mbl.intg_bl_seq, mbl.rgst_ofc_cd,
+		                        mbl.org_bl_rcvd_flg, mbl.rcvd_dt_tm, mbl.express_tp_cd, mbl.rlsd_dt_tm,
+		                        ISNULL(hbl.sub_mbl_flg, 'N') AS sub_mbl_flg,
+		                        CASE WHEN #air_sea_clss_cd# = 'S' 
+		                             THEN  CASE WHEN isnull(CONVERT(FLOAT, #mbl_volume#), 0) = 0 
+		                                        THEN 0 
+		                                        ELSE (CASE WHEN (hbl.meas - hbl.grs_wgt/1000) > 0 
+		                                                   THEN hbl.meas
+		                                                   ELSE hbl.grs_wgt/1000
+		                                               END)/CONVERT(FLOAT, #mbl_volume#)*100
+		                                   END   
+		                             WHEN #air_sea_clss_cd# = 'A' 
+		                             THEN CASE WHEN isnull(CONVERT(FLOAT, #mbl_volume#), 0) = 0 
+		                                       THEN 0 
+		                                       ELSE  hbl.grs_wgt/CONVERT(FLOAT, #mbl_volume#)*100/1000*1000
+		                                  END 
+		                        END  AS ratio 
+		                        , mbl.ref_ofc_cd 
+		                 FROM   tb_intg_bl  hbl   
+		                        LEFT OUTER JOIN tb_intg_bl_rlt rlt ON rlt.INTG_BL_SEQ = hbl.intg_bl_seq AND rlt.delt_flg = 'N'
+		                        LEFT OUTER JOIN tb_intg_bl mbl ON rlt.rlt_intg_bl_seq = mbl.intg_bl_seq AND mbl.delt_flg = 'N'
+		                 WHERE  hbl.intg_bl_seq =  #intg_bl_seq#
+		                 UNION
+		                 SELECT 'M' bl_kind, mbl.bl_no, sbl.intg_bl_seq, mbl.rgst_ofc_cd,
+		                        mbl.org_bl_rcvd_flg, mbl.rcvd_dt_tm, mbl.express_tp_cd, mbl.rlsd_dt_tm,
+		                        ISNULL(sbl.sub_mbl_flg, 'N') as sub_mbl_flg,
+		                        CASE WHEN #air_sea_clss_cd# = 'S'   
+		                             THEN  CASE WHEN isnull(CONVERT(FLOAT, #mbl_volume#), 0) = 0 
+		                                        THEN 0 
+		                                        ELSE (CASE WHEN (hbl.meas - hbl.grs_wgt/1000) > 0 
+		                                                   THEN hbl.meas
+		                                                   ELSE hbl.grs_wgt/1000
+		                                               END)/CONVERT(FLOAT, #mbl_volume#)*100
+		                                   END 
+		                        END  AS ratio  
+		                        , mbl.ref_ofc_cd
+		                  FROM  tb_intg_bl  hbl   
+		                        LEFT OUTER JOIN tb_intg_bl_rlt rlt on rlt.intg_bl_seq = hbl.intg_bl_seq and rlt.delt_flg = 'N'
+		                        LEFT OUTER JOIN tb_intg_bl mbl on rlt.rlt_intg_bl_seq = mbl.intg_bl_seq and mbl.delt_flg = 'N'
+		                        LEFT OUTER JOIN tb_intg_bl_rlt srlt on srlt.rlt_intg_bl_seq = mbl.intg_bl_seq and srlt.delt_flg = 'N'
+		                        LEFT OUTER JOIN tb_intg_bl sbl on srlt.intg_bl_seq = sbl.intg_bl_seq and mbl.delt_flg = 'N'
+		                  WHERE hbl.intg_bl_seq =  #intg_bl_seq#
+		                  AND   ISNULL(sbl.sub_mbl_flg, 'N') = 'Y'       
+		                ) bl 
+		                 ON bl.intg_bl_seq = ISNULL(frt.intg_bl_seq_2, frt.intg_bl_seq)
+		                JOIN tb_inv inv 
+		                 ON inv.inv_seq = frt.inv_seq and inv.delt_flg = 'N'
+		                LEFT OUTER JOIN tb_inv_dtl dtl 
+		                 ON dtl.inv_seq = inv.inv_seq and dtl.delt_flg = 'N'
+		                LEFT OUTER JOIN tb_frt_cd frt_cd 
+		                 ON  frt_cd.frt_cd = frt.frt_cd and frt_cd.delt_flg = 'N'
+		                LEFT OUTER JOIN tb_finc_perf_xcrt dd_ex_rt              
+				         ON dd_ex_rt.fm_curr_cd = frt.inv_curr_cd    
+					        AND dd_ex_rt.delt_flg = 'N'                                                       
+					        AND dd_ex_rt.to_curr_cd = #f_curr_cd#   
+					        AND dd_ex_rt.dt_clss_cd = 'D' 
+					        AND dd_ex_rt.aply_fm_dt = frt.inv_post_dt    
+					        LEFT OUTER JOIN tb_finc_perf_xcrt mm_ex_rt              
+				         ON mm_ex_rt.fm_curr_cd = frt.inv_curr_cd   
+					        AND mm_ex_rt.delt_flg = 'N'                                                       
+					        AND mm_ex_rt.to_curr_cd = #f_curr_cd#   
+					        AND mm_ex_rt.dt_clss_cd = 'M' 
+					        AND substring(mm_ex_rt.aply_fm_dt,1,6) = substring(frt.inv_post_dt,1,6)
+		                LEFT OUTER JOIN ($one_curr_rate_sql$) gd_ex_rt 
+		                 ON gd_ex_rt.curr_cd = frt.inv_curr_cd  
+		                 AND gd_ex_rt.aply_fm_dt = substring(frt.inv_post_dt,1,6)   
+		        WHERE frt.delt_flg = 'N'     
+		        AND   frt_cd.pfmc_flg = 'Y' 
+		      ) prf     
+		ORDER BY prf.bl_kind DESC
+		        ,prf.inv_no
+		        ,prf.frt_kind DESC
+		        ,prf.bl_no 
+
+    </select>
+    
+    <select id="searchOtherOneCurrList" parameterClass="HashMap" resultClass="com.clt.apps.fis.pfm.mgt.management.dto.ProfitReportVO">
+		/** RptPrintSQL.xml > searchOtherOneCurrList **/
+		SELECT bl.curr_cd as curr_cd
+	          ,bl.inv_post_mm as aply_fm_dt
+        	  ,0 as rate
+	      FROM (
+	      		SELECT DISTINCT frt.inv_curr_cd AS curr_cd
+						       ,substring(frt.inv_post_dt,1,6)  as inv_post_mm
+            				   ,frt.inv_post_dt as inv_post_dt
+		          FROM tb_frt frt
+			   		   JOIN
+				       (SELECT  'N' bl_kind, oth.*
+					      FROM  tb_oth_sales oth
+					     WHERE  oth.delt_flg = 'N'
+						   AND  oth_seq = #oth_seq#
+					    ) bl
+					     ON frt.oth_seq = bl.oth_seq
+					   JOIN
+					    tb_inv inv
+					     ON inv.inv_seq = frt.inv_seq
+					     AND inv.delt_flg = 'N'
+					   LEFT OUTER JOIN tb_inv_dtl dtl
+					     ON dtl.inv_seq = inv.inv_seq
+					   LEFT OUTER JOIN
+		                tb_frt_cd frt_cd
+		                 ON  frt_cd.frt_cd = frt.frt_cd
+		                 AND frt_cd.delt_flg = 'N'
+				WHERE frt.delt_flg = 'N'
+				  AND frt_cd.pfmc_flg = 'Y'
+			 ) bl
+			 LEFT OUTER JOIN
+			    tb_finc_perf_xcrt fixc_mm              
+			        ON  fixc_mm.fm_curr_cd = bl.curr_cd    
+			        AND fixc_mm.dt_clss_cd = 'M' 
+			        AND substring(fixc_mm.aply_fm_dt,1,6) = bl.inv_post_mm
+			        AND fixc_mm.delt_flg = 'N'                                                       
+			        AND fixc_mm.to_curr_cd = '$f_curr_cd$'   
+			LEFT OUTER JOIN
+			    tb_finc_perf_xcrt fixc_dd              
+			        ON  fixc_dd.fm_curr_cd = bl.curr_cd    
+			        AND fixc_dd.dt_clss_cd = 'D' 
+			        AND fixc_dd.aply_fm_dt = bl.inv_post_dt
+			        AND fixc_dd.delt_flg = 'N'                                                       
+			        AND fixc_dd.to_curr_cd = '$f_curr_cd$'
+		WHERE ISNULL(fixc_dd.xch_rt_ut,fixc_mm.xch_rt_ut) IS NULL
+		  AND bl.curr_cd != '$f_curr_cd$'   
+		GROUP BY
+		    bl.curr_cd,
+		    bl.inv_post_mm
+    </select>
+    
+    <!-- WMS ACCOUNT LKH 2015.01.20 -->
+    <select id="searchWmsOneCurrList" parameterClass="HashMap" resultClass="com.clt.apps.fis.pfm.mgt.management.dto.ProfitReportVO">
+		/** RptPrintSQL.xml > searchWmsOneCurrList **/
+		SELECT bl.curr_cd as curr_cd
+	          ,bl.inv_post_mm as aply_fm_dt
+        	  ,0 as rate
+	      FROM (
+	      		SELECT DISTINCT frt.inv_curr_cd AS curr_cd
+						       ,substring(frt.inv_post_dt,1,6)  as inv_post_mm
+            				   ,frt.inv_post_dt as inv_post_dt
+		          FROM tb_frt frt
+			   		   JOIN
+				       (SELECT  'N' bl_kind, oth.*
+					      FROM  tb_wm_doc_mst oth
+					     WHERE  oth.delt_flg = 'N'
+						   AND  wm_doc_seq = #oth_seq#
+					    ) bl
+					     ON frt.wms_seq = bl.wm_doc_seq
+					   JOIN
+					    tb_inv inv
+					     ON inv.inv_seq = frt.inv_seq
+					     AND inv.delt_flg = 'N'
+					   LEFT OUTER JOIN tb_inv_dtl dtl
+					     ON dtl.inv_seq = inv.inv_seq
+					   LEFT OUTER JOIN
+		                tb_frt_cd frt_cd
+		                 ON  frt_cd.frt_cd = frt.frt_cd
+		                 AND frt_cd.delt_flg = 'N'
+				WHERE frt.delt_flg = 'N'
+				  AND frt_cd.pfmc_flg = 'Y'
+			 ) bl
+			 LEFT OUTER JOIN
+			    tb_finc_perf_xcrt fixc_mm              
+			        ON  fixc_mm.fm_curr_cd = bl.curr_cd    
+			        AND fixc_mm.dt_clss_cd = 'M' 
+			        AND substring(fixc_mm.aply_fm_dt,1,6) = bl.inv_post_mm
+			        AND fixc_mm.delt_flg = 'N'                                                       
+			        AND fixc_mm.to_curr_cd = '$f_curr_cd$'   
+			LEFT OUTER JOIN
+			    tb_finc_perf_xcrt fixc_dd              
+			        ON  fixc_dd.fm_curr_cd = bl.curr_cd    
+			        AND fixc_dd.dt_clss_cd = 'D' 
+			        AND fixc_dd.aply_fm_dt = bl.inv_post_dt
+			        AND fixc_dd.delt_flg = 'N'                                                       
+			        AND fixc_dd.to_curr_cd = '$f_curr_cd$'
+		WHERE ISNULL(fixc_dd.xch_rt_ut,fixc_mm.xch_rt_ut) IS NULL
+		  AND bl.curr_cd != '$f_curr_cd$'   
+		GROUP BY
+		    bl.curr_cd,
+		    bl.inv_post_mm
+    </select>
+    
+    <select id="selectMblVolumeByHbl" parameterClass="HashMap" resultClass="String">
+         SELECT Isnull(CASE 
+			          WHEN #air_sea_clss_cd# = 'S' THEN (SELECT SUM(CASE 
+					                                             WHEN ( hbl.meas - (hbl.grs_wgt / 1000) ) > 0 
+					                                             THEN hbl.meas 
+					                                             ELSE hbl.grs_wgt / 1000 
+					                                           END) 
+						                                FROM   tb_intg_bl_rlt rlt 
+						                                       LEFT OUTER JOIN tb_intg_bl hbl 
+						                                         ON rlt.intg_bl_seq = hbl.intg_bl_seq AND hbl.delt_flg = 'N'  
+						                                WHERE  rlt.rlt_intg_bl_seq = mbl.intg_bl_seq 
+						                                   AND Isnull(hbl.sub_mbl_flg, 'N') = 'N' 
+						                                GROUP  BY rlt.rlt_intg_bl_seq) 
+			          WHEN #air_sea_clss_cd# = 'A' THEN(SELECT SUM(hbl.grs_wgt) / 1000 * 1000
+														 FROM   tb_intg_bl_rlt rlt 
+																LEFT OUTER JOIN tb_intg_bl hbl 
+																  ON rlt.intg_bl_seq = hbl.intg_bl_seq AND hbl.delt_flg = 'N' 
+														 WHERE  rlt.rlt_intg_bl_seq = mbl.intg_bl_seq 
+														 GROUP  BY rlt.rlt_intg_bl_seq)
+			        END, 0)                                                         AS mbl_volume
+			FROM   tb_intg_bl hbl 
+			       LEFT OUTER JOIN tb_intg_bl_rlt rlt 
+			         ON hbl.intg_bl_seq = rlt.intg_bl_seq 
+			            AND rlt.delt_flg = 'N' 
+			       LEFT OUTER JOIN tb_intg_bl mbl 
+			         ON mbl.intg_bl_seq = rlt.rlt_intg_bl_seq 
+			            AND mbl.delt_flg = 'N' 
+			WHERE  hbl.intg_bl_seq = #intg_bl_seq# 
+    </select>
+    
+    <select id="selectMblVolumeByMbl" parameterClass="HashMap" resultClass="String">
+         SELECT Isnull(CASE 
+			          WHEN #air_sea_clss_cd# = 'S' THEN (SELECT SUM(CASE 
+			                                             WHEN ( hbl.meas - hbl.grs_wgt / 1000 ) > 0 THEN hbl.meas 
+			                                             ELSE hbl.grs_wgt / 1000 
+			                                           END) 
+			                                FROM   tb_intg_bl_rlt rlt 
+			                                       LEFT OUTER JOIN tb_intg_bl hbl 
+			                                         ON rlt.intg_bl_seq = hbl.intg_bl_seq AND hbl.delt_flg = 'N' 
+			                                WHERE  rlt.rlt_intg_bl_seq = mbl.intg_bl_seq 
+			                                   AND Isnull(hbl.sub_mbl_flg, 'N') = 'N' 
+			                                GROUP  BY rlt.rlt_intg_bl_seq) 
+			          WHEN #air_sea_clss_cd# = 'A' THEN(SELECT SUM(hbl.grs_wgt) / 1000 * 1000 
+			                               FROM   tb_intg_bl_rlt rlt 
+			                                      LEFT OUTER JOIN tb_intg_bl hbl 
+			                                        ON rlt.intg_bl_seq = hbl.intg_bl_seq AND hbl.delt_flg = 'N' 
+			                               WHERE  rlt.rlt_intg_bl_seq = mbl.intg_bl_seq 
+			                               GROUP  BY rlt.rlt_intg_bl_seq) 
+			        END,0)                                                         AS mbl_volume 
+			FROM   tb_intg_bl mbl       
+			WHERE  mbl.intg_bl_seq = #intg_bl_seq#   
+    </select>
+
+	<!-- #27546 [BINEX] Arrival Notice Mail/Fax 전송 시 수신자 설정에 따른 TRDP_NM,C.TRD_DIV_NM,C.TRDP_CD -->
+	<select id="getRptMailParameters" parameterClass="HashMap" resultClass="com.clt.apps.fis.rpt.dto.EmailInfoVO">
+		/* RptPrintSQL.xml > getRptMailParameters */
+		SELECT C.PIC_NM,
+			   C.PIC_EML,
+			   C.PIC_FAX,
+               (SELECT LOCL_NM FROM TB_TRDP WHERE TRDP_CD = C.TRDP_CD) AS TRDP_NM,
+               C.TRD_DIV_NM,
+			   C.TRDP_CD,
+			   C.TRD_DIV_CD
+		  FROM
+		<isNotEmpty property="intg_bl_seq">
+		       TB_BL_PRNR B,
+		</isNotEmpty>
+		<isEmpty property="intg_bl_seq">
+		       TB_TRDP B,
+		</isEmpty>
+			   TB_TRDP_CNTC_PSON C
+		 WHERE B.TRDP_CD = C.TRDP_CD
+		   AND C.DELT_FLG = 'N'
+		   AND C.PIC_EML_FLG = 'Y'
+		   AND ISNULL(C.PIC_EML, '') != ''
+		<isNotEmpty property="intg_bl_seq">
+		   AND B.INTG_BL_SEQ IN ( '$intg_bl_seq$' )
+		   AND B.BL_TRDP_TP_CD IN  ( '', '$bl_trdp_tp_cd$' ) 
+		</isNotEmpty>
+		<isNotEmpty property="rpt_trdp_cd">
+		   AND B.TRDP_CD IN ( '$rpt_trdp_cd$' )
+		</isNotEmpty>
+		<isNotEmpty property="rpt_acc_grp_id">
+		   AND B.ACCT_CD = #rpt_acc_grp_id#
+		</isNotEmpty>
+		   AND ( ISNULL(C.TRD_DIV_CD, '') = '' 
+		<isNotEmpty property="rpt_biz_tp">
+		        OR C.TRD_DIV_CD = SUBSTRING(#rpt_biz_tp#, 1, 2)
+			<isNotEqual property="rpt_biz_tp" compareValue="ACCT">
+		        OR C.TRD_DIV_CD = SUBSTRING(#rpt_biz_tp#, 1, 1)
+	            OR C.TRD_DIV_CD = SUBSTRING(#rpt_biz_tp#, 2, 1)
+			</isNotEqual>
+		</isNotEmpty>
+	           )           
+		 GROUP BY C.PIC_NM,
+				  C.PIC_EML,
+				  C.PIC_FAX,
+                  C.TRD_DIV_NM,
+			      C.TRDP_CD,
+			      C.TRD_DIV_CD
+	</select>
+	
+	<!-- #27546 [BINEX] Arrival Notice Mail/Fax 전송 시 수신자 설정  [B.TRDP_CD = #rpt_trdp_cd#] => [B.TRDP_CD IN ( '$rpt_trdp_cd$' ) ] -->
+	<select id="getRptFaxParameters" parameterClass="HashMap" resultClass="com.clt.apps.fis.rpt.dto.FaxInfoVO">
+		/* RptPrintSQL.xml > getRptFaxParameters */
+		SELECT DISTINCT
+               (SELECT LOCL_NM FROM TB_TRDP WHERE TRDP_CD = C.TRDP_CD) AS TRDP_NM,
+               C.PIC_NM AS TRDP_PIC_NM,
+               C.TRD_DIV_NM,
+			   C.PIC_FAX AS FAX_NO,
+			   C.TRDP_CD,
+			   C.TRD_DIV_CD
+		  FROM
+		<isNotEmpty property="intg_bl_seq">
+		       TB_BL_PRNR B,
+		</isNotEmpty>
+		<isEmpty property="intg_bl_seq">
+		       TB_TRDP B,
+		</isEmpty>
+			   TB_TRDP_CNTC_PSON C
+		 WHERE B.TRDP_CD = C.TRDP_CD
+		   AND C.DELT_FLG = 'N'
+		   AND ISNULL(C.PIC_FAX, '') != ''
+		<isNotEmpty property="intg_bl_seq">
+		   AND B.INTG_BL_SEQ IN ( '$intg_bl_seq$' )
+		   AND B.BL_TRDP_TP_CD IN  ( '', '$bl_trdp_tp_cd$' ) 
+		</isNotEmpty>
+		<isNotEmpty property="rpt_trdp_cd">
+		   AND B.TRDP_CD IN ( '$rpt_trdp_cd$' )
+		</isNotEmpty>
+		<isNotEmpty property="rpt_acc_grp_id">
+		   AND B.ACCT_CD = #rpt_acc_grp_id#
+		</isNotEmpty>
+		   AND ( ISNULL(C.TRD_DIV_CD, '') = '' 
+		<isNotEmpty property="rpt_biz_tp">
+		        OR C.TRD_DIV_CD = SUBSTRING(#rpt_biz_tp#, 1, 2)
+			<isNotEqual property="rpt_biz_tp" compareValue="ACCT">
+		        OR C.TRD_DIV_CD = SUBSTRING(#rpt_biz_tp#, 1, 1)
+	            OR C.TRD_DIV_CD = SUBSTRING(#rpt_biz_tp#, 2, 1)
+			</isNotEqual>
+		</isNotEmpty>
+	           ) 
+	       ORDER BY TRDP_NM, FAX_NO, TRDP_PIC_NM          
+	</select>
+	
+	<select id="selectOEHBLForm" resultClass="String">
+		SELECT	pre_fix
+		  FROM	tb_seq
+		 WHERE	seq_type = 'OE_HBL_FORM'
+    </select>
+    
+	<select id="selectAEHBLForm" resultClass="String">
+		SELECT	pre_fix
+		  FROM	tb_seq
+		 WHERE	seq_type = 'AE_HBL_FORM'
+    </select>
+    
+    <select id="selectTbSeqPrefix" resultClass="String" parameterClass="String">
+		SELECT	pre_fix
+		  FROM	tb_seq
+		 WHERE	seq_type = #seq_type#
+    </select>
+
+    <!-- jsjang *16393 -->
+	<select id="searchLogoYn" resultClass="String" parameterClass="java.util.HashMap">
+		select ofc.value_2 AS logoYn
+		from TB_INTG_BL bl, TB_OFC_SETTINGS ofc
+		where bl.ref_ofc_cd = ofc.ofc_cd
+		and bl.intg_bl_seq = #intg_bl_seq#
+		AND bl.biz_clss_cd = 'H'
+		and ofc.set_type = 'CLOGO_1';
+    </select>  
+    
+    <!-- jsjang *16393 -->
+	<select id="searchLogoYnDft" resultClass="String">
+		select ofc.value_2 AS logoYn
+		from tb_seq se, TB_OFC_SETTINGS ofc
+		where se.pre_fix = ofc.ofc_cd
+		and se.SEQ_TYPE = 'SYS_OFC_CD'
+		and ofc.set_type = 'CLOGO_1';
+    </select>  
+    
+    <!-- OEH Print Popup - search bl Remark -->
+    <select id="selectBlRemarkList" resultClass="com.clt.apps.opusbase.system.systemcode.dto.ComCdDtlVO" parameterClass="java.util.HashMap">
+	select
+		cd_val, cd_nm
+		from
+		(
+			select 
+				rmk_cd cd_val,
+				rmk_title cd_nm, 1 ord
+				FROM  TB_INTG_BL bl
+				JOIN 
+					(     
+						SELECT  rlt.intg_bl_seq, mbl.bl_no, rlt.rlt_intg_bl_seq, mbl.CUT_OFF_DT, mbl.modi_ofc_cd, mbl.ref_ofc_cd        
+						FROM  tb_intg_bl mbl     
+						JOIN  tb_intg_bl_rlt rlt  ON  rlt.rlt_intg_bl_seq = mbl.intg_Bl_seq AND mbl.delt_flg = 'N'   and mbl.biz_clss_cd  = 'M'
+								
+					) X ON X.intg_bl_seq = bl.intg_Bl_seq
+			, tb_bl_rmk rmk
+			where bl.biz_clss_cd  = 'H'
+			<dynamic>
+			   <isNotNull property="intg_bl_seq">
+			       and bl.intg_bl_seq = #intg_bl_seq#
+			   </isNotNull>
+			</dynamic>	
+			and rmk.use_flg = 'Y'
+			and rmk.ofc_cd = X.ref_ofc_cd
+		)  a order by ord, cd_val      
+    </select> 
+    
+    <!-- OEH Print 팝업에서 bl 정보를 조회. -->
+    <select id="selectBLPrintCnt" resultClass="String" parameterClass="java.util.HashMap">
+		SELECT  org_bl_qty
+		  FROM  TB_INTG_BL bl
+	     WHERE 1=1
+		<dynamic>
+		   <isNotNull property="intg_bl_seq">
+		       AND bl.intg_bl_seq = #intg_bl_seq#
+		   </isNotNull>
+		</dynamic>	
+    </select> 
+    
+    <!-- HB/L booking confirm input info select    -->
+    <select id="selectBook_Confirm" parameterClass="java.util.HashMap" resultClass="com.clt.apps.fis.rpt.dto.BookConfirmVO">
+	SELECT
+		bl.intg_bl_seq,
+	    shp.trdp_cd AS b_shpr_trdp_cd,      shp.trdp_nm AS b_shpr_trdp_nm,      shp.trdp_addr AS b_shpr_trdp_addr
+		, (select ofc.OOH_BKG_RMK from tb_ofc ofc where ofc.ofc_cd = bl.ref_ofc_cd and ofc.use_flg = 'Y') AS i_ooh_bkg_rmk
+    FROM   tb_intg_bl bl
+	LEFT OUTER JOIN tb_bl_prnr shp
+           ON   bl.intg_bl_seq = shp.intg_bl_seq  AND shp.bl_trdp_tp_cd = 'S03' AND shp.delt_flg = 'N'
+	WHERE bl.delt_flg = 'N' 
+    <isNotEmpty property="intg_bl_seq">
+        AND bl.intg_bl_seq = #intg_bl_seq#
+    </isNotEmpty>
+    </select>
+    
+   <!-- 2013.08.20 jsjang #17610 : [BINEX] 7. Email 전송 History -->
+   <insert id="insertRdHisInfo" parameterClass="java.util.HashMap">
+    	INSERT INTO TB_RD_HIS(
+    		HIS_TYPE,
+    		INTG_BL_SEQ,				INV_SEQ,				HIS_TITLE,			HIS_CALL_VIEW,
+    		HIS_CALL_FILE,				RGST_USRID,			RGST_OFC_CD,		RGST_TMS,
+    		HIS_1,						HIS_2,				HIS_3,				HIS_4,			HIS_5, DELT_FLG,  SND_NO,  HIS_CALL_URL, HIS_CALL_FRM 
+    	) SELECT
+    		#his_type#,				
+    		#intg_bl_seq#,				#inv_seq#,			#his_title#,		#his_call_view#,
+    		SUBSTRING(#his_call_file#,0,400),			#rgst_usrid#,		#rgst_ofc_cd#,		GETDATE(),
+    		#his_1#,					#his_2#,			#his_3#,
+    		(SELECT REF_NO FROM TB_INTG_BL BL WHERE BL.intg_bl_seq = #intg_bl_seq# AND delt_flg = 'N'),			
+     		#his_5#,	'N', #snd_no#, #his_call_url# , #his_call_frm#
+    </insert>    
+    <!-- 2016.03.03 jsjang #50485 : [BNX]  -->
+    <update id="updateTbAddInfoBnd" parameterClass="java.util.HashMap">
+    	UPDATE TB_ADD_INFO_BND
+    	   <isEqual property="his_type" compareValue="E">     
+		       SET AN_EML_SND_DT = ISNULL((SELECT AN_EML_SND_DT 
+		                                     FROM TB_ADD_INFO_BND 
+		                                    WHERE 1 = 1 
+		                                      AND INTG_BL_SEQ = #intg_bl_seq#
+		                                      AND DELT_FLG = 'N'),(REPLACE(CONVERT(VARCHAR, GETDATE(), 102),'.','') + REPLACE(CONVERT(VARCHAR(5), GETDATE(), 114),':','')))
+		   </isEqual>
+	       <isEqual property="his_type" compareValue="F">
+	           SET AN_FAX_SND_DT = ISNULL((SELECT AN_FAX_SND_DT 
+	                                         FROM TB_ADD_INFO_BND 
+	                                        WHERE 1 = 1 
+	                                          AND INTG_BL_SEQ = #intg_bl_seq#
+	                                          AND DELT_FLG = 'N'),(REPLACE(CONVERT(VARCHAR, GETDATE(), 102),'.','') + REPLACE(CONVERT(VARCHAR(5), GETDATE(), 114),':','')))
+		   </isEqual>
+		 WHERE 1 = 1
+		   AND INTG_BL_SEQ = #intg_bl_seq#
+		   AND DELT_FLG = 'N'
+    </update>
+    
+    <select id="selectApplCd" parameterClass="String" resultClass="String">
+		SELECT
+			RD_APPL_CD
+		FROM COM_RPT_DSGN_SND_APPL
+		WHERE RD_TMPLT_NM = #value#
+    </select>
+    
+   <insert id="insertApplCd" parameterClass="String">
+    	INSERT INTO COM_RPT_DSGN_SND_APPL (
+    		RD_APPL_CD,		
+    		RD_SUB_SYS_CD,		
+    		FAX_EML_DIV_CD,		
+    		RD_TMPLT_NM,
+    		JB_TIT_CTNT,		
+    		JB_DESC,
+    		DELT_FLG,
+    		CRE_USR_ID,		
+    		CRE_DT,				
+    		UPD_USR_ID,			
+    		UPD_DT )
+    	SELECT
+    		(SELECT ISNULL(MAX(CAST(RD_APPL_CD AS INT)),0)+1 FROM COM_RPT_DSGN_SND_APPL),
+    		'CLT',				
+    		'M',				
+    		#value#,			
+    		null,	
+    		null,	
+    		'1',
+    		'SYSTEM',
+    		GETDATE(),
+    		'SYSTEM',
+    		GETDATE()
+    </insert> 
+    
+    
+    <select id="selectDestinationCnt" parameterClass="Hashmap" resultClass="String">
+		SELECT CNT_LOCL_NM
+		FROM TB_CNT CNT
+		LEFT OUTER JOIN TB_LOC LOC ON LOC.CNT_CD = CNT.CNT_CD 
+		LEFT OUTER JOIN TB_INTG_BL BL ON LOC.LOC_CD = BL.POD_CD 
+		WHERE  CNT.DELT_FLG = 'N'          
+		AND CNT.USE_FLG  = 'Y'     
+		AND	BL.INTG_BL_SEQ = #intg_bl_seq# 
+    </select>
+    
+    <select id="selectBLPrintOptInfo" parameterClass="Hashmap" resultClass="Hashmap">
+		SELECT	intg_bl_seq,	sci,			dest_cnt,			by_carr,	sign_ship,	sign_carr,	frt_flg,	desc_flg1,	desc_flg2,	charge_flg1,	charge_flg2
+		,	desc_flg3,	desc_flg4,	charge_flg3,	charge_flg4
+		  FROM	TB_BLPRN_OPTINFO
+		 WHERE	INTG_BL_SEQ = #intg_bl_seq# AND PRN_TYPE = #prn_type#
+    </select>
+
+    <insert id="insertBLPrintOptInfo" parameterClass="Hashmap">	
+    	INSERT INTO TB_BLPRN_OPTINFO(
+    		intg_bl_seq,	prn_type,	sci,						dest_cnt,					by_carr,	sign_ship,		sign_carr,	frt_flg,	desc_flg1,	desc_flg2,	charge_flg1,	charge_flg2,
+    		rgst_usrid,					rgst_tms,					modi_usrid,					modi_tms,	desc_flg3,	desc_flg4,	charge_flg3,	charge_flg4
+    	) SELECT
+    		#intg_bl_seq#,	#prn_type#,	#sci#,						#dest_cnt#,					#by_carr#,	#sign_ship#,	#sign_carr#,	#frt_flg#,	#desc_flg1#,	#desc_flg2#,	#charge_flg1#,	#charge_flg2#,
+    		#rgst_usrid#,				GETDATE(),					#modi_usrid#,				GETUTCDATE(),	#desc_flg3#,	#desc_flg4#,	#charge_flg3#,	#charge_flg4#
+    	
+    </insert>
+
+    <update id="updateBLPrintOptInfo" parameterClass="HashMap">
+    	UPDATE	TB_BLPRN_OPTINFO
+    	   SET	
+    	   <isNotNull property="sci">sci				 = #sci#,</isNotNull>
+    	   <isNotNull property="dest_cnt">dest_cnt 		 = #dest_cnt#,</isNotNull>
+    	   <isNotNull property="by_carr">by_carr 		 = #by_carr#,</isNotNull>
+    	   <isNotNull property="sign_ship">sign_ship 	 = #sign_ship#,</isNotNull>
+    	   <isNotNull property="sign_carr">sign_carr 	 = #sign_carr#,</isNotNull>
+    	   <isNotNull property="frt_flg">frt_flg 		 = #frt_flg#,</isNotNull>
+    	   <isNotNull property="desc_flg1">desc_flg1 	 = #desc_flg1#,</isNotNull>
+    	   <isNotNull property="desc_flg2">desc_flg2 	 = #desc_flg2#,</isNotNull>
+    	   <isNotNull property="charge_flg1">charge_flg1 = #charge_flg1#,</isNotNull>
+    	   <isNotNull property="charge_flg2">charge_flg2 = #charge_flg2#,</isNotNull>
+    	   <isNotNull property="desc_flg3">desc_flg3 	 = #desc_flg3#,</isNotNull>
+    	   <isNotNull property="desc_flg4">desc_flg4 	 = #desc_flg4#,</isNotNull>
+    	   <isNotNull property="charge_flg3">charge_flg3 = #charge_flg3#,</isNotNull>
+    	   <isNotNull property="charge_flg4">charge_flg4 = #charge_flg4#,</isNotNull>
+    	   		modi_usrid = #modi_usrid#,
+    	   		modi_tms = GETUTCDATE()
+    	 WHERE	1 = 1
+    	   AND  INTG_BL_SEQ = #intg_bl_seq#
+    	   AND  PRN_TYPE = #prn_type#
+    </update>
+    
+    <!-- #24114, [BINEX]AWB PRINT, jsjang 2013.12.5 -->
+    <select id="selectOfcCntCd" parameterClass="Hashmap" resultClass="String">
+		SELECT (select max(cnt_cd) from tb_ofc where ofc_cd = bl.ref_ofc_cd) cnt_cd
+		FROM tb_intg_bl BL
+		WHERE  BL.DELT_FLG = 'N'   
+		AND	BL.INTG_BL_SEQ = #intg_bl_seq# 
+    </select>    
+    
+    <!--  -->
+    <select id="selectPreliminaryClaimInfo" parameterClass="java.util.HashMap" resultClass="java.util.HashMap">
+		SELECT BL.INTG_BL_SEQ 
+		     , BL.BL_NO
+			 , BL.REF_NO
+			 , BL.RGST_OFC_CD
+			 , CNE.TRDP_NM AS CSTM_TRDP_NM	<!-- Customer name -->
+			 , CNE.TRDP_ADDR AS CSTM_TRDP_ADDR	<!-- Customer address -->
+		FROM TB_INTG_BL BL
+		LEFT OUTER JOIN TB_BL_PRNR CNE		
+		  ON  CNE.INTG_BL_SEQ = BL.INTG_BL_SEQ 
+		  AND CNE.BL_TRDP_TP_CD = 'C01'
+		  AND CNE.DELT_FLG = 'N'
+		WHERE BL.INTG_BL_SEQ =  #intg_bl_seq#
+		  AND BL.BL_NO =  #hbl_no#
+		  AND BL.AIR_SEA_CLSS_CD =  #air_sea_tp#     
+		  AND BL.DELT_FLG = 'N'
+    </select>
+    
+    <!-- 20151113  #50431 관련 팝업 조회-->               
+    <select id="selectBlTrucker_cutOffDt" parameterClass="Hashmap" resultClass="Hashmap">
+    	/* RptPrintSQL.xml > selectBlTrucker_cutOffDt */
+		SELECT H.INTG_BL_SEQ,
+		       H.BL_NO,
+			   SUBSTRING(M.CUT_OFF_DT,5,4) + SUBSTRING(M.CUT_OFF_DT,1,4)     AS PORT_CUT_OFF_DT,
+			   SUBSTRING(M.CUT_OFF_DT,9,4)      AS PORT_CUT_OFF_TM,
+			   SUBSTRING(M.RAIL_CUT_OFF_DT,5,4) + SUBSTRING(M.RAIL_CUT_OFF_DT,1,4) AS RAIL_CUT_OFF_DT,
+			   SUBSTRING(M.RAIL_CUT_OFF_DT,9,4) AS RAIL_CUT_OFF_TM,
+		       SUBSTRING(H.WH_CUT_OFF_DT,5,4) + SUBSTRING(H.WH_CUT_OFF_DT,1,4)   AS WH_CUT_OFF_DT,
+			   SUBSTRING(H.WH_CUT_OFF_DT,9,4)   AS WH_CUT_OFF_TM,
+			   SUBSTRING(M.DOC_CUT_OFF_DT,5,4) + SUBSTRING(M.DOC_CUT_OFF_DT,1,4)  AS DOC_CUT_OFF_DT,
+			   SUBSTRING(M.DOC_CUT_OFF_DT,9,4)  AS DOC_CUT_OFF_TM,               
+			   H.RMK,                           
+			   ISNULL((SELECT TRDP_CD 
+			      FROM TB_BL_PRNR 
+				 WHERE 1 = 1 
+				   AND DELT_FLG = 'N' 
+				   AND INTG_BL_SEQ = H.INTG_BL_SEQ 
+				   AND BL_TRDP_TP_CD = 'T02'),'') AS TRUCKER_CD,     
+		       ISNULL((SELECT TRDP_NM 
+			      FROM TB_BL_PRNR 
+				 WHERE 1 = 1 
+				   AND DELT_FLG = 'N' 
+				   AND INTG_BL_SEQ = H.INTG_BL_SEQ 
+				   AND BL_TRDP_TP_CD = 'T02'),'') AS TRUCKER_NM,
+			   PIC.PIC_PHN AS TRK_TRDP_PHN,
+			   PIC.PIC_FAX AS TRK_TRDP_FAX             
+		  FROM TB_INTG_BL H 
+		  LEFT OUTER JOIN TB_INTG_BL_RLT R
+		         ON R.INTG_BL_SEQ = H.INTG_BL_SEQ
+		  LEFT OUTER JOIN TB_INTG_BL M 
+		         ON M.INTG_BL_SEQ = R.RLT_INTG_BL_SEQ
+		  LEFT OUTER JOIN TB_BL_PRNR TRK
+		         ON H.INTG_BL_SEQ = TRK.INTG_BL_SEQ AND TRK.BL_TRDP_TP_CD = 'T02' AND TRK.DELT_FLG = 'N'
+		  LEFT OUTER JOIN TB_TRDP TRDP
+		         ON TRK.TRDP_CD = TRDP.TRDP_CD AND TRDP.DELT_FLG = 'N'
+		  LEFT OUTER JOIN TB_TRDP_CNTC_PSON PIC
+		         ON TRDP.TRDP_CD = PIC.TRDP_CD AND PIC.REP_FLG = 'Y' AND PIC.DELT_FLG = 'N'
+    	 WHERE 1 = 1
+    	   AND H.DELT_FLG = 'N'
+		   AND H.INTG_BL_SEQ = #intg_bl_seq#
+    </select> 
+    
+    <!-- #52565 - [COMMON] RD History 저장 오류 수정 -->
+    <select id="selectBLRefNo" parameterClass="Hashmap" resultClass="String">
+    	/* RptPrintSQL.xml > selectBLRefNo */
+		SELECT ref_no FROM TB_INTG_BL BL WHERE BL.intg_bl_seq = #intg_bl_seq# AND delt_flg = 'N'
+    </select>   
+    
+</sqlMap>

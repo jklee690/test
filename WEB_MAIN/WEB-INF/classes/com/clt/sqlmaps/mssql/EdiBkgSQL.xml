@@ -1,0 +1,363 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE sqlMap PUBLIC "-//ibatis.apache.org//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="edi.bkg">
+	
+	<select id="searchEdiBkgList" parameterClass="HashMap" resultClass="com.clt.apps.fis.edi.bkg.dto.EdiBkgVO">
+		/* searchEdiBkgList */
+		           SELECT   
+		           			BKG.BKG_SEQ,
+		           			BKG.LNR_TRDP_NM          ,
+		           			BKG.TRNK_VSL_NM          ,
+		           			BKG.TRNK_VOY          ,
+		           			BKG.BKG_NO, 
+							BKG.BKG_DT_TM,
+							BKG.PO_NO          ,
+					        BKG.LC_NO          ,
+					        BKG.PRNR_TRDP_CD          ,
+					        BKG.PRNR_TRDP_NM          ,
+					        BKG.ACT_SHPR_TRDP_CD          ,
+					        BKG.ACT_SHPR_TRDP_NM          ,
+					        BKG.SHPR_TRDP_CD          ,
+					        BKG.SHPR_TRDP_NM          ,
+					        BKG.SHPR_TRDP_ADDR          ,
+							(SELECT  B.PIC_NM  FROM TB_TRDP_CNTC_PSON B WHERE B.TRDP_CD = BKG.SHPR_TRDP_CD AND B.REP_FLG = 'Y' AND B.DELT_FLG = 'N') AS SHPR_NM,
+							(SELECT  B.PIC_EML FROM TB_TRDP_CNTC_PSON B WHERE B.TRDP_CD = BKG.SHPR_TRDP_CD AND B.REP_FLG = 'Y' AND B.DELT_FLG = 'N') AS SHPR_EML,
+							(SELECT  B.PIC_PHN FROM TB_TRDP_CNTC_PSON B WHERE B.TRDP_CD = BKG.SHPR_TRDP_CD AND B.REP_FLG = 'Y' AND B.DELT_FLG = 'N') AS SHPR_PHN,
+							(SELECT  B.PIC_FAX FROM TB_TRDP_CNTC_PSON B WHERE B.TRDP_CD = BKG.SHPR_TRDP_CD AND B.REP_FLG = 'Y' AND B.DELT_FLG = 'N') AS SHPR_FAX,
+							(SELECT  T.CNT_CD FROM TB_TRDP T WHERE T.TRDP_CD = BKG.SHPR_TRDP_CD AND T.DELT_FLG = 'N') AS SHPR_CNT_CD,
+					        BKG.CNEE_TRDP_CD          ,
+					        BKG.CNEE_TRDP_NM          ,
+					        BKG.CNEE_TRDP_ADDR          ,
+							(SELECT  B.PIC_NM  FROM TB_TRDP_CNTC_PSON B WHERE B.TRDP_CD = BKG.CNEE_TRDP_CD  AND B.REP_FLG = 'Y' AND B.DELT_FLG = 'N') AS CNEE_NM,
+							(SELECT  B.PIC_EML FROM TB_TRDP_CNTC_PSON B WHERE B.TRDP_CD = BKG.CNEE_TRDP_CD  AND B.REP_FLG = 'Y' AND B.DELT_FLG = 'N') AS CNEE_EML,
+							(SELECT  B.PIC_PHN FROM TB_TRDP_CNTC_PSON B WHERE B.TRDP_CD = BKG.CNEE_TRDP_CD  AND B.REP_FLG = 'Y' AND B.DELT_FLG = 'N') AS CNEE_PHN,
+							(SELECT  B.PIC_FAX FROM TB_TRDP_CNTC_PSON B WHERE B.TRDP_CD = BKG.CNEE_TRDP_CD  AND B.REP_FLG = 'Y' AND B.DELT_FLG = 'N') AS CNEE_FAX ,
+							(SELECT  T.CNT_CD FROM TB_TRDP T WHERE T.TRDP_CD = BKG.CNEE_TRDP_CD AND T.DELT_FLG = 'N') AS CNEE_CNT_CD,
+					        BKG.NTFY_TRDP_CD          ,
+					        BKG.NTFY_TRDP_NM          ,
+					        BKG.NTFY_TRDP_ADDR          ,
+							(SELECT  B.PIC_NM  FROM TB_TRDP_CNTC_PSON B WHERE B.TRDP_CD = BKG.NTFY_TRDP_CD  AND B.REP_FLG = 'Y' AND B.DELT_FLG = 'N') AS NTFY_NM,
+							(SELECT  B.PIC_EML FROM TB_TRDP_CNTC_PSON B WHERE B.TRDP_CD = BKG.NTFY_TRDP_CD  AND B.REP_FLG = 'Y' AND B.DELT_FLG = 'N') AS NTFY_EML,
+							(SELECT  B.PIC_PHN FROM TB_TRDP_CNTC_PSON B WHERE B.TRDP_CD = BKG.NTFY_TRDP_CD  AND B.REP_FLG = 'Y' AND B.DELT_FLG = 'N') AS NTFY_PHN,
+							(SELECT  B.PIC_FAX FROM TB_TRDP_CNTC_PSON B WHERE B.TRDP_CD = BKG.NTFY_TRDP_CD  AND B.REP_FLG = 'Y' AND B.DELT_FLG = 'N') AS NTFY_FAX ,
+							(SELECT  T.CNT_CD FROM TB_TRDP T WHERE T.TRDP_CD = BKG.NTFY_TRDP_CD AND T.DELT_FLG = 'N') AS NTFY_CNT_CD,
+					        BKG.EXP_REF_NO          ,
+					        BKG.PU_TRDP_CD          ,
+					        BKG.PU_TRDP_NM          ,
+					        BKG.CGO_PU_TRDP_CD          ,
+					        BKG.CGO_PU_TRDP_NM          ,
+					        BKG.CGO_PU_TRDP_ADDR          ,
+					        BKG.RCV_WH_CD          ,
+					        BKG.RCV_WH_NM          ,
+					        BKG.TRK_TRDP_CD          ,
+					        BKG.TRK_TRDP_NM          ,
+					        BKG.CUST_REF_NO          ,
+					        BKG.CNTR_INFO          ,
+					        BKG.TRNK_VSL_CD          ,
+					        BKG.POR_CD          ,
+					        BKG.POR_NOD_CD          ,
+					        BKG.POR_NM          ,
+							(SELECT  loc.un_loc_cd from tb_loc loc where bkg.POR_CD = loc.LOC_CD) AS por_un_loc_cd, 
+					        BKG.POL_CD          ,
+							(SELECT  loc.un_loc_cd from tb_loc loc where bkg.POL_CD = loc.LOC_CD) AS pol_un_loc_cd,
+					        BKG.POL_NOD_CD          ,
+					        BKG.POL_NM          ,
+					        BKG.POD_CD          ,
+							(SELECT  loc.un_loc_cd from tb_loc loc where bkg.POD_CD = loc.LOC_CD) AS pod_un_loc_cd,
+					        BKG.POD_NOD_CD          ,
+					        BKG.POD_NM          ,
+					        BKG.DEL_CD          ,
+							(SELECT  loc.un_loc_cd from tb_loc loc where bkg.DEL_CD = loc.LOC_CD) AS del_un_loc_cd,
+					        BKG.DEL_NOD_CD          ,
+					        BKG.DEL_NM          ,
+					        BKG.FNL_DEST_LOC_CD          ,
+					        BKG.FNL_DEST_NOD_CD          ,
+					        BKG.FNL_DEST_LOC_NM          ,
+					        BKG.LNR_TRDP_CD          ,
+					        BKG.LNR_BKG_NO          ,
+							(SELECT  B.PIC_NM  FROM TB_TRDP_CNTC_PSON B WHERE B.TRDP_CD = BKG.LNR_TRDP_CD AND B.REP_FLG = 'Y' AND B.DELT_FLG = 'N') AS LNR_NM,
+							(SELECT  B.PIC_EML  FROM TB_TRDP_CNTC_PSON B WHERE B.TRDP_CD = BKG.LNR_TRDP_CD AND B.REP_FLG = 'Y' AND B.DELT_FLG = 'N') AS LNR_EML,
+							(SELECT  B.PIC_PHN FROM TB_TRDP_CNTC_PSON B WHERE B.TRDP_CD = BKG.LNR_TRDP_CD AND B.REP_FLG = 'Y' AND B.DELT_FLG = 'N') AS LNR_PHN,
+							(SELECT  B.PIC_FAX FROM TB_TRDP_CNTC_PSON B WHERE B.TRDP_CD = BKG.LNR_TRDP_CD AND B.REP_FLG = 'Y' AND B.DELT_FLG = 'N') AS LNR_FAX,
+							(SELECT  T.CNT_CD FROM TB_TRDP T WHERE T.TRDP_CD = BKG.LNR_TRDP_CD AND T.DELT_FLG = 'N') AS LNR_CNT_CD,
+					        BKG.ETD_DT_TM          ,
+					        BKG.ETA_DT_TM          ,
+					        BKG.ETD_POR_TM          ,
+					        BKG.SHP_MOD_CD          ,
+					        BKG.REP_CMDT_CD          ,
+					        BKG.REP_CMDT_NM          ,
+					        BKG.PCK_QTY          ,
+					        BKG.PCK_UT_CD          ,
+					        BKG.GRS_WGT_UT_CD          ,
+					        BKG.GRS_WGT          ,
+					        BKG.GRS_WGT1          ,
+					        BKG.MEAS_UT_CD          ,
+					        BKG.MEAS          ,
+					        BKG.MEAS1          ,
+					        BKG.FM_SVC_TERM_CD          ,
+					        BKG.TO_SVC_TERM_CD          ,
+					        BKG.CARGO_TP_CD          ,
+					        BKG.CUT_OFF_DT          ,
+					        BKG.RAIL_CUT_OFF_DT          ,
+					        BKG.WH_CUT_OFF_DT          ,
+					        BKG.DOC_CUT_OFF_DT          ,
+					        BKG.SLS_OFC_CD          ,
+					        BKG.SLS_DEPT_CD          ,
+					        BKG.SLS_USRID          ,
+					        BKG.SLS_USR_NM          ,
+					        BKG.RMK          ,
+					        BKG.DEPT_CD          ,
+					        BKG.RGST_USRID          ,
+					        BKG.RGST_OFC_CD          ,
+					        BKG.RGST_TMS          ,
+					        BKG.MODI_USRID          ,
+					        BKG.MODI_OFC_CD          ,
+					        BKG.MODI_TMS          ,
+					        BKG.DELT_FLG          ,
+					        BKG.LNR_CTRT_NO            ,
+					        BKG.FRT_TERM_CD,
+							edi.MSG_NO AS MSG_NO,
+							edi.MSG_NO_SEQ  AS MSG_NO_SEQ,
+							edi.MSG_STS AS  MSG_STS ,
+							( CASE WHEN edi.MSG_STS = 'S' THEN 'Sending' 
+									    WHEN edi.MSG_STS = 'E' THEN 'Error' 
+									    WHEN edi.MSG_STS = 'T' THEN 'Transmitted'	 
+									    WHEN edi.MSG_STS = 'R' THEN 'Rejected' 
+									    WHEN edi.MSG_STS = 'A' THEN 'Accepted' END  ) AS MSG_STS_NM 
+					FROM  TB_BKG BKG 
+					LEFT OUTER JOIN tb_edi_bkg edi 
+			          ON   BKG.BKG_SEQ = edi.bkg_seq 
+			        LEFT OUTER JOIN TB_TRDP	LNR_TRDP 
+				      ON  LNR_TRDP.TRDP_CD = BKG.LNR_TRDP_CD AND LNR_TRDP.DELT_FLG = 'N' 
+					LEFT OUTER JOIN TB_TRDP	SHPR_TRDP 
+				      ON  SHPR_TRDP.TRDP_CD = BKG.SHPR_TRDP_CD AND SHPR_TRDP.DELT_FLG = 'N' 
+					LEFT OUTER JOIN TB_TRDP	CNEE_TRDP 
+				      ON  CNEE_TRDP.TRDP_CD = BKG.CNEE_TRDP_CD AND CNEE_TRDP.DELT_FLG = 'N' 
+					WHERE 1 = 1   
+					  AND BKG.DELT_FLG = 'N'  
+					  AND BKG.BKG_SEQ = #bkg_seq#   
+	</select>
+	
+	<select id="searchEdiBkgInfo" parameterClass="HashMap" resultClass="com.clt.apps.fis.edi.bkg.dto.EdiBkgInfoVO">
+		/* searchEdiBkgInfo */
+		SELECT TOP 1 
+				    BKG.BKG_NO          ,
+			        BKG.BKG_SEQ          ,
+			        BKG.BKG_DT_TM          ,
+			        BKG.PO_NO          ,
+			        BKG.LC_NO          ,
+			        BKG.PRNR_TRDP_CD          ,
+			        BKG.PRNR_TRDP_NM          ,
+			        BKG.ACT_SHPR_TRDP_CD          ,
+			        BKG.ACT_SHPR_TRDP_NM          ,
+			        BKG.SHPR_TRDP_CD          ,
+			        BKG.SHPR_TRDP_NM          ,
+			        BKG.SHPR_TRDP_ADDR          ,
+					(SELECT  B.PIC_NM  FROM TB_TRDP_CNTC_PSON B WHERE B.TRDP_CD = BKG.SHPR_TRDP_CD AND B.REP_FLG = 'Y' AND B.DELT_FLG = 'N') AS SHPR_NM,
+					(SELECT  B.PIC_EML FROM TB_TRDP_CNTC_PSON B WHERE B.TRDP_CD = BKG.SHPR_TRDP_CD AND B.REP_FLG = 'Y' AND B.DELT_FLG = 'N') AS SHPR_EML,
+					(SELECT  B.PIC_PHN FROM TB_TRDP_CNTC_PSON B WHERE B.TRDP_CD = BKG.SHPR_TRDP_CD AND B.REP_FLG = 'Y' AND B.DELT_FLG = 'N') AS SHPR_PHN,
+					(SELECT  B.PIC_FAX FROM TB_TRDP_CNTC_PSON B WHERE B.TRDP_CD = BKG.SHPR_TRDP_CD AND B.REP_FLG = 'Y' AND B.DELT_FLG = 'N') AS SHPR_FAX,
+					(SELECT  T.CNT_CD FROM TB_TRDP T WHERE T.TRDP_CD = BKG.SHPR_TRDP_CD AND T.DELT_FLG = 'N') AS SHPR_CNT_CD,
+			        BKG.CNEE_TRDP_CD          ,
+			        BKG.CNEE_TRDP_NM          ,
+			        BKG.CNEE_TRDP_ADDR          ,
+					(SELECT  B.PIC_NM  FROM TB_TRDP_CNTC_PSON B WHERE B.TRDP_CD = BKG.CNEE_TRDP_CD  AND B.REP_FLG = 'Y' AND B.DELT_FLG = 'N') AS CNEE_NM,
+					(SELECT  B.PIC_EML FROM TB_TRDP_CNTC_PSON B WHERE B.TRDP_CD = BKG.CNEE_TRDP_CD  AND B.REP_FLG = 'Y' AND B.DELT_FLG = 'N') AS CNEE_EML,
+					(SELECT  B.PIC_PHN FROM TB_TRDP_CNTC_PSON B WHERE B.TRDP_CD = BKG.CNEE_TRDP_CD  AND B.REP_FLG = 'Y' AND B.DELT_FLG = 'N') AS CNEE_PHN,
+					(SELECT  B.PIC_FAX FROM TB_TRDP_CNTC_PSON B WHERE B.TRDP_CD = BKG.CNEE_TRDP_CD  AND B.REP_FLG = 'Y' AND B.DELT_FLG = 'N') AS CNEE_FAX ,
+					(SELECT  T.CNT_CD FROM TB_TRDP T WHERE T.TRDP_CD = BKG.CNEE_TRDP_CD AND T.DELT_FLG = 'N') AS CNEE_CNT_CD,
+			        BKG.NTFY_TRDP_CD          ,
+			        BKG.NTFY_TRDP_NM          ,
+			        BKG.NTFY_TRDP_ADDR          ,
+					(SELECT  B.PIC_NM  FROM TB_TRDP_CNTC_PSON B WHERE B.TRDP_CD = BKG.NTFY_TRDP_CD  AND B.REP_FLG = 'Y' AND B.DELT_FLG = 'N') AS NTFY_NM,
+					(SELECT  B.PIC_EML FROM TB_TRDP_CNTC_PSON B WHERE B.TRDP_CD = BKG.NTFY_TRDP_CD  AND B.REP_FLG = 'Y' AND B.DELT_FLG = 'N') AS NTFY_EML,
+					(SELECT  B.PIC_PHN FROM TB_TRDP_CNTC_PSON B WHERE B.TRDP_CD = BKG.NTFY_TRDP_CD  AND B.REP_FLG = 'Y' AND B.DELT_FLG = 'N') AS NTFY_PHN,
+					(SELECT  B.PIC_FAX FROM TB_TRDP_CNTC_PSON B WHERE B.TRDP_CD = BKG.NTFY_TRDP_CD  AND B.REP_FLG = 'Y' AND B.DELT_FLG = 'N') AS NTFY_FAX ,
+					(SELECT  T.CNT_CD FROM TB_TRDP T WHERE T.TRDP_CD = BKG.NTFY_TRDP_CD AND T.DELT_FLG = 'N') AS NTFY_CNT_CD,
+			        BKG.EXP_REF_NO          ,
+			        BKG.PU_TRDP_CD          ,
+			        BKG.PU_TRDP_NM          ,
+			        BKG.CGO_PU_TRDP_CD          ,
+			        BKG.CGO_PU_TRDP_NM          ,
+			        BKG.CGO_PU_TRDP_ADDR          ,
+			        BKG.RCV_WH_CD          ,
+			        BKG.RCV_WH_NM          ,
+			        BKG.TRK_TRDP_CD          ,
+			        BKG.TRK_TRDP_NM          ,
+			        BKG.CUST_REF_NO          ,
+			        BKG.CNTR_INFO          ,
+			        BKG.TRNK_VSL_CD          ,
+			        BKG.TRNK_VSL_NM          ,
+			        BKG.TRNK_VOY          ,
+			        BKG.POR_CD          ,
+			        BKG.POR_NOD_CD          ,
+			        BKG.POR_NM          ,
+					(SELECT  loc.un_loc_cd from tb_loc loc where bkg.POR_CD = loc.LOC_CD) AS por_un_loc_cd, 
+			
+			        BKG.POL_CD          ,
+					(SELECT  loc.un_loc_cd from tb_loc loc where bkg.POL_CD = loc.LOC_CD) AS pol_un_loc_cd,
+			        BKG.POL_NOD_CD          ,
+			        BKG.POL_NM          ,
+			        BKG.POD_CD          ,
+					(SELECT  loc.un_loc_cd from tb_loc loc where bkg.POD_CD = loc.LOC_CD) AS pod_un_loc_cd,
+			        BKG.POD_NOD_CD          ,
+			        BKG.POD_NM          ,
+			        BKG.DEL_CD          ,
+					(SELECT  loc.un_loc_cd from tb_loc loc where bkg.DEL_CD = loc.LOC_CD) AS del_un_loc_cd,
+			        BKG.DEL_NOD_CD          ,
+			        BKG.DEL_NM          ,
+			        BKG.FNL_DEST_LOC_CD          ,
+			        BKG.FNL_DEST_NOD_CD          ,
+			        BKG.FNL_DEST_LOC_NM          ,
+			        BKG.LNR_TRDP_CD          ,
+			        BKG.LNR_TRDP_NM          ,
+			        BKG.LNR_BKG_NO          ,
+					(SELECT  B.PIC_NM  FROM TB_TRDP_CNTC_PSON B WHERE B.TRDP_CD = BKG.LNR_TRDP_CD AND B.REP_FLG = 'Y' AND B.DELT_FLG = 'N') AS LNR_NM,
+					(SELECT  B.PIC_EML  FROM TB_TRDP_CNTC_PSON B WHERE B.TRDP_CD = BKG.LNR_TRDP_CD AND B.REP_FLG = 'Y' AND B.DELT_FLG = 'N') AS LNR_EML,
+					(SELECT  B.PIC_PHN FROM TB_TRDP_CNTC_PSON B WHERE B.TRDP_CD = BKG.LNR_TRDP_CD AND B.REP_FLG = 'Y' AND B.DELT_FLG = 'N') AS LNR_PHN,
+					(SELECT  B.PIC_FAX FROM TB_TRDP_CNTC_PSON B WHERE B.TRDP_CD = BKG.LNR_TRDP_CD AND B.REP_FLG = 'Y' AND B.DELT_FLG = 'N') AS LNR_FAX,
+					(SELECT  T.CNT_CD FROM TB_TRDP T WHERE T.TRDP_CD = BKG.LNR_TRDP_CD AND T.DELT_FLG = 'N') AS LNR_CNT_CD,
+			        BKG.ETD_DT_TM          ,
+			        BKG.ETA_DT_TM          ,
+			
+			        BKG.ETD_POR_TM          ,
+			        BKG.SHP_MOD_CD          ,
+			        BKG.REP_CMDT_CD          ,
+			        BKG.REP_CMDT_NM          ,
+			        BKG.PCK_QTY          ,
+			        BKG.PCK_UT_CD          ,
+			        BKG.GRS_WGT_UT_CD          ,
+			        BKG.GRS_WGT          ,
+			        BKG.GRS_WGT1          ,
+			        BKG.MEAS_UT_CD          ,
+			        BKG.MEAS          ,
+			        BKG.MEAS1          ,
+			        BKG.FM_SVC_TERM_CD          ,
+			        BKG.TO_SVC_TERM_CD          ,
+			        BKG.CARGO_TP_CD          ,
+			        BKG.CUT_OFF_DT          ,
+			        BKG.RAIL_CUT_OFF_DT          ,
+			        BKG.WH_CUT_OFF_DT          ,
+			        BKG.DOC_CUT_OFF_DT          ,
+			        BKG.SLS_OFC_CD          ,
+			        BKG.SLS_DEPT_CD          ,
+			        BKG.SLS_USRID          ,
+			        BKG.SLS_USR_NM          ,
+			        BKG.RMK          ,
+			        BKG.DEPT_CD          ,
+			        BKG.RGST_USRID          ,
+			        BKG.RGST_OFC_CD          ,
+			        BKG.RGST_TMS          ,
+			        BKG.MODI_USRID          ,
+			        BKG.MODI_OFC_CD          ,
+			        BKG.MODI_TMS          ,
+			        BKG.DELT_FLG          ,
+			        BKG.LNR_CTRT_NO            ,
+			        BKG.FRT_TERM_CD				
+		    FROM 
+		        	TB_BKG BKG  
+		    LEFT OUTER JOIN 
+		        	TB_TRDP			LNR_TRDP 
+		      ON  LNR_TRDP.TRDP_CD = BKG.LNR_TRDP_CD AND LNR_TRDP.DELT_FLG = 'N' 
+			LEFT OUTER JOIN 
+		        	TB_TRDP			SHPR_TRDP 
+		      ON  SHPR_TRDP.TRDP_CD = BKG.SHPR_TRDP_CD AND SHPR_TRDP.DELT_FLG = 'N'
+			LEFT OUTER JOIN 
+		        	TB_TRDP			CNEE_TRDP 
+		      ON  CNEE_TRDP.TRDP_CD = BKG.CNEE_TRDP_CD AND CNEE_TRDP.DELT_FLG = 'N'     
+		   WHERE  1 = 1  
+        	 AND  BKG.DELT_FLG = 'N' 
+		   	 AND  BKG.BKG_SEQ = #bkg_seq# 
+    </select>
+    
+    <select id="searchEdiBkgCntrList" parameterClass="HashMap" resultClass="com.clt.apps.fis.edi.bkg.dto.EdiBkgCntrListVO">
+		SELECT 	cntr.cntr_tpsz_cd , cntr.qty, cntr.cntr_seq  
+          FROM  tb_bkg bkg 
+     	  LEFT OUTER JOIN TB_BKG_CNTR cntr  
+            ON  bkg.bkg_seq = cntr.bkg_seq 
+           AND  cntr.delt_flg = 'N' 
+         WHERE  bkg.bkg_seq = #bkg_seq# 
+      ORDER BY  cntr.cntr_seq ASC 
+    </select>
+    
+     <select id="searchBkgToEdi" parameterClass="java.lang.String" resultClass="com.clt.apps.fis.edi.bkg.dto.EdiBkgSendVO">
+		SELECT  TOP 1 * 
+		  FROM 	TB_EDI_BKG
+		 WHERE 	BKG_SEQ = #bkg_seq# 
+		 ORDER BY MSG_NO_SEQ DESC
+    </select>
+     
+    <select id="searchEdiBkgMsgNo" parameterClass="java.lang.String" resultClass="java.lang.String">
+		SELECT  #msg_no_prefix# + ISNULL(dbo.LPAD(MAX(SUBSTRING(MSG_NO, 10, 5))+1, 5, '0'), '00001')
+		  FROM  TB_EDI_BKG 
+		 WHERE  MSG_NO LIKE #msg_no_prefix# + '%'
+	</select>	
+	
+	<select id="searchRequesterAddr" parameterClass="java.lang.String" resultClass="java.lang.String">
+		select OFC_ADDR from TB_OFC where OFC_CD = #rqst_trdp_cd#
+	</select>
+    
+    <insert id="insertEdiBkg"  parameterClass="com.clt.apps.fis.edi.bkg.dto.EdiBkgSendVO">
+	    INSERT INTO TB_EDI_BKG
+	           (MSG_NO
+	           ,MSG_NO_SEQ
+	           ,MSG_FNC_CD
+	           ,MSG_STS
+	           ,BKG_SEQ
+	           ,FILE_NM
+	           ,RGST_USRID
+	           ,RGST_OFC_CD
+	           ,RGST_TMS)
+	     VALUES
+	           (#msg_no#
+	           ,#msg_no_seq#
+	           ,#msg_fnc_cd#
+	           ,#msg_sts#
+	           ,#bkg_seq#
+	           ,#file_nm#
+	           ,#rgst_usrid#
+	           ,#rgst_ofc_cd#
+	           ,GETDATE()
+	           )
+	</insert>
+	
+	<select id="searchEdiBkgVvdList" parameterClass="HashMap" resultClass="com.clt.apps.fis.edi.bkg.dto.IBkgVvdVO">
+		SELECT 	bkg.trnk_voy
+				,bkg.trnk_vsl_nm
+				,trdp.trdp_cd
+				,trdp.scac_cd
+				,bkg.pod_cd
+				,loc.un_loc_cd
+				,loc.loc_nm
+				,bkg.etd_dt_tm
+				,bkg.cut_off_dt
+				,bkg.pod_cd
+				,bkg.pod_nm
+				,bkg.eta_dt_tm 
+          FROM  TB_BKG bkg 
+     	  LEFT OUTER JOIN TB_TRDP trdp      
+            ON  bkg.trk_trdp_cd = trdp.trdp_cd   
+           AND  trdp.DELT_FLG = 'N'
+    	  LEFT OUTER JOIN TB_LOC loc       
+            ON  bkg.pod_cd = loc.loc_cd    
+           AND  loc.delt_flg = 'N'
+         WHERE  bkg.bkg_seq = #bkg_seq# 
+		   AND  bkg.delt_flg = 'N' 
+    </select>
+    
+    <select id="searchEdiBkgAddLocList" parameterClass="HashMap" resultClass="com.clt.apps.fis.edi.bkg.dto.IBAddLocVO">
+		SELECT  tpcd.loc_tp_cd
+				,loc.loc_cd
+				,loc.loc_nm
+				,loc.un_loc_cd	
+		  FROM  TB_LOC loc 
+		  JOIN  TB_LOC_TP_CD_LIST tpcd 
+			ON  loc.loc_cd = tpcd.loc_cd
+		 WHERE  loc.un_loc_cd = #un_loc_cd#
+		   AND  loc.delt_flg='N' 
+    </select>
+    
+	
+	
+ 
+</sqlMap>

@@ -1,0 +1,165 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE sqlMap PUBLIC "-//ibatis.apache.org//DTD SQL Map 2.0//EN"
+    "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="air.cmm">
+   <!-- AIR Carrier Schedule Count   -->
+    <select id="selectAIR_SKD_LIST_CNT" parameterClass="java.util.HashMap" resultClass="Integer">
+		SELECT  count(skd.air_skd_seq)
+          FROM  tb_air_skd skd
+          JOIN  tb_trdp aln
+            ON  skd.trdp_cd = aln.trdp_cd AND aln.delt_flg = 'N'
+
+		 WHERE  skd.delt_flg = 'N'
+        <isNotNull property="f_trdp_cd">
+            AND  skd.trdp_cd = #f_trdp_cd#
+        </isNotNull>
+        <isNotNull property="f_dep_loc_cd">
+            AND  skd.dep_loc_cd = #f_dep_loc_cd#
+        </isNotNull>
+        <isNotNull property="f_dest_loc_cd">
+            AND  skd.dest_loc_cd = #f_dest_loc_cd#
+        </isNotNull>
+        <isNotNull property="f_prd_dt">
+            AND  skd.prd_dt = #f_prd_dt#
+        </isNotNull>
+	</select>
+
+	<!-- AIR Carrier Schedule 조회  -->
+	<select id="selectAIR_SKD_LIST" parameterClass="java.util.HashMap" resultClass="com.clt.apps.fis.aic.bmd.linerinfo.dto.AirSkdVO">
+		SELECT  TOP $topCnt$
+				skd.air_skd_seq,    skd.trdp_cd,          aln.shrt_nm AS trdp_nm,
+				skd.flt_no,         skd.dep_loc_cd,       skd.dest_loc_cd,
+			
+				skd.wkdy_sun_flg,   skd.wkdy_mon_flg,     skd.wkdy_tue_flg,
+				skd.wkdy_wed_flg,   skd.wkdy_thu_flg,     skd.wkdy_fri_flg,   skd.wkdy_sat_flg,
+			
+				skd.dep_hrmnt,      skd.arr_hrmnt,        skd.dur_dys_qty,    skd.prd_dt,
+			
+				skd.ts1_trdp_cd,    skd.ts1_arpt_loc_cd,  skd.ts1_dur_dys_qty,
+				skd.ts1_arr_hrmnt,  skd.ts1_flt_no,       ts1.shrt_nm AS ts1_trdp_nm,
+			
+				skd.ts2_trdp_cd,    skd.ts2_arpt_loc_cd,  skd.ts2_dur_dys_qty,
+				skd.ts2_arr_hrmnt,  skd.ts2_flt_no,       ts2.shrt_nm AS ts2_trdp_nm,
+			
+				skd.ts3_trdp_cd,    skd.ts3_arpt_loc_cd,  skd.ts3_dur_dys_qty,
+				skd.ts3_arr_hrmt,   skd.ts3_flt_no,       ts3.shrt_nm AS ts3_trdp_nm,
+			
+				skd.rmk
+			
+		  FROM  tb_air_skd skd
+		  JOIN  tb_trdp aln
+		    ON  skd.trdp_cd = aln.trdp_cd AND aln.delt_flg = 'N'
+		
+LEFT OUTER JOIN tb_trdp ts1
+		    ON  skd.ts1_trdp_cd = ts1.trdp_cd  AND ts1.delt_flg = 'N'
+		
+LEFT OUTER JOIN tb_trdp ts2
+		    ON  skd.ts2_trdp_cd = ts2.trdp_cd AND ts2.delt_flg = 'N'
+		
+LEFT OUTER JOIN tb_trdp ts3
+		    ON  skd.ts3_trdp_cd = ts3.trdp_cd AND ts3.delt_flg = 'N'   
+		
+		 WHERE  skd.delt_flg = 'N'
+		<isNotNull property="f_trdp_cd">
+			AND	 skd.trdp_cd = #f_trdp_cd#
+		</isNotNull>
+		<isNotNull property="f_dep_loc_cd">
+			AND  skd.dep_loc_cd = #f_dep_loc_cd#
+		</isNotNull>
+		<isNotNull property="f_dest_loc_cd">
+			AND  skd.dest_loc_cd = #f_dest_loc_cd#
+		</isNotNull>
+		<isNotNull property="f_prd_dt">
+			AND  skd.prd_dt = #f_prd_dt#
+		</isNotNull>
+    </select>
+    
+	<select id="selectAIR_SKD_MkPK" resultClass="String">
+        SELECT ISNULL(MAX(air_skd_seq),0)+1
+        FROM   tb_air_skd
+    </select>
+	
+	<!-- Air Line Schedule등록   -->
+	<insert id="insertAIR_SKD" parameterClass="com.clt.apps.fis.aic.bmd.linerinfo.dto.AirSkdVO">
+		INSERT INTO tb_air_skd(
+                air_skd_seq,       trdp_cd,              flt_no,
+                dep_loc_cd,        dest_loc_cd,
+            
+                wkdy_sun_flg,      wkdy_mon_flg,         wkdy_tue_flg,
+                wkdy_wed_flg,      wkdy_thu_flg,         wkdy_fri_flg,      wkdy_sat_flg,
+             
+                dep_hrmnt,         arr_hrmnt,            dur_dys_qty,       prd_dt,
+            
+                ts1_trdp_cd,       ts1_arpt_loc_cd,      ts1_dur_dys_qty,
+                ts1_arr_hrmnt,     ts1_flt_no,
+            
+                ts2_trdp_cd,       ts2_arpt_loc_cd,      ts2_dur_dys_qty,
+                ts2_arr_hrmnt,     ts2_flt_no,
+            
+                ts3_trdp_cd,       ts3_arpt_loc_cd,      ts3_dur_dys_qty,
+                ts3_arr_hrmt,      ts3_flt_no,
+            
+                rmk, 
+                
+                rgst_usrid,        rgst_ofc_cd,          rgst_tms, 
+                modi_usrid,        modi_ofc_cd,          modi_tms,            delt_flg
+		)VALUES(
+                #air_skd_seq#,     #trdp_cd#,            #flt_no#,
+                #dep_loc_cd#,      #dest_loc_cd#,
+            
+                #wkdy_sun_flg#,    #wkdy_mon_flg#,       #wkdy_tue_flg#,
+                #wkdy_wed_flg#,    #wkdy_thu_flg#,       #wkdy_fri_flg#,      #wkdy_sat_flg#,
+             
+                #dep_hrmnt#,       #arr_hrmnt#,          #dur_dys_qty#,       #prd_dt#,
+            
+                #ts1_trdp_cd#,     #ts1_arpt_loc_cd#,    #ts1_dur_dys_qty#,
+                #ts1_arr_hrmnt#,   #ts1_flt_no#,
+            
+                #ts2_trdp_cd#,     #ts2_arpt_loc_cd#,    #ts2_dur_dys_qty#,
+                #ts2_arr_hrmnt#,   #ts2_flt_no#,
+            
+                #ts3_trdp_cd#,     #ts3_arpt_loc_cd#,    #ts3_dur_dys_qty#,
+                #ts3_arr_hrmt#,    #ts3_flt_no#,
+            
+                #rmk#, 
+                
+				#proc_usrid#,    #proc_ofccd#,      getdate(),
+				#proc_usrid#,    #proc_ofccd#,      GETUTCDATE(),         'N'
+		)
+	</insert>
+	
+    <!-- Air Line Schedule 수정   -->
+    <update id="updateAIR_SKD" parameterClass="com.clt.apps.fis.aic.bmd.linerinfo.dto.AirSkdVO">
+        UPDATE  tb_air_skd
+           SET  trdp_cd      = #trdp_cd#,           flt_no         = #flt_no#,
+                dep_loc_cd   = #dep_loc_cd#,        dest_loc_cd    = #dest_loc_cd#,
+            
+                wkdy_sun_flg = #wkdy_sun_flg#,      wkdy_mon_flg   = #wkdy_mon_flg#,         wkdy_tue_flg   = #wkdy_tue_flg#,
+                wkdy_wed_flg = #wkdy_wed_flg#,      wkdy_thu_flg   = #wkdy_thu_flg#,         wkdy_fri_flg   = #wkdy_fri_flg#,      wkdy_sat_flg = #wkdy_sat_flg#,
+             
+                dep_hrmnt    = #dep_hrmnt#,         arr_hrmnt      = #arr_hrmnt#,            dur_dys_qty    = #dur_dys_qty#,       prd_dt       = #prd_dt#,
+            
+                ts1_trdp_cd  = #ts1_trdp_cd#,       ts1_arpt_loc_cd= #ts1_arpt_loc_cd#,      ts1_dur_dys_qty= #ts1_dur_dys_qty#,
+                ts1_arr_hrmnt= #ts1_arr_hrmnt#,     ts1_flt_no     = #ts1_flt_no#,
+            
+                ts2_trdp_cd  = #ts2_trdp_cd#,       ts2_arpt_loc_cd= #ts2_arpt_loc_cd#,      ts2_dur_dys_qty= #ts2_dur_dys_qty#,
+                ts2_arr_hrmnt= #ts2_arr_hrmnt#,     ts2_flt_no     = #ts2_flt_no#,
+            
+                ts3_trdp_cd  = #ts3_trdp_cd#,       ts3_arpt_loc_cd= #ts3_arpt_loc_cd#,      ts3_dur_dys_qty= #ts3_dur_dys_qty#,
+                ts3_arr_hrmt = #ts3_arr_hrmt#,      ts3_flt_no     = #ts3_flt_no#,
+            
+                rmk = #rmk#, 
+		        
+		        modi_usrid   = #proc_usrid#,     modi_ofc_cd = #proc_ofccd#,   modi_tms   = GETUTCDATE()
+		 WHERE  air_skd_seq  = #air_skd_seq#		
+    </update>
+	
+    <!-- Air Line Schedule 삭제   -->
+    <update id="deleteAIR_SKD" parameterClass="com.clt.apps.fis.aic.bmd.linerinfo.dto.AirSkdVO">
+        UPDATE  tb_air_skd
+           SET  delt_flg     = 'Y',
+                modi_usrid   = #proc_usrid#,     modi_ofc_cd = #proc_ofccd#,   modi_tms   = GETUTCDATE()
+         WHERE  air_skd_seq  = #air_skd_seq#        
+    </update>
+</sqlMap>    
