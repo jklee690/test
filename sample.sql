@@ -1,0 +1,1 @@
+create table customer(name nvarchar(10), age nvarchar(10) )
