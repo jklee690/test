@@ -12,7 +12,7 @@ function Extract-Zip
 }
 
 
-if(-not test-path C:\git)
+if(-Not (test-path -path "C:\git") )
 {
 	write-output "no exist C:\git"
 	exit 0
