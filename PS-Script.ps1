@@ -11,6 +11,16 @@ function Extract-Zip
   }
 }
 
+
+if(-not test-path C:\git)
+{
+	write-output "no exist C:\git"
+	exit 0
+}
+
+
+
+
 $tomcatname = Get-Service -name "tomcat8" -ErrorAction SilentlyContinue | select object-name -ExpandProperty Name 
 if($tomcatname -ne "tomcat8")
 {
@@ -66,12 +76,12 @@ else
 }
 
 
-Extract-Zip C:\git\WEB_MAIN_01.zip "C:\clt\OPUS_FWD_2014"
-Extract-Zip C:\git\WEB_MAIN_02.zip "C:\clt\OPUS_FWD_2014"
+Copy-Item -path "C:\git\WEB_MAIN" -destination "C:\clt\OPUS_FWD_2014" -recurse
+
 
 if( test-path "C:\clt\OPUS_FWD_2014\WEB_MAIN")
 {
-    Write-Output "create web_main directory"
+    Write-Output "create web_main directory" -force
 }
 else
 {
@@ -81,7 +91,7 @@ else
 Extract-Zip C:\git\WEB_MAIN_Patch.zip "C:\git"
 
 
-$paths = get-childitem -path "c:\git" -recurse | select FullName
+$paths = get-childitem -path "c:\git\apps" -recurse | select FullName
 
 foreach($item in $paths)
 {
@@ -104,4 +114,3 @@ if($tomcatStatus -eq "Stopped")
 	
 }
 
-Remove-Item "C:\git" -Recurse
