@@ -11,40 +11,65 @@ function Extract-Zip
   }
 }
 
+if(-Not (test-path -path "C:\chef_log") )
+{
+	write-output "no exist C:\chef_log"
+	exit 0
+}
+
+New-Item C:\chef_log\log.txt -ItemType file
+$logpath = "C:\chef_log\log.txt"
+
 
 if(-Not (test-path -path "C:\git") )
 {
 	write-output "no exist C:\git"
+	write-output $logpath
 	exit 0
 }
 
 
 
 
-$tomcatname = Get-Service -name "tomcat8" -ErrorAction SilentlyContinue | select object-name -ExpandProperty Name 
-if($tomcatname -ne "tomcat8")
+$tomcatname = Get-Service -DisplayName 'tomcat' -ErrorAction SilentlyContinue | select object-name -ExpandProperty DisplayName 
+if($tomcatname -ne 'tomcat')
 {
-		$tomcatname = Get-Service -name "tomcat7" -ErrorAction SilentlyContinue | select object-name -ExpandProperty Name 
-		if($tomcatname -ne "tomcat7")
-		{
-			write-output "no tomcat7 and tomcat 8 service"
-			exit 0
-		}
+	write-output "no exist tomcat service"
+	write-output $logpath
+	exit 0
+
+}
+else
+{
+	write-output "tomcat service exist"
+	Add-Content $logpath "tomcat service exist"
 }
 
-$tomcatStatus = Get-Service -name $tomcatname | select object-name -ExpandProperty Status
+
+$tomcatStatus = Get-Service -DisplayName "tomcat" | select object-name -ExpandProperty Status
 
 if($tomcatStatus -eq "Running")
 {
-  Stop-Service $tomcatname
+  Stop-Service -DisplayName "tomcat"
 }
 
-$tomcatStatus = Get-Service -name $tomcatname | Where-Object {$_.Status -eq "Active"} | select object-name -ExpandProperty Status
+
+
+$tomcatStatus = Get-Service -DisplayName "tomcat" | Where-Object {$_.Status -eq "Active"} | select object-name -ExpandProperty Status
 if($tomcatStatus -eq "Active")
 {
-	write-output "not enable stop tomcat7 and tomcat 8 service"
+	write-output "not enable stop tomcat service"
+	Add-Content $logpath  "not enable stop tomcat service"
 	exit 0
 }
+
+if( test-path "C:\clt\OPUS_FWD_2014\WEB_MAIN\work")
+{
+    Remove-Item "C:\clt\OPUS_FWD_2014\WEB_MAIN\work" -Recurse
+    Write-Output "remove tomcat work directory"
+	Add-Content $logpath  "remove tomcat work directory"
+}
+
 $curdate = get-date -format yyMMdd
 
 $rename_path = "C:\clt\OPUS_FWD_2014\WEB_MAIN_" + $curdate
@@ -55,38 +80,28 @@ if($IsDir)
     Remove-Item $rename_path -Recurse
 }
 
-
 Rename-Item "C:\clt\OPUS_FWD_2014\WEB_MAIN" $rename_path
 
-if($tomcatname -eq "tomcat8")
-{
- if( test-path "C:\clt\Server\Tomcat 8.0\work")
- {
-    Remove-Item "C:\clt\Server\Tomcat 8.0\work" -Recurse
-    Write-Output "remove tomcat8 work directory"
-  }
-}
-else
-{
-   if( test-path "C:\clt\Server\Tomcat 7.0\work")
-   {
-     Remove-Item "C:\clt\Server\Tomcat 7.0\work" -Recurse
-     Write-Output "remove tomcat7 work directory"
-   }
-}
 
 
 Copy-Item -path "C:\git\WEB_MAIN" -destination "C:\clt\OPUS_FWD_2014" -recurse
 
 
+
 if( test-path "C:\clt\OPUS_FWD_2014\WEB_MAIN")
 {
-    Write-Output "create web_main directory" -force
+    Write-Output "create web_main directory"
+	Add-Content $logpath  "create web_main directory"
 }
 else
 {
     Write-Output "not create web_main directory"
+	Add-Content $logpath  "not create web_main directory"
+    exit 0
 }
+
+<#
+
 
 Extract-Zip C:\git\WEB_MAIN_Patch.zip "C:\git"
 
@@ -103,14 +118,15 @@ foreach($item in $paths)
         
 		Copy-Item $filename $destname -force 	
 	}
-}
+}#>
 
 
-Start-Service $tomcatname
-$tomcatStatus = Get-Service -name $tomcatname | Where-Object {$_.Status -eq "Active"} | select object-name -ExpandProperty Status
+Start-Service -DisplayName "tomcat"
+$tomcatStatus = Get-Service -DisplayName "tomcat" | Where-Object {$_.Status -eq "Active"} | select object-name -ExpandProperty Status
 if($tomcatStatus -eq "Stopped")
 {
-	write-output "not enable Active tomcat7 and tomcat 8 service"
+	write-output "not enable Active tomcat service"
 	
 }
+
 
